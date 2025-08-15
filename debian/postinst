@@ -1,0 +1,49 @@
+#!/bin/sh
+
+cd /usr/share/webmin
+config_dir=/etc/webmin
+var_dir=/var/webmin
+perl=/usr/bin/perl
+
+set ${WEBMIN_PORT:=10000}
+
+login=root
+port=$WEBMIN_PORT
+host=`hostname`
+autoos=3
+atboot=0
+nochown=1
+autothird=1
+noperlpath=
+nouninstall=1
+nostart=1
+
+# Handle case where stunnel is being used
+target=/etc/systemd/system/multi-user.target.wants
+if find $target -name 'stunnel4@webmin.service' | grep . 2>&1 >/dev/null; then
+    ssl=0
+else
+    ssl=1
+fi
+
+if [ -r /etc/shadow ]; then
+    crypt=x
+else
+    crypt=`grep "^root:" /etc/passwd | cut -f 2 -d :`
+fi
+
+export config_dir var_dir perl autoos port login crypt host ssl nochown autothird noperlpath nouninstall nostart allow atboot
+./setup.sh >/tmp/.webmin/webmin-setup.out 2>&1
+
+exit_code=0
+grep sudo= /etc/webmin/miniserv.conf >/dev/null 2>&1 || exit_code="$?"
+if [ "$exit_code" = 1 ]; then
+    # Allow sudo-based logins for Ubuntu/Debian
+    echo sudo=1 >>/etc/webmin/miniserv.conf
+fi
+
+rm -f /var/lock/subsys/webmin
+
+systemctl -q restart webmin
+
+#DEBHELPER#

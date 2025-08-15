@@ -1,0 +1,12 @@
+#!/bin/sh
+if [ "$1" != "upgrade" ]; then
+    exit_status=0
+    grep root=/usr/share/webmin /etc/webmin/miniserv.conf >/dev/null 2>&1 || exit_status="$?"
+    if [ "$exit_status" = 0 ]; then
+        # Package is being removed, and no new version of webmin
+        # has taken it's place. Delete the config files
+        rm -rf /etc/webmin /var/webmin /tmp/.webmin
+    fi
+fi
+
+#DEBHELPER#
