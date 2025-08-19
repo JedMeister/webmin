@@ -73,7 +73,6 @@ extra=Ekstra innstillinger
 pass=Passord
 none1=Spør ved første innlogging
 none2=Ingen passord påkrevd
-nologin=Ingen innlogging tillatt
 encrypted=Forhånds-krypterte passord
 nochange=La stå uendret
 clear=Normalt passord
@@ -228,7 +227,6 @@ usave_efromroot=DU kan ikke flytte hjemmekatalogen fra /
 usave_etoroot=Du kan ikke flytte hjemmekatalogen til /
 
 logins_title=Loggførte innlogginger
-logins_head=Loggførte innlogginger for $1
 logins_from=Innlogging fra
 logins_tty=TTY
 logins_in=Logget inn

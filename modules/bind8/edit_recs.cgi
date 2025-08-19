@@ -23,6 +23,7 @@ my $typedesc = $text{"recs_$in{'type'}"} || $in{'type'};
 # Show form for adding a record
 my $type = $zone->{'type'};
 $type = 'master' if ($type eq 'primary');
+$type = 'slave' if ($type eq 'secondary');
 my $file = $zone->{'file'};
 my $form = 0;
 my $shown_create_form;
@@ -249,6 +250,10 @@ for(my $i=0; $i<@_; $i++) {
 				elsif ($j == 1) {
 					$v = $text{'value_caa_'.$v} || $v;
 					}
+				}
+			elsif ($in{'type'} eq "NSEC3PARAM" && $j == 3) {
+				$v = $text{'value_NSEC3PARAM4_none'}
+					if ($v eq "-");
 				}
 			}
 		if (length($v) > 80) {

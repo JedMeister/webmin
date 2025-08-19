@@ -9,7 +9,6 @@ index_restart=Riavvia Webmin
 index_restartmsg=Clicca su questo pulsante per riavviare il processo server di Webmin. Questo potrebbe essere necessario dopo un aggiornamento di Perl.
 
 access_title=Controllo degli accessi IP
-access_desc=Il server Webmin può essere configurato in modo da impedire o consentire l'accesso ad indirizzi IP predefiniti utilizzando questa pagina. Possono essere inseriti anche nomi di host (come foo.bar.com) e reti IP (come 10.254.3.0 o 10.254.1.0/255.255.255.128 o 2001:DB8::A0BC:0001 o 2001:DB8::/32). Dovresti limitare l'accesso al tuo server ad indirizzi sicuri, specialmente se accessibile tramite internet. In caso contrario, chiunque scopra la tua password potrà avere controllo completo del tuo sistema.
 access_ip=Permetti l'accesso a Webmin
 access_header=Opzioni di controllo degli accessi IP
 access_all=da qualunque indirizzo IP
@@ -270,7 +269,6 @@ os_name=Nome variabile
 os_value=Valore
 os_eversion=Versione del sistema operativo mancante
 os_eiversion=Versione del sistema operativo mancante
-os_fix=Aggiorna il Sistema Operativo individuato
 
 lang_intro=Questa pagina permette di scegliere quale linguaggio verrà utilizzato da Webmin per visualizzare titoli, richieste e messaggi.
 lang_ok=Modifica Lingua
@@ -446,7 +444,7 @@ update_apply=Salva ed applica
 update_sched2=Aggiorna i moduli alle ore $1:$2 ogni $3 giorni
 update_none=Nessun aggiornamento Webmin per questa versione.
 update_failed=Installazione del modulo non riuscita: $1
-update_desc2=Questo modulo ti permette di programmare l'aggiornamento automatico dei moduli di Webmin contenente bug o falle di sicurezza dalla pagina degli <a href=http://www.webmin.com/updates.html>aggiornamenti di Webmin</a> o da un'altra sorgente.  Questo sistema è molto utile per mantenere Webmin aggiornato. Tuttavia deve essere usato con cura in quanto potrebbe permettere degli attacchi al sistema nel caso in cui il server su cui risiedono gli aggiornamenti sia compromesso.
+update_desc2=Questo modulo ti permette di programmare l'aggiornamento automatico dei moduli di Webmin contenente bug o falle di sicurezza dalla pagina degli <a href=http://www.webmin.com/updates.html>aggiornamenti di Webmin</a> o da un'altra sorgente. Questo sistema è molto utile per mantenere Webmin aggiornato. Tuttavia deve essere usato con cura in quanto potrebbe permettere degli attacchi al sistema nel caso in cui il server su cui risiedono gli aggiornamenti sia compromesso.
 
 ca_title=Autorità di certificazione
 ca_old=Certificato esistente
@@ -476,7 +474,7 @@ ca_stopmsg=Clicca questo pulsante per impedire a Webmin di accettare certificati
 ca_stopok=La tua autorità di certificazione è stata fermata.
 ca_eminiserv=SSL client certificates sono supportati solo con miniserv.
 ca_eversion=La versione di Perl Net::SSLeay installata non supporta gli SSL client certificates.
-ca_essleay=Il comando di amministrazione SSL  $1 non è stato trovato sul tuo sistema. Potresti dover modificare il percorso nella configurazione Utenti Webmin.
+ca_essleay=Il comando di amministrazione SSL $1 non è stato trovato sul tuo sistema. Potresti dover modificare il percorso nella configurazione Utenti Webmin.
 ca_essl=La certificazione SSL può essere impostata solo quando il webserver gira in modalità SSL.
 
 session_title=Autenticazione
@@ -484,7 +482,6 @@ session_desc1=Quando è abilitato il timeout della password protegge il tuo serv
 session_header=Opzioni di sessione e di autenticazione
 session_pdisable=Disattiva i timeout per le password
 session_penable=Attiva i timeout per le password
-session_blockhost=Blocca gli host con più di $1 login non riusciti in $2 secondi.
 session_blockuser=Blocca gli utenti con più di $1 login non riusciti in $2 secondi.
 session_disable=Disattiva l'autenticazione di sessione
 session_enable=Abilita autenticazione della sessione
@@ -596,7 +593,6 @@ themes_egzip=Il file è compresso con gzip, ma il comando $1 non è stato trovat
 themes_egzip2=Decompressione del file con gunzip non riuscita: $1
 themes_erpm=Non è un tema di Webmin in RPM
 themes_eirpm=Installazione RPM non riuscita: $1
-themes_ok=Tema modificato con successo... è in corso il ridirezionamento alla pagina principale di Webmin.
 themes_delete=Questa pagina può essere usata per eliminare uno dei temi installati. Il tema da eliminare non deve essere attualmente in uso.
 themes_delok=Tema da eliminare:
 themes_return=lista dei temi
@@ -696,7 +692,6 @@ advanced_preload=Precaricare le librerie delle funzioni di Webmin?
 advanced_err=Salvataggio delle opzioni avanzate non riuscito
 advanced_etemp=Directory dei file temporanei mancante o non esistente
 advanced_etdir=Directory dei file temporanei per $1 mancante o non esistente
-advanced_pass=Rendere la password disponibile per i programmi di Webmin?<br><font size=-1>(non funziona se l'autenticazione della sessione è abilitata)</font>
 advanced_tempmods=Directory temporanea per modulo:
 advanced_tmod=Modulo
 advanced_tdir=Directory

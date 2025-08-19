@@ -8,6 +8,15 @@ do 'phpini-lib.pl';
 sub parse_webmin_log
 {
 local ($user, $script, $action, $type, $object, $p) = @_;
-return &text('log_'.$action, "<tt>".&html_escape($object)."</tt>");
+if ($action eq "imod") {
+	return &text('log_'.$action, "<tt>".&html_escape($object)."</tt>",
+		     "<tt>".&html_escape($p->{'mod'})."</tt>");
+	}
+elsif ($type eq "pkgs") {
+	return &text('log_'.$action.'_pkgs', $object);
+	}
+else {
+	return &text('log_'.$action, "<tt>".&html_escape($object)."</tt>");
+	}
 }
 

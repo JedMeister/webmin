@@ -5,6 +5,8 @@ client_enis=Parece que su máquina no tiene instalado el soporte de cliente NIS.
 switch_srcs=Fuentes de datos
 switch_return=servicios al cliente
 
+order_=&nbsp;
+
 server_epwdir=Directorio de archivos fuente de contraseña inválida
 
 desc_auto.home=Inicio del montador automático
@@ -22,7 +24,7 @@ eswitch_1=Segunda fuente de datos
 eswitch_2=Tercera fuente de datos
 eswitch_3=Cuarta fuente de datos
 eswitch_4=Quinta fuente de datos
-eswitch_nth=Fuente de datos $1 
+eswitch_nth=Fuente de datos $1
 eswitch_success=En el éxito
 eswitch_notfound=Si no se encuentra
 eswitch_unavail=Si no está disponible

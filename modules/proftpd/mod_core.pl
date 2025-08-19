@@ -128,9 +128,9 @@ return &parse_opt("AccessGrantMsg");
 
 sub edit_Allow_Deny_Order
 {
-local (@type, @what, @mode, $i);
-foreach $d (@{$_[0]}, @{$_[1]}) {
-	local @w = @{$d->{'words'}};
+my (@type, @what, @mode);
+foreach my $d (@{$_[0]}, @{$_[1]}) {
+	my @w = @{$d->{'words'}};
 	shift(@w) if (lc($w[0]) eq 'from');
 	for($i=0; $i<@w; $i++) {
 		push(@type, lc($d->{'name'}) eq "allow" ? 1 : 2);
@@ -144,25 +144,24 @@ foreach $d (@{$_[0]}, @{$_[1]}) {
 		}
 	}
 push(@type, ""); push(@what, ""); push(@mode, 0);
-$rv = "<i>$text{'mod_core_order'}</i>\n".
+my $rv = "<i>$text{'mod_core_order'}</i>\n".
       &choice_input($_[2]->[0]->{'value'}, "order", "",
       		    "$text{'mod_core_denyallow'},deny,allow", 
       		    "$text{'mod_core_allowdeny'},allow,deny", 
       		    "$text{'default'},")."<br>\n";
-$rv .= "<table border>\n".
-       "<tr $tb> <td><b>$text{'mod_core_action'}</b></td> ".
-       "<td><b>$text{'mod_core_cond'}</b></td> </tr>\n";
-@sels = map { $text{"mod_core_mode_$_"}.','.$_ } (0 .. 4);
-for($i=0; $i<@type; $i++) {
-	$rv .= "<tr $cb> <td>".&select_input($type[$i], "allow_type_$i", "0",
-		"&nbsp;,0", "$text{'mod_core_allow'},1",
-		"$text{'mod_core_deny'},2")."</td>\n";
-	$rv .= "<td>".&select_input($mode[$i], "allow_mode_$i", "0", @sels);
-	$rv .= sprintf "<input name=allow_what_$i size=20 value=\"%s\"></td>\n",
-		 $mode[$i] ? $what[$i] : "";
-	$rv .= "</tr>\n";
+$rv .= &ui_columns_start([ $text{'mod_core_action'},
+			   $text{'mod_core_cond'} ]);
+my @sels = map { $text{"mod_core_mode_$_"}.','.$_ } (0 .. 4);
+for(my $i=0; $i<@type; $i++) {
+	$rv .= &ui_columns_row([
+		&select_input($type[$i], "allow_type_$i", "0",
+			      "&nbsp;,0", "$text{'mod_core_allow'},1",
+			      "$text{'mod_core_deny'},2"),
+		&select_input($mode[$i], "allow_mode_$i", "0", @sels).
+		  &ui_textbox("allow_what_$i", $mode[$i] ? $what[$i] : "", 20),
+		]);
 	}
-$rv .= "</table>\n";
+$rv .= &ui_columns_end();
 return (2, $text{'mod_core_allow_deny'}, $rv);
 }
 sub save_Allow_Deny_Order
@@ -195,14 +194,11 @@ return ( \@allow, \@deny, &parse_choice("order", ""));
 
 sub edit_AllowAll_DenyAll
 {
-#local $a = @{$_[0]}, $d = @{$_[1]};
-local $a = $_[0], $d = $_[1];
-local $rv = sprintf "<input type=radio name=AllowAll value=0 %s> %s\n",
-	$a || $d ? "" : "checked", $text{'mod_core_addefault'};
-$rv .= sprintf "<input type=radio name=AllowAll value=1 %s> %s\n",
-	$a ? "checked" : "", $text{'mod_core_allowall'};
-$rv .= sprintf "<input type=radio name=AllowAll value=2 %s> %s\n",
-	$d ? "checked" : "", $text{'mod_core_denyall'};
+my ($a, $d) = @_;
+my $rv = &ui_radio("AllowAll", $a ? 1 : $d ? 2 : 0,
+		   [ [ 0, $text{'mod_core_addefault'} ],
+		     [ 1, $text{'mod_core_allowall'} ],
+		     [ 2, $text{'mod_core_denyall'} ] ]);
 return (1, $text{'mod_core_adall'}, $rv);
 }
 sub save_AllowAll_DenyAll
@@ -380,31 +376,25 @@ return ( [ split(/\s+/, $in{'CDPath'}) ] );
 
 sub edit_Class_Classes
 {
-local $rv = $text{'mod_core_classes'}.
+my $rv = $text{'mod_core_classes'}.
 	    &choice_input($_[1]->[0]->{'value'}, "Classes", "",
 		          "$text{'yes'},on", "$text{'no'},off",
 		      	  "$text{'default'},")."<br>\n";
-$rv .= "<table border>\n".
-       "<tr $tb> <td><b>$text{'mod_core_cname'}</b></td> ".
-       "<td><b>$text{'mod_core_ctype'}</b></td> </tr>\n";
-local $i = 0;
-foreach $c (@{$_[0]}, { }) {
-	local @w = @{$c->{'words'}};
-	$rv .= "<tr $cb>\n";
-	$rv .= "<td><input name=Class_n_$i size=10 value='$w[0]'></td>\n";
-	$rv .= "<td><select name=Class_t_$i>\n";
-	$rv .= sprintf "<option value=limit %s>%s</option>\n",
-		$w[1] eq 'limit' ? 'selected' : '', $text{'mod_core_climit'};
-	$rv .= sprintf "<option value=regex %s>%s</option>\n",
-		$w[1] eq 'regex' ? 'selected' : '', $text{'mod_core_cregex'};
-	$rv .= sprintf "<option value=ip %s>%s</option>\n",
-		$w[1] eq 'ip' ? 'selected' : '', $text{'mod_core_cip'};
-	$rv .= "</select>\n";
-	$rv .= "<input name=Class_v_$i size=20 value='$w[2]'></td>\n";
-	$rv .= "</tr>\n";
+$rv .= &ui_columns_start([ $text{'mod_core_cname'}, $text{'mod_core_ctype'}, ]);
+my $i = 0;
+foreach my $c (@{$_[0]}, { }) {
+	my @w = @{$c->{'words'}};
+	$rv .= &ui_columns_row([
+		&ui_textbox("Class_n_$i", $w[0], 8),
+		&ui_select("Class_t_$i", $w[1],
+			   [ [ 'limit', $text{'mod_core_climit'} ],
+			     [ 'regex', $text{'mod_core_cregex'} ],
+			     [ 'ip', $text{'mod_core_cip'} ] ])." ".
+		  &ui_textbox("Class_v_$i", $w[2], 20)
+		]);
 	$i++;
 	}
-$rv .= "</table>\n";
+$rv .= &ui_columns_end();
 return (2, $text{'mod_core_cls'}, $rv);
 }
 sub save_Class_Classes
@@ -593,20 +583,15 @@ return &parse_opt("DisplayQuit", '\S', $text{'mod_core_equit'});
 
 sub edit_Group
 {
-local($rv, @ginfo);
-$rv = sprintf "<input type=radio name=Group value=0 %s> $text{'default'}\n",
-       $_[0] ? "" : "checked";
-$rv .= sprintf "<input type=radio name=Group value=1 %s> %s\n",
-        $_[0] && $_[0]->{'value'} !~ /^#/ ? "checked" : "",
-	$text{'mod_core_gname'};
-$rv .= sprintf "<input name=Group_name size=8 value=\"%s\"> %s\n",
-	$_[0]->{'value'} !~ /^#/ ? $_[0]->{'value'} : "",
-	&group_chooser_button("Group_name", 0);
-$rv .= sprintf "<input type=radio name=Group value=2 %s> %s\n",
-        $_[0]->{'value'} =~ /^#/ ? "checked" : "",
-	$text{'mod_core_gid'};
-$rv .= sprintf "<input name=Group_id size=6 value=\"%s\">\n",
-	 $_[0]->{'value'} =~ /^#(.*)$/ ? $1 : "";
+my @ginfo;
+my $rv = &ui_radio_table("Group",
+	   !$_[0] ? 0 :
+	   $_[0]->{'value'} =~ /^#/ ? 2 : 1,
+	   [ [ 0, $text{'default'} ],
+	     [ 1, $text{'mod_core_gname'},
+	       &ui_textbox("Group_name", $_[0]->{'value'} !~ /^#/ ? $_[0]->{'value'} : "", 13) ],
+	     [ 2, $text{'mod_core_gid'},
+	       &ui_textbox("Group_name", $_[0]->{'value'} =~ /^#(.*)$/ ? $1 : "", 13) ] ]);
 return (2, $text{'mod_core_group'}, $rv);
 }
 sub save_Group
@@ -636,23 +621,24 @@ else {
 
 sub edit_GroupPassword
 {
-local $rv = "<table border>\n";
-$rv .= "<tr $tb> <td><b>$text{'mod_core_gpname'}</b></td> ".
-       "<td><b>$text{'mod_core_gppass'}</b></td> </tr>\n";
-local $i = 0;
-foreach $g (@{$_[0]}) {
-	local @v = @{$g->{'words'}};
-	$rv .= "<tr $cb>\n";
-	$rv .= "<td><input name=GroupPassword_n_$i size=13 value='$v[0]'></td>\n";
-	$rv .= "<td><input type=radio name=GroupPassword_d_$i value='$v[1]' checked> $text{'mod_core_gpdef'}\n";
-	$rv .= "<input type=radio name=GroupPassword_d_$i value=0>\n";
-	$rv .= "<input name=GroupPassword_p_$i size=25></td> </tr>\n";
+my $rv = &ui_columns_start([ $text{'mod_core_gpname'},
+			     $text{'mod_core_gppass'} ]);
+my $i = 0;
+foreach my $g (@{$_[0]}) {
+	my @v = @{$g->{'words'}};
+	$rv .= &ui_columns_row([
+		&ui_textbox("GroupPassword_n_$i", $v[0], 13),
+		&ui_radio("GroupPassword_d_$i", $v[1],
+			  [ [ $v[1], $text{'mod_core_gpdef'} ],
+			    [ 0, &ui_textbox("GroupPassword_p_$i", undef, 25) ] ]),
+		]);
 	$i++;
 	}
-$rv .= "<tr $cb>\n".
-       "<td><input name=GroupPassword_n_$i size=13></td>\n".
-       "<td><input name=GroupPassword_p_$i size=35></td>\n".
-       "</tr> </table>\n";
+$rv .= &ui_columns_row([
+	&ui_textbox("GroupPassword_n_$i", undef, 13),
+	&ui_textbox("GroupPassword_d_$i", undef, 25),
+	]);
+$rv .= &ui_columns_end();
 return (2, $text{'mod_core_grouppassword'}, $rv);
 }
 sub save_GroupPassword
@@ -702,8 +688,7 @@ return &parse_choice("HiddenStores", "");
 sub edit_HideGroup
 {
 return (2, $text{'mod_core_hgroup'},
-	sprintf "<input name=HideGroup size=50 value='%s'>",
-	 join(" ", map { $_->{'value'} } @{$_[0]}));
+    &ui_textbox("HideGroup", join(" ", map { $_->{'value'} } @{$_[0]}), 50));
 }
 sub save_HideGroup
 {
@@ -729,8 +714,7 @@ return &parse_choice("HideNoAccess", "");
 sub edit_HideUser
 {
 return (2, $text{'mod_core_huser'},
-	sprintf "<input name=HideUser size=50 value='%s'>",
-	 join(" ", map { $_->{'value'} } @{$_[0]}));
+    &ui_textbox("HideUser", join(" ", map { $_->{'value'} } @{$_[0]}), 50));
 }
 sub save_HideUser
 {
@@ -806,18 +790,14 @@ return &save_max("MaxClientsPerUser");
 
 sub edit_max
 {
-local $m = !$_[0] ? 0 :
+my $m = !$_[0] ? 0 :
 	   $_[0]->{'words'}->[0] eq 'none' ? 1 : 2;
-local $rv = sprintf "<input type=radio name=$_[1]_m value=0 %s> %s\n",
-		$m == 0 ? "checked" : "", $text{'default'};
-$rv .= sprintf "<input type=radio name=$_[1]_m value=1 %s> %s\n",
-		$m == 1 ? "checked" : "", $text{'mod_core_maxc1'};
-$rv .= sprintf "<input type=radio name=$_[1]_m value=2 %s>\n",
-		$m == 2 ? "checked" : "";
-$rv .= sprintf "<input name=$_[1] size=6 value='%s'><br>\n",
-		$m == 2 ? $_[0]->{'words'}->[0] : "";
-$rv .= sprintf "%s <input name=$_[1]_t size=40 value='%s'>\n",
-	$text{'mod_core_maxcmsg'}, $_[0]->{'words'}->[1];
+my $rv = &ui_radio("$_[1]_m", $m,
+		   [ [ 0, $text{'default'} ],
+		     [ 1, $text{'mod_core_maxc1'} ],
+		     [ 2, &ui_textbox($_[1], $m == 2 ? $_[0]->{'words'}->[0] : "", 6) ] ]);
+$rv .= "<br>$text{'mod_core_maxcmsg'}\n";
+$rv .= &ui_textbox("$_[1]_t", $m > 0 ? $_[0]->{'words'}->[1] : "", 40);
 return $rv;
 }
 sub save_max
@@ -877,14 +857,13 @@ return &parse_choice("MultilineRFC2228", "");
 
 sub edit_PassivePorts
 {
-local $rv = sprintf "<input type=radio name=PassivePorts_def value=1 %s> %s\n",
-		$_[0] ? "" : "checked", $text{'default'};
-$rv .= sprintf "<input type=radio name=PassivePorts_def value=0 %s> %s\n",
-		$_[0] ? "checked" : "", $text{'mod_core_pasvr'};
-$rv .= sprintf "<input name=PassivePorts_f size=5 value='%s'> -\n",
-		$_[0]->{'words'}->[0];
-$rv .= sprintf "<input name=PassivePorts_t size=5 value='%s'>\n",
-		$_[0]->{'words'}->[1];
+my $rv = &ui_radio("PassivePorts_def", $_[0] ? 0 : 1,
+   [ [ 1, $text{'default'} ],
+     [ 0, $text{'mod_core_pasvr'}." ".
+	  &ui_textbox("PassivePorts_f", $_[0] ? $_[0]->{'words'}->[0] : "", 5).
+	  " - ".
+	  &ui_textbox("PassivePorts_t", $_[0] ? $_[0]->{'words'}->[1] : "", 5) ]
+   ]);
 return (1, $text{'mod_core_pasv'}, $rv);
 }
 sub save_PassivePorts
@@ -984,28 +963,21 @@ return &parse_rlimit("RLimitOpenFiles", $text{'mod_core_efilelimit'});
 # rlimit_input(name, desc, value)
 sub rlimit_input
 {
-local @w = @{$_[2]->{'words'}};
-local $rv;
-$rv .= sprintf "<b>%s</b> <input type=radio name=%s_smax value=2 %s> %s\n",
-		$text{'mod_core_soft'}, $_[0], $w[0] ? "" : "checked",
-		$text{'default'};
-$rv .= sprintf "<input type=radio name=%s_smax value=1 %s> %s\n",
-		$_[0], $w[0] eq 'max' ? "checked" : "", $text{'mod_core_max'};
-$rv .= sprintf "<input type=radio name=%s_smax value=0 %s>\n",
-		$_[0], !$w[0] || $w[0] eq 'max' ? "" : "checked";
-$rv .= sprintf "<input name=%s_soft size=6 value='%s'>\n",
-		$_[0], $w[0] eq 'max' ? '' : $w[0];
-$rv .= "&nbsp;&nbsp;&nbsp;";
-
-$rv .= sprintf "<b>%s</b> <input type=radio name=%s_hmax value=2 %s> %s\n",
-		$text{'mod_core_hard'}, $_[0], $w[1] ? "" : "checked",
-		$text{'default'};
-$rv .= sprintf "<input type=radio name=%s_hmax value=1 %s> %s\n",
-		$_[0], $w[1] eq 'max' ? "checked" : "", $text{'mod_core_max'};
-$rv .= sprintf "<input type=radio name=%s_hmax value=0 %s>\n",
-		$_[0], !$w[1] || $w[1] eq 'max' ? "" : "checked";
-$rv .= sprintf "<input name=%s_hard size=6 value='%s'>\n",
-		$_[0], $w[1] eq 'max' ? '' : $w[1];
+my @w = @{$_[2]->{'words'}};
+my $rv = "<b>$text{'mod_core_soft'}</b> ".
+	 &ui_radio("$_[0]_smax",
+		   $w[0] eq 'max' ? 1 : $w[0] ? 2 : 0,
+		   [ [ 2, $text{'default'} ],
+		     [ 1, $text{'mod_core_max'} ],
+		     [ 0, &ui_textbox("$_[0]_soft",
+				$w[0] eq 'max' ? '' : $w[0], 6) ] ]);
+$rv .= "<b>$text{'mod_core_hard'}</b> ".
+       &ui_radio("$_[0]_hmax",
+		   $w[1] eq 'max' ? 1 : $w[1] ? 2 : 0,
+		   [ [ 2, $text{'default'} ],
+		     [ 1, $text{'mod_core_max'} ],
+		     [ 0, &ui_textbox("$_[0]_hard",
+				$w[1] eq 'max' ? '' : $w[1], 6) ] ]);
 return (2, $_[1], $rv);
 }
 
@@ -1058,18 +1030,15 @@ return &parse_opt("ServerAdmin", '^\S+\@\S+$', $text{'mod_core_eadmin'});
 
 sub edit_ServerIdent
 {
-local @w = @{$_[0]->{'words'}};
-local $rv = sprintf "<input type=radio name=ServerIdent_m value=0 %s> %s\n",
-	$_[0] ? "" : "checked", $text{'default'};
-$rv .= sprintf "<input type=radio name=ServerIdent_m value=1 %s> %s\n",
-	lc($w[0]) eq 'off' ? "checked" : "", $text{'mod_core_none'};
-$rv .= sprintf "<input type=radio name=ServerIdent_m value=2 %s> %s\n",
-	lc($w[0]) eq 'on' && !$w[1] ? "checked" : "",
-	$text{'mod_core_identmsg_def'};
-$rv .= sprintf "<input type=radio name=ServerIdent_m value=3 %s>\n",
-	lc($w[0]) eq 'on' && $w[1] ? "checked" : "";
-$rv .= sprintf "<input name=ServerIdent size=30 value='%s'>\n",
-	lc($w[0]) eq 'on' ? $w[1] : "";
+my @w = @{$_[0]->{'words'}};
+my $rv = &ui_radio("ServerIdent_m",
+		   !@w ? 0 :
+		   lc($w[0]) eq 'off' ? 1 :
+		   lc($w[0]) eq 'on' && !$w[1] ? 2 : 3,
+		   [ [ 0, $text{'default'} ],
+		     [ 1, $text{'mod_core_none'} ],
+		     [ 2, $text{'mod_core_identmsg_def'} ],
+		     [ 3, &ui_textbox("ServerIdent", lc($w[0]) eq 'on' ? $w[1] : "", 30) ] ]);
 return (2, $text{'mod_core_identmsg'}, $rv);
 }
 sub save_ServerIdent
@@ -1161,18 +1130,12 @@ return &parse_select("SyslogLevel", "");
 
 sub edit_TransferLog
 {
-local $mode = $_[0]->{'value'} eq 'NONE' ? 2 :
-	      $_[0]->{'value'} ? 0 : 1;
-local $rv = sprintf "<input type=radio name=TransferLog_def value=1 %s> %s\n",
-		$mode == 1 ? "checked" : "", $text{'default'};
-if ($_[1]->{'version'} >= 1.17) {
-	$rv .= sprintf"<input type=radio name=TransferLog_def value=2 %s> %s\n",
-		$mode == 2 ? "checked" : "", $text{'mod_core_nowhere'};
-	}
-$rv .= sprintf "<input type=radio name=TransferLog_def value=0 %s>\n",
-		$mode == 0 ? "checked" : "";
-$rv .= sprintf "<input name=TransferLog size=50 value='%s'>\n",
-		$mode == 0 ? $_[0]->{'value'} : "";
+my $mode = $_[0]->{'value'} eq 'NONE' ? 2 :
+	   $_[0]->{'value'} ? 0 : 1;
+my $rv = &ui_radio("TransferLog_def", $mode,
+		   [ [ 1, $text{'default'} ],
+		     [ 2, $text{'mod_core_nowhere'} ],
+		     [ 0, &ui_textbox("TransferLog", $mode == 0 ? $_[0]->{'value'} : "", 50) ] ]);
 return (2, $text{'mod_core_tlog'}, $rv);
 }
 sub save_TransferLog
@@ -1289,22 +1252,11 @@ return &parse_opt("TimeoutStalled", '^\d+$', $text{'mod_core_etstalled'});
 
 sub edit_Umask
 {
-local $rv;
-$rv .= sprintf "<input type=radio name=Umask_def value=1 %s> %s\n",
-	$_[0]->{'words'}->[0] ? "" : "checked", $text{'default'};
-$rv .= sprintf "<input type=radio name=Umask_def value=0 %s> %s\n",
-	$_[0]->{'words'}->[0] ? "checked" : "", $text{'mod_core_octal'};
-$rv .= sprintf "<input name=Umask size=5 value='%s'>\n",
-	$_[0]->{'words'}->[0];
-
-$rv .= "&nbsp;&nbsp;&nbsp;<b>$text{'mod_core_umask_d'}</b>\n";
-$rv .= sprintf "<input type=radio name=Umask_d_def value=1 %s> %s\n",
-	$_[0]->{'words'}->[1] ? "" : "checked", $text{'default'};
-$rv .= sprintf "<input type=radio name=Umask_d_def value=0 %s> %s\n",
-	$_[0]->{'words'}->[1] ? "checked" : "", $text{'mod_core_octal'};
-$rv .= sprintf "<input name=Umask_d size=5 value='%s'>\n",
-	$_[0]->{'words'}->[1];
-
+my $rv = &ui_opt_textbox("Umask", $_[0]->{'words'}->[0], 5,
+			 $text{'default'}, $text{'mod_core_octal'});
+$rv .= " <b>$text{'mod_core_umask_d'}</b>\n";
+$rv .= &ui_opt_textbox("Umask_d", $_[0]->{'words'}->[1], 5,
+		       $text{'default'}, $text{'mod_core_octal'});
 return (2, $text{'mod_core_umask'}, $rv);
 }
 sub save_Umask
@@ -1388,20 +1340,15 @@ return &parse_choice("UserDirRoot", "");
 
 sub edit_User
 {
-local($rv, @uinfo);
-$rv = sprintf "<input type=radio name=User value=0 %s> $text{'default'}\n",
-       $_[0] ? "" : "checked";
-$rv .= sprintf "<input type=radio name=User value=1 %s> %s\n",
-        $_[0] && $_[0]->{'value'} !~ /^#/ ? "checked" : "",
-	$text{'mod_core_uname'};
-$rv .= sprintf "<input name=User_name size=8 value=\"%s\"> %s&nbsp;\n",
-	$_[0]->{'value'} !~ /^#/ ? $_[0]->{'value'} : "",
-	&user_chooser_button("User_name", 0);
-$rv .= sprintf "<input type=radio name=User value=2 %s> %s\n",
-        $_[0]->{'value'} =~ /^#/ ? "checked" : "",
-	$text{'mod_core_uid'};
-$rv .= sprintf "<input name=User_id size=6 value=\"%s\">\n",
-	 $_[0]->{'value'} =~ /^#(.*)$/ ? $1 : "";
+my @ginfo;
+my $rv = &ui_radio_table("User",
+	   !$_[0] ? 0 :
+	   $_[0]->{'value'} =~ /^#/ ? 2 : 1,
+	   [ [ 0, $text{'default'} ],
+	     [ 1, $text{'mod_core_uname'},
+	       &ui_textbox("User_name", $_[0]->{'value'} !~ /^#/ ? $_[0]->{'value'} : "", 13) ],
+	     [ 2, $text{'mod_core_uid'},
+	       &ui_textbox("User_name", $_[0]->{'value'} =~ /^#(.*)$/ ? $1 : "", 13) ] ]);
 return (2, $text{'mod_core_user'}, $rv);
 }
 sub save_User
@@ -1416,19 +1363,18 @@ else { return ( [ "#$in{'User_id'}" ] ); }
 
 sub edit_UserAlias
 {
-local $rv = "<table border>\n".
-	    "<tr $tb> <td><b>$text{'mod_core_afrom'}</b></td> ".
-	    "<td><b>$text{'mod_core_ato'}</b></td> </tr>\n";
-local $i = 0;
-foreach $u (@{$_[0]}, { }) {
-	local @w = @{$u->{'words'}};
-	$rv .= "<tr $cb>\n";
-	$rv .= "<td><input name=UserAlias_f_$i size=15 value='$w[0]'></td>\n";
-	$rv .= "<td><input name=UserAlias_t_$i size=15 value='$w[1]'></td>\n";
-	$rv .= "</tr>\n";
+my $rv = &ui_columns_start([ $text{'mod_core_afrom'},
+			     $text{'mod_core_ato'} ]);
+my $i = 0;
+foreach my $u (@{$_[0]}, { }) {
+	my @w = @{$u->{'words'}};
+	$rv .= &ui_columns_row([
+		&ui_textbox("UserAlias_f_$i", $w[0], 15),
+		&ui_textbox("UserAlias_t_$i", $w[1], 15),
+		]);
 	$i++;
 	}
-$rv .= "</table>\n";
+$rv .= &ui_columns_end();
 return (2, $text{'mod_core_ualias'}, $rv);
 }
 sub save_UserAlias
@@ -1460,23 +1406,24 @@ else {
 
 sub edit_UserPassword
 {
-local $rv = "<table border>\n";
-$rv .= "<tr $tb> <td><b>$text{'mod_core_upname'}</b></td> ".
-       "<td><b>$text{'mod_core_uppass'}</b></td> </tr>\n";
-local $i = 0;
-foreach $u (@{$_[0]}) {
-	local @v = @{$u->{'words'}};
-	$rv .= "<tr $cb>\n";
-	$rv .= "<td><input name=UserPassword_n_$i size=13 value='$v[0]'></td>\n";
-	$rv .= "<td><input type=radio name=UserPassword_d_$i value='$v[1]' checked> $text{'mod_core_updef'}\n";
-	$rv .= "<input type=radio name=UserPassword_d_$i value=0>\n";
-	$rv .= "<input name=UserPassword_p_$i size=25></td> </tr>\n";
+my $rv = &ui_columns_start([ $text{'mod_core_upname'},
+			     $text{'mod_core_uppass'} ]);
+my $i = 0;
+foreach my $u (@{$_[0]}) {
+	my @v = @{$u->{'words'}};
+	$rv .= &ui_columns_row([
+		&ui_textbox("UserPassword_n_$i", $v[0], 13),
+		&ui_radio("UserPassword_d_$i", $v[1],
+			  [ [ $v[1], $text{'mod_core_updef'} ],
+			    [ 0, &ui_textbox("UserPassword_p_$i", "", 25) ] ])
+		]);
 	$i++;
 	}
-$rv .= "<tr $cb>\n".
-       "<td><input name=UserPassword_n_$i size=13></td>\n".
-       "<td><input name=UserPassword_p_$i size=35></td>\n".
-       "</tr> </table>\n";
+$rv .= &ui_columns_row([
+	&ui_textbox("UserPassword_n_$i", undef, 13),
+	&ui_textbox("UserPassword_p_$i", undef, 35),
+	]);
+$rv .= &ui_columns_end();
 return (2, $text{'mod_core_userpassword'}, $rv);
 }
 sub save_UserPassword

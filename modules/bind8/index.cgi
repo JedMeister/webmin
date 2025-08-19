@@ -68,7 +68,7 @@ my $chroot = &get_chroot() || "";
 	&restart_links().'<br>'.
 	&help_search_link("bind", "doc", "google"), undef, undef,
 	&text($chroot eq "/" || !$chroot ? 'index_version' : 'index_chroot',
-	      $bind_version, "<tt>$chroot</tt>"));
+	      &get_bind_version(), "<tt>$chroot</tt>"));
 
 # If the named.conf file does not exist, offer to create it
 if ($need_create) {
@@ -118,16 +118,19 @@ if ($access{'defaults'}) {
 if ($access{'defaults'}) {
 	# display global options
 	print &ui_subheading($text{'index_opts'});
-	my @olinks = ("conf_servers.cgi", "conf_logging.cgi", "conf_acls.cgi",
-		   "conf_files.cgi", "conf_forwarding.cgi", "conf_net.cgi",
-		   "conf_misc.cgi", "conf_controls.cgi", "conf_keys.cgi",
-		   "conf_zonedef.cgi", "list_slaves.cgi",
-		   $bind_version >= 9 ? ( "conf_rndc.cgi" ) : ( ),
-		   &supports_dnssec_client() ? ( "conf_trusted.cgi" ) : ( ),
-				   ((&supports_dnssec()) && (&have_dnssec_tools_support())) ? ( "conf_dnssectools.cgi" ) : ( ),
-		   &supports_dnssec() ? ( "conf_dnssec.cgi" ) : ( ),
-		   &supports_check_conf() ? ( "conf_ncheck.cgi" ) : ( ),
-		   "conf_manual.cgi" );
+	my @olinks = (
+		"conf_servers.cgi", "conf_logging.cgi", "conf_acls.cgi",
+		"conf_files.cgi", "conf_forwarding.cgi", "conf_net.cgi",
+		"conf_misc.cgi", "conf_controls.cgi", "conf_keys.cgi",
+		"conf_zonedef.cgi", "list_slaves.cgi", "conf_rndc.cgi",
+		&supports_dnssec_client() ? ( "conf_trusted.cgi" ) : ( ),
+		&supports_dnssec() && &have_dnssec_tools_support() ?
+			( "conf_dnssectools.cgi" ) : ( ),
+		&supports_dnssec() ? ( "conf_dnssec.cgi" ) : ( ),
+		&supports_tls() ? ( "list_tls.cgi" ) : ( ),
+		&supports_check_conf() ? ( "conf_ncheck.cgi" ) : ( ),
+		"conf_manual.cgi",
+		);
 	my @otitles = map { /(conf|list)_(\S+).cgi/; $text{$2."_title"} } @olinks;
 	my @oicons = map { /^(conf|list)_(\S+).cgi/; "images/$2.gif"; } @olinks;
 	&icons_table(\@olinks, \@otitles, \@oicons, 6);
@@ -188,6 +191,7 @@ elsif (@zones && (!@views || !$config{'by_view'})) {
 		next if (!$t);
 		$t = "delegation" if ($t eq "delegation-only");
 		$t = "master" if ($t eq "primary");
+		$t = "slave" if ($t eq "secondary");
 		my $zn = $v eq "." ? "<i>$text{'index_root'}</i>"
 				      : &ip6int_to_net(&arpa_to_ip($v));
 		if ($z->{'view'}) {
@@ -353,6 +357,7 @@ elsif (@zones) {
 			my $t = $z->{'type'};
 			$t = "delegation" if ($t eq "delegation-only");
 			$t = "master" if ($t eq "primary");
+			$t = "slave" if ($t eq "secondary");
 			my $zn = $v eq "." ? "<i>$text{'index_root'}</i>"
 					      : &ip6int_to_net(&arpa_to_ip($v));
 			push(@zlinks, "edit_$t.cgi?zone=$z->{'name'}".
@@ -451,7 +456,7 @@ else {
 	print &ui_links_row(\@crlinks);
 	}
 
-if ($access{'views'} && $bind_version >= 9) {
+if ($access{'views'}) {
 	# Display list of views
 	print &ui_hr();
 	print &ui_subheading($text{'index_views'});

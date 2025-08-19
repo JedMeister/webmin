@@ -1,6 +1,7 @@
 index_title=Linux IPTables Firewall
 index_title_v=IPv4 Firewall
 index_title_v6=IPv6 Firewall
+index_position=Showing rules $1 to $2 of $3
 index_editing=rules file $1
 index_ecommand=The command $1 was not found on your system. Webmin needs this command to configure IPtables.
 index_ekernel=An error occured when checking your current IPtables configuration : $1 This may indicate that your kernel does not support IPtables.
@@ -16,7 +17,6 @@ index_chain=Chain $1
 index_action=Action
 index_desc=Condition
 index_comm=Comment
-index_no_comment=
 index_move=Move
 index_none=There are no rules defined for this chain.
 index_policy=Set Default Action To:
@@ -44,8 +44,8 @@ index_cdeletesel=Delete Selected
 index_cmovesel=Move Selected
 index_cadd=Add a new chain named:
 index_apply=Apply Configuration
-index_applydesc=Click this button to make the firewall configuration listed above active. Any firewall rules currently in effect will be flushed and replaced 
-index_applydesc2=Click this button to make the firewall configuration listed above active on all servers in the cluster. Any firewall rules currently in effect will be flushed and replaced 
+index_applydesc=Click this button to make the firewall configuration listed above active. Any firewall rules currently in effect will be flushed and replaced
+index_applydesc2=Click this button to make the firewall configuration listed above active on all servers in the cluster. Any firewall rules currently in effect will be flushed and replaced
 index_unapply=Revert Configuration
 index_unapplydesc=Click this button to reset the configuration listed above to the one that is currently active.
 index_unapply2=Save Configuration
@@ -84,7 +84,7 @@ index_ipset_title=Active IPsets which can be used by firewall rules
 index_ipset_name=Name of IPset
 index_ipset_type=Type
 index_ipset_elem=# Elements
-index_ipset_maxe=# Max 
+index_ipset_maxe=# Max
 index_ipset_size=Size
 index_ipvxmode=Change IP protocol version:
 index_ipvx4=IPv4
@@ -151,17 +151,17 @@ desc_physdev-out!=output physical interface is not $1
 desc_conds=If $1
 desc_and=and
 desc_always=Always
-desc_args--match-set=$2 is contained in IP-set $1  
+desc_args--match-set=$2 is contained in IP-set $1
 desc_src=source
 desc_dest=destination
 
-redhat_einstalled=No <tt>iptables(6)</tt> bootup action was found, indicating that the IPtables package is not installed on your system
+redhat_einstalled2=No <tt>$1</tt> bootup action was found, indicating that the IPtables package is not installed on your system
 redhat_eoutput=An error occured getting IPtables status from the command $1. This probably indicates that your system has been configured to use IPchains instead of IPtables.
 
 gentoo_escript=The Gentoo IPtables startup script $1 was not found on your system.
 
-eiptables=Unknown IPtables save file line : $1
-eip6tables=Unknown IP6tables save file line : $1
+eiptables2=Unknown IPtables save file entry at line $2 : $1
+eip6tables2=Unknown IP6tables save file entry at line $2 : $1
 
 edit_title1=Add Rule
 edit_title2=Edit Rule

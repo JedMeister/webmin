@@ -113,6 +113,14 @@ push(@rv, $packages{$pos, 'install'} ? "" : false);
 return @rv;
 }
 
+# virtual_package_info(package)
+# Returns an array of package information for a virtual package, usually called
+# if "package_info" returns nothing.
+sub virtual_package_info
+{
+return ( );
+}
+
 # check_files(package)
 # Fills in the %files array with information about the files belonging
 # to some package. Values in %files are  path type user group mode size error
@@ -224,7 +232,7 @@ sub update_system_install
 local $update = $_[0] || $in{'update'};
 local (@rv, @newpacks);
 local $cmd = "$ipkg install";
-print "<b>",&text('IPKG_install', "<tt>$cmd</tt>"),"</b><p>\n";
+print &text('IPKG_install', "<tt>$cmd</tt>"),"\n";
 print "<pre>";
 &additional_log('exec', undef, "$cmd $update");
 local $qm = join(" ", map { quotemeta($_) } split(/\s+/, $update));
@@ -242,11 +250,11 @@ while(<CMD>) {
 close(CMD);
 print "</pre>\n";
 if ($?) {
-	print "<b>$text{'IPKG_failed'}</b><p>\n";
+	print "$text{'IPKG_failed'}<p>\n";
 	return ( );
 	}
 else {
-	print "<b>$text{'IPKG_ok'}</b><p>\n";
+	print "$text{'IPKG_ok'}<p>\n";
 	return &unique(@rv);
 	}
 }

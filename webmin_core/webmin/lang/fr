@@ -11,7 +11,6 @@ index_refresh=Actualiser les modules
 index_refreshmsg=Vérifiez à nouveau tous les modules Webmin pour les serveurs installés et mettez à jour ceux qui apparaissent dans la catégorie 'Modules non utilisés'.
 
 access_title=Contrôle d'accès IP
-access_desc=Le serveur Webmin peut être configuré pour refuser ou autoriser l'accès uniquement à partir de certaines adresses IP à l'aide de ce formulaire. Les noms d'hôte (comme foo.bar.com) et les réseaux IP (comme 10.254.3.0 ou 10.254.1.0/255.255.255.128 ou 10.254.1.0/25 ou 10.254.1.5-10.254.97.127 ou 2001:DB8::A0BC:0001 ou 2001:DB8::/32) peuvent également être saisis. Vous devez limiter l'accès à votre serveur aux adresses de confiance, en particulier s'il est accessible depuis Internet. Sinon, toute personne qui devine votre mot de passe aura le contrôle total de votre système.
 access_ip=Adresses IP autorisées
 access_local=Inclure le réseau local dans la liste
 access_header=Options de contrôle d'accès
@@ -31,7 +30,6 @@ access_ecidr8=La taille du réseau IPv6 '$1' doit être divisible par 8
 access_ehost=Impossible de trouver l'adresse IP pour '$1'
 access_eself=Votre adresse IP actuelle ($1) serait refusée
 access_always=Résoudre les noms d'hôte à chaque demande?
-access_trust=Faire confiance à l'adresse IP distante fournie par les proxys?
 
 bind_title=Ports et adresses
 bind_desc2=Ce formulaire peut être utilisé pour modifier le numéro de port sur lequel Webmin écoute ou pour qu'il n'écoute que sur une seule adresse IP de votre système. Vous pouvez également le configurer pour accepter les connexions sur plusieurs ports ou pour écouter sur plusieurs adresses IP. Remarque - votre navigateur Web peut vous inviter à vous reconnecter après avoir modifié le port ou l'adresse de liaison.
@@ -294,7 +292,6 @@ os_name=Nom de variable
 os_value=Valeur
 os_eversion=Version du système d'exploitation manquante
 os_eiversion=Version du système d'exploitation interne manquante
-os_fix=Mettre à jour le système d'exploitation détecté
 os_usermin=Mettez également à jour le système d'exploitation Usermin
 
 lang_intro=Cette page vous permet de choisir la langue que Webmin utilisera pour afficher les titres, les invites et les messages
@@ -398,11 +395,6 @@ ssl_letserr2=Vous pouvez également consulter la page <a href='$1'>de configurat
 ssl_letsdesc2=Cette page peut être utilisée pour demander un nouveau certificat, qui écrasera tout autre déjà configuré dans Webmin. Cependant, le service Let's Encrypt nécessite que votre propriété du domaine de certificat soit validée en vérifiant que ce système héberge le site Web du domaine. Pour ce faire, placez un petit fichier temporaire dans le répertoire de documents du site Web.
 ssl_letsheader=Options pour le nouveau certificat SSL
 ssl_letsdoms=Noms d'hôte pour le certificat
-ssl_webroot=Répertoire racine du site Web pour le fichier de validation
-ssl_webroot0=Hôte virtuel Apache correspondant au nom d'hôte
-ssl_webroot1=Un hôte virtuel Apache différent
-ssl_webroot2=Autre répertoire
-ssl_webroot3=Utiliser les domaines DNS pour la validation
 ssl_letsok=Demander un certificat
 ssl_letsonly=Il suffit de mettre à jour le renouvellement
 ssl_usewebmin=Copier la nouvelle clé et le nouveau certificat dans Webmin?
@@ -577,7 +569,6 @@ session_ptimeout=Délai d'expiration du mot de passe
 session_pdisable=Désactiver les délais d'expiration des mots de passe
 session_penable=Activer les délais d'expiration des mots de passe
 session_pblock=Échec des blocages de connexion
-session_blockhost=Bloquer les hôtes avec plus de $1 échoués de connexion pendant $2 secondes.
 session_blockuser=Bloquer les utilisateurs ayant échoué de connexion de plus de $1 pendant $2 secondes.
 session_syslog3=Journaliser les échecs dans <tt>syslog</tt>?
 session_stype=Type d'identification
@@ -726,8 +717,6 @@ themes_egzip=Le fichier est gzippé, mais la commande $1 n'a pas été trouvée 
 themes_egzip2=Échec du fichier gunzip : $1
 themes_erpm=Pas un RPM de thème Webmin
 themes_eirpm=L'installation du RPM a échoué : $1
-themes_ok=Thème modifié avec succès ... redirection vers la page d'index Webmin.
-themes_ok2=La superposition de thème a été modifiée avec succès ... redirection vers la page d'index Webmin.
 themes_delete=Ce formulaire peut être utilisé pour supprimer l'un des thèmes installés sur votre système qui n'est pas actuellement utilisé.
 themes_delok=Thème à supprimer :
 themes_return=liste des thèmes
@@ -843,7 +832,6 @@ advanced_eprecache=Liste manquante des modèles de shell à pré-mettre en cache
 advanced_err=Échec de l'enregistrement des options avancées
 advanced_etemp=Répertoire des fichiers temporaires manquant ou inexistant
 advanced_etdir=Répertoire des fichiers temporaires manquant ou inexistant pour $1
-advanced_pass=Rendre le mot de passe disponible pour les programmes Webmin?<br><font size=-1>(ne fonctionne pas lorsque l'authentification de session est activée)</font>
 advanced_tempmods=Per-module répertoires temporaires
 advanced_tmod=Module
 advanced_tdir=Répertoire
@@ -1089,10 +1077,7 @@ twofactor_eauthyotp=Authy le jeton n'est pas valide
 twofactor_enrolllink=Vous pouvez désormais vous inscrire à l'authentification à deux facteurs dans le module <a href='$1'>Utilisateurs Webmin</a>.
 twofactor_url=Pour en savoir plus sur $1, consultez son site Web à l'adresse <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=Le module Perl <tt>$1</tt> nécessaire pour l'authentification à deux facteurs n'est pas installé. Utilisez la page <a href='$2'>Modules Perl</a> de Webmin pour l'installer.
-twofactor_qrcode=Saisissez le code secret $1 dans l'application Google Authenticator ou scannez le code QR ci-dessous.
 twofactor_etotpid=Secret TOTP codé en base32 non valide
-twofactor_etotptoken=Le jeton Google Authenticator doit être un nombre
-twofactor_etotpmodule2=Module Perl manquant $1
 twofactor_etotpmatch=Code OTP incorrect
 twofactor_secret=Clé secrète personnelle
 twofactor_secret1=Généré aléatoirement

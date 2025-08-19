@@ -294,12 +294,12 @@ if (!scalar(@updates_available_cache)) {
 return @updates_available_cache;
 }
 
-# package_install(package-name, [system], [new-install])
+# package_install(package-name, [system], [new-install], [flags])
 # Install some package, either from an update system or from Webmin. Returns
 # a list of updated package names.
 sub package_install
 {
-my ($name, $system, $install) = @_;
+my ($name, $system, $install, $flags) = @_;
 $system ||= $software::update_system;
 my @rv;
 my $pkg;
@@ -342,7 +342,7 @@ if (defined(&software::update_system_install)) {
 				$name .= " apache2-mpm-prefork";
 				}
 			}
-		@rv = &software::update_system_install($name, undef, 1);
+		@rv = &software::update_system_install($name, undef, 1, $flags);
 		}
 	else {
 		# Another update system exists!! Use it..
@@ -352,7 +352,7 @@ if (defined(&software::update_system_install)) {
 		if (!$done_rhn_text++) {
 			%text = ( %text, %software::text );
 			}
-		@rv = &update_system_install($name, undef, 1);
+		@rv = &update_system_install($name, undef, 1, $flags);
 		}
 	&reset_environment();
 	}
@@ -364,12 +364,12 @@ unlink($current_cache_file);
 return @rv;
 }
 
-# package_install_multiple(&package-names, system, [new-install])
+# package_install_multiple(&package-names, system, [new-install], [flags])
 # Install multiple packages, either from an update system or from Webmin.
 # Returns a list of updated package names.
 sub package_install_multiple
 {
-my ($names, $system, $install) = @_;
+my ($names, $system, $install, $flags) = @_;
 $system ||= $software::update_system;
 my @rv;
 my $pkg;
@@ -380,7 +380,7 @@ if (defined(&software::update_system_install)) {
 	if ($software::update_system eq $system) {
 		# Can use the default system
 		@rv = &software::update_system_install(
-			join(" ", @$names), undef, 1);
+			join(" ", @$names), undef, 1, $flags);
 		}
 	else {
 		# Another update system exists!! Use it..
@@ -390,7 +390,7 @@ if (defined(&software::update_system_install)) {
 		if (!$done_rhn_text++) {
 			%text = ( %text, %software::text );
 			}
-		@rv = &update_system_install(join(" ", @$names), undef, 1);
+		@rv = &update_system_install(join(" ", @$names), undef, 1, $flags);
 		}
 	&reset_environment();
 	}
@@ -677,16 +677,23 @@ return $mode eq 'updates' || $mode eq 'security' ?
 	&list_possible_updates($nocache) : &list_available($nocache);
 }
 
-# check_reboot_required([no-collect])
+# check_reboot_required()
 # Returns 1 if the package system thinks a reboot is needed
-# If the no-collect flag is set, then check won't happen
 sub check_reboot_required
 {
-my ($no_collect) = @_;
-return 0 if ($no_collect);
 if ($gconfig{'os_type'} eq 'debian-linux') {
-        return -e "/var/run/reboot-required" ? 1 : 0;
-        }
+	if (-e "/var/run/reboot-required") {
+		return 1;
+		}
+	if (&has_command("needrestart")) {
+		my $out = &backquote_command("needrestart -b -k -n 2>&1 </dev/null");
+		if ($out =~ /NEEDRESTART-KSTA:\s*(?<status>\d)/m) {
+			if ($+{status} == 3) {
+				return 1;
+				}
+			}
+		}
+	}
 elsif ($gconfig{'os_type'} eq 'redhat-linux') {
 	my $needs_restarting_cmd = "needs-restarting";
 	my $needs_restarting = has_command($needs_restarting_cmd);

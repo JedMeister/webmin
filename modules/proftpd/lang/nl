@@ -1,14 +1,12 @@
 index_title=ProFTPD Server
 index_eproftpd=De ProFTPD server $1 werd niet gevonden op uw systeem. Misschien is het niet geinstalleerd, of is uw <a href='$2'>module configuratie</a> niet in orde.
 index_eproftpd2=Het programma $1 lijkt niet de ProFTPD server te zijn. Misschien is het niet geinstalleerd, of is uw <a href='$2'>module configuratie</a> niet in orde. Het resultaat van opdracht $3 was : $4
-index_eversion=Versie  $1 van ProFTPD server word niet ondersteund door Webmin.
+index_eversion=Versie $1 van ProFTPD server word niet ondersteund door Webmin.
 index_econf=De ProFTPD config file $1 bestaat niet of is niet geldig. Misschien is uw <a href='$2'>module configuratie</a> niet in orde.
 index_apply=Veranderingen Toevoegen
 index_applymsg=Klik op deze knop om de huidige configuratie toe te voegen met het SIGHUP signaal aan het werkende ProFTPD proces.
 index_applymsg2=Klik op deze knop om de huidige configuratie toe te voegen door middel van stoppen en her-starten van ProFTPD.
 index_start=Start Server
-index_startmsg=Klik op deze knop om de FTP server te starten met de huidige configuratie. U kunt de server ook zo configureren dat hij automatisch start wanneer hij nodig is met behulp van de <a href='$1'>Internet Services</a> module.
-index_startmsg2=Klik op deze knop om de FTP server te starten met de huidige configuratie. U kunt de server ook zo configureren dat hij automatisch start wanneer hij nodig is met behulp van inetd of een ander gelijkwaardig programma.
 index_stop=Stop Server
 index_stopmsg=Klik op deze knop om de FTP server te stoppen, zodat er geen nieuwe clienten meer kunnen verbinden.
 index_return=hoofd menu
@@ -448,7 +446,7 @@ log_anon=Verander $1 in anonieme FTP voor server $2
 log_start=Gestarte proftpd
 log_apply=Veranderingen toevoegen
 
-eafter=Configuratie en verificatie mislukt  : $1 veranderingen zijn niet opgeslagen.
+eafter=Configuratie en verificatie mislukt : $1 veranderingen zijn niet opgeslagen.
 proftpd_apply=Veranderingen Toevoegen
 proftpd_stop=Stop ProFTPd
 proftpd_start=Start ProFTPd

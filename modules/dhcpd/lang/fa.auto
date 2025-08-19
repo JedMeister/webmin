@@ -1,3 +1,4 @@
+index_comment=توضیحات
 index_stop=توقف سرور
 index_stopdesc=روی این دکمه کلیک کنید تا سرور DHCP در حال اجرا روی سیستم شما متوقف شود. هنگامی که متوقف شد ، مشتریان DHCP قادر به درخواست آدرس IP نخواهند بود.
 index_dhcpd=ISC DHCPd
@@ -5,7 +6,7 @@ index_delete=انتخاب شده را پاک کن
 
 listl_unknown=ناشناخته
 listl_allocs=$1 آدرس IP موجود ،$2 اختصاص یافته ($3٪)
-listl_mode=حالت نمایش  :
+listl_mode=حالت نمایش :
 listl_mode_0=DHCP اجاره می دهد
 listl_mode_1=زیرمجموعه‌ها و موارد استفاده
 listl_size=کل IP ها

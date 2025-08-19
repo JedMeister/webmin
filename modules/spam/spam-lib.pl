@@ -607,7 +607,7 @@ sub version_atleast
 if (!$version_cache) {
 	$version_cache = &get_spamassassin_version();
 	}
-return $version_cache >= $_[0];
+return &compare_version_numbers($version_cache, '>=', $_[0]);
 }
 
 # spam_file_folder()
@@ -1140,6 +1140,58 @@ if ($config{'global_cf'}) {
 my $conf = &get_config();
 push(@rv, &find_value("loadplugin", $conf));
 return @rv;
+}
+
+# get_procmail_status()
+# Returns flags indicating if spamassassin is called, and if delivery based
+# on the headers it adds are enabled, based on the procmail config.
+sub get_procmail_status
+{
+if (!$warn_procmail || !&foreign_check("procmail")) {
+	# Don't know, or checking disabled
+	return (-1, -1);
+	}
+&foreign_require("procmail");
+my $spam_enabled = 0;		# Found call to spamassassin
+my $delivery_enabled = 0;	# Found X-Spam: header rule
+my @pmrcs = &get_procmailrc();
+foreach my $pmrc (@pmrcs) {
+	my @recipes = &procmail::parse_procmail_file($pmrc);
+	my $isglobal = $pmrc eq $config{'global_procmailrc'} ||
+		       $pmrc eq $config{'procmailrc'} ||
+		       $pmrc eq $procmail::procmailrc;
+	if (&find_spam_recipe(\@recipes)) {
+		$spam_enabled ||= 1;
+		}
+	if (&find_file_recipe(\@recipes)) {
+		if ($isglobal) {
+			# Enabled globally, and so
+			# cannot be changed by user
+			$delivery_enabled ||= -2;
+			}
+		else {
+			$delivery_enabled ||= 1;
+			}
+		}
+	if (&find_virtualmin_recipe(\@recipes) ||
+	    &foreign_installed("virtual-server")) {
+		# Controlled by Virtualmin
+		if ($isglobal &&
+		    &find_force_default_receipe(
+		      \@recipes)) {
+			# User .procmailrc files are
+			# prevented
+			$spam_enabled ||= -2;
+			$delivery_enabled ||= -2;
+			}
+		else {
+			# Users can have a .procmailrc
+			$spam_enabled ||= -2;
+			$delivery_enabled ||= 1;
+			}
+		}
+	}
+return ($spam_enabled, $delivery_enabled);
 }
 
 1;

@@ -1,3 +1,4 @@
+index_applydesc=Sistem yeniden başlatılmış gibi önyükleme zamanı arayüzünü ve yönlendirme ayarlarını uygulamak için tıklayın. Yanlış yapılandırma sisteminizin ağ üzerinden erişilemez olmasına ve Webmin erişiminin kesilmesine neden olabilir. Ana bilgisayar adını ve DNS ayarlarını düzenlemek bu adımı gerektirmez.
 index_delete1=Seçili Arayüzleri Devre Dışı Bırak
 index_delete2=Seçili Arayüzleri Sil
 index_delete3=Seçili Arayüzleri Sil ve Uygula
@@ -85,8 +86,8 @@ routes_cdest=Güzergah hedefi
 routes_cdef=Varsayılan rota
 routes_cnetmask=Hedef için ağ maskesi
 routes_cvia=Güzergah
-routes_ciface=Ağ arayüzü $1 
-routes_cgw=Ağ Geçidi $1 
+routes_ciface=Ağ arayüzü $1
+routes_cgw=Ağ Geçidi $1
 routes_cerr=Etkin rota oluşturulamadı
 routes_ecdest=Eksik veya geçersiz hedef IP adresi veya ağ
 routes_ecnetmask=Eksik veya geçersiz ağ maskesi
@@ -119,7 +120,7 @@ ipnodes_delete=Seçilen IPv6 Ana Bilgisayar Adreslerini Sil
 
 log_create_ipnode=IPv6 ana bilgisayar adresi $1 oluşturuldu
 log_delete_ipnode=IPv6 ana bilgisayar adresi $1 silindi
-log_modify_ipnode=Değiştirilmiş IPv6 ana bilgisayar adresi $1 
+log_modify_ipnode=Değiştirilmiş IPv6 ana bilgisayar adresi $1
 log_delete_hosts=$1 ana bilgisayar adresi silindi
 log_delete_ipnodes=$1 IPv6 ana bilgisayar adresi silindi
 log_delete_afics=$1 etkin arayüzü silme
@@ -130,6 +131,7 @@ log_create_defroute=Aktif varsayılan rota oluşturuldu
 log_delete_routes=$1 etkin rota silindi
 log_delete_aifcs=$1 arayüzü devre dışı bırakıldı
 log_delete_bifcs=$1 arayüz silindi
+log_apply=Uygulanan önyükleme zamanı ağ yapılandırması
 
 acl_hide=Düzenlenemeyen arayüzler gizlensin mi?
 acl_sysinfo=Gösterge Tablosunda kullanılabilir ağ arayüzlerini göster

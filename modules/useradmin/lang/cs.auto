@@ -17,6 +17,7 @@ index_loginsuser=Pouze uživatel
 index_loginsdesc=Zobrazit poslední přihlášení některého nebo všech uživatelů Unixu, kteří se připojili přes SSH nebo Usermin.
 index_whodesc=Zobrazit uživatele, kteří jsou aktuálně přihlášeni přes SSH nebo Usermin.
 
+nologin=Zakázat ověřování heslem
 sshkey=Veřejný klíč SSH
 uedit_manual=Adresář
 uedit_allg=Všechny skupiny
@@ -40,6 +41,9 @@ gedit_selu=Uživatelé ve skupině
 gedit_pri=Členové primární skupiny
 gedit_prinone=Žádní uživatelé nemají tuto skupinu jako svou primární
 gedit_clone=Skupina klonování
+
+logins_head=Všechna zaznamenaná přihlášení pro uživatele $1
+logins_head_limit=Poslední $2 zaznamenala přihlášení pro uživatele $1
 
 udel_ugroupother=Mazání této skupiny uživatelů v jiných modulech ..
 
@@ -76,14 +80,14 @@ gbatch_header=Dávkové vytváření skupin, možnosti aktualizace a mazání
 gbatch_others=Vytvořit, upravit nebo odstranit skupiny v jiných modulech?
 gbatch_batch=Aktualizovat soubor skupin pouze po dokončení dávky?
 gbatch_chgid=Změnit GID u souborů modifikovaných skupin?
-gbatch_ecaccess=Není dovoleno vytvořit skupinu na řádku $1 : $2 
-gbatch_emaccess=Není dovoleno měnit skupinu na řádku $1 : $2 
-gbatch_edaccess=Není dovoleno smazat skupinu na řádku $1 : $2 
+gbatch_ecaccess=Není dovoleno vytvořit skupinu na řádku $1 : $2
+gbatch_emaccess=Není dovoleno měnit skupinu na řádku $1 : $2
+gbatch_edaccess=Není dovoleno smazat skupinu na řádku $1 : $2
 gbatch_created=Vytvořená skupina $1
 gbatch_deleted=Odstraněná skupina $1
 gbatch_modified=Upravená skupina $1
-gbatch_enogroup=Skupina neexistuje na řádku $1 : $2 
+gbatch_enogroup=Skupina neexistuje na řádku $1 : $2
 gbatch_eprimary=Skupina na řádku $1 nelze odstranit, protože se jedná o primární skupinu uživatele $2.
-gbatch_egroup=Duplicitní název skupiny na řádku $1 : $2 
+gbatch_egroup=Duplicitní název skupiny na řádku $1 : $2
 gbatch_egroupname=Na řádku $1 je neplatný název skupiny
-gbatch_erename=Není povoleno přejmenovat skupiny na řádku $1 : $2 
+gbatch_erename=Není povoleno přejmenovat skupiny na řádku $1 : $2

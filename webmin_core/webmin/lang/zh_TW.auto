@@ -3,18 +3,26 @@ index_apache=因為Webmin當前在Apache下運行，所以您可能不想啟用�
 index_refresh=刷新模塊
 index_refreshmsg=重新檢查所有已安裝服務器的Webmin模塊，並更新“未使用的模塊”類別中顯示的模塊。
 
+access_desc=可以使用此表單將 Webmin 設定為僅拒絕或允許來自某些 IP 位址的存取。主機名稱（如foo.bar.com）和IP 網路（如10.254.3.0 或10.254.1.0/255.255.255.128 或10.254.1.0/25 或10.254.1.5-10.254.901:01:005 2001 :DB8::/32) 也可以輸入。您應該將對 Webmin 的存取權限限制為受信任的位址，尤其是當可以從 Internet 存取時。否則，任何猜到您密碼的人都將完全控制您的系統。
 access_ip=允許的IP地址
 access_local=在列表中包括本地網絡
 access_ecidr='$1'不是有效的CIDR號
 access_eip6='$1'不是完整的IPv6或網絡地址
 access_ecidr6='$1'不是有效的IPv6網絡大小
 access_ecidr8=IPv6網絡大小'$1'必須被8整除
-access_trust=信任代理提供的遠程IP地址嗎？
+access_trust_lvl=代理標頭的信任級別
+access_trust_lvl0=不，不要相信來自代理商的任何標頭
+access_trust_lvl1=是的，信任代理提供的遠端 IP 位址
+access_trust_lvl2=是的，信任代理提供的遠端 IP 和 SSL 憑證
 
 bind_desc2=此表單可用於更改Webmin偵聽的端口號，或僅在系統上的單個IP地址上偵聽此端口號。您還可以將其配置為接受多個端口上的連接，或偵聽多個IP地址。注意-更改端口或綁定地址後，您的Web瀏覽器可能會提示您重新登錄。
 bind_firewall=在防火牆上打開新端口？
 bind_sip=綁定到IP地址
 bind_listen=監聽UDP端口上的廣播
+bind_websocport=WebSocket 連線的基本連接埠號
+bind_websocport_none=預設 (555)
+bind_websoc_host=WebSocket 連線的主機名
+bind_websoc_host_auto=自動的
 bind_enone=沒有輸入要監聽的IP地址和端口
 bind_eip2=“$1”不是要綁定的有效IP地址
 bind_erestart=使用新的地址和端口設置啟動Webmin時發生錯誤：$1
@@ -36,6 +44,7 @@ bind_maxlifetime_secs=秒
 bind_emaxlifetime=最大進程生命週期必須是大於 60 秒的數字
 
 log_status=正在記錄活動？
+log_trust=在代理後面時記錄客戶端 IP 位址嗎？
 log_clear2=定期清除日誌文件？
 log_period=是的，每$1小時
 log_forusers=用戶登錄Webmin操作
@@ -139,7 +148,7 @@ os_eversion=缺少操作系統版本
 os_eiversion=缺少內部操作系統版本
 os_incorrect=操作系統 $1 已升級到版本 $2
 os_release_notes=發行說明
-os_fix=更新檢測到的操作系統
+os_fix=確認偵測到的變化
 os_usermin=同時更新Usermin OS
 
 lang_title=語言和地區
@@ -223,11 +232,13 @@ ssl_letserr2=或者，檢查<a href='$1'>模塊配置</a>頁面，以確保使�
 ssl_letsdesc2=此頁面可用於請求新證書，該證書將覆蓋Webmin中當前配置的任何其他證書。但是，“加密”服務要求通過檢查此系統是否託管該域的網站來驗證您對證書域的所有權。這是通過在網站的文檔目錄中放置一個小的臨時文件來完成的。
 ssl_letsheader=新SSL證書的選項
 ssl_letsdoms=證書的主機名
-ssl_webroot=驗證文件的網站根目錄
-ssl_webroot0=與主機名匹配的Apache虛擬主機
-ssl_webroot1=不同的Apache虛擬主機
-ssl_webroot2=其他目錄
-ssl_webroot3=使用DNS域進行驗證
+ssl_subset=跳過無法驗證的主機名稱？
+ssl_letsmode=讓我們加密驗證方法
+ssl_letsmode0=Apache 虛擬主機比對主機名
+ssl_letsmode1=選定的 Apache 虛擬主機
+ssl_letsmode2=其他網頁伺服器文件目錄
+ssl_letsmode3=使用 BIND 進行 DNS 驗證
+ssl_letsmode4=Certbot 內建網路伺服器
 ssl_letsok=索取證書
 ssl_letsonly=只是更新續訂
 ssl_usewebmin=將新的密鑰和證書複製到Webmin？
@@ -254,6 +265,7 @@ upgrade_descdeb=通過此表，您可以通過升級Debian軟件包將整個Webm
 upgrade_descsun-pkg=該表格使您可以將整個Webmin安裝從Sun提供的Solaris軟件包升級到新版本。您可以從本地Solaris軟件包文件或上載的文件進行安裝。可以在<a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>中找到最新的軟件包。與手動升級一樣，所有配置設置和第三方模塊都將保留。
 upgrade_descgentoo=通過刪除當前的Gentoo Emerge軟件包並安裝新的軟件包，此表單使您可以將整個Webmin安裝升級到新版本。您可以從本地Gentoo軟件包文件，上載的文件或從Emerge存儲庫中的最新版本進行安裝。與手動升級一樣，所有配置設置和第三方模塊都將保留。
 upgrade_emerge=Emerge存儲庫中的最新版本
+upgrade_repo=$1 儲存庫中的最新版本
 upgrade_err4=無法從Emerge存儲庫升級
 upgrade_err5=無法從URL $1升級
 upgrade_edeb=不是有效的Webmin Debian軟件包文件
@@ -302,6 +314,7 @@ ca_notafter=有效期至
 
 session_ptimeout=密碼超時
 session_pblock=登錄塊失敗
+session_blockhost=阻止登入失敗次數超過 $1 次的客戶端 IP，持續 $2 秒。
 session_blockuser=阻止用戶$1以上的用戶登錄失敗$2秒。
 session_syslog3=將故障記錄到<tt>syslog</tt>？
 session_stype=認證方式
@@ -336,6 +349,14 @@ session_passapi=啟用遠程密碼更改 API？
 session_passapi0=API 已禁用
 session_passapi1=為 Unix 用戶啟用 API
 session_passurl=啟用後，可以通過對 $1 的 POST 請求更改用戶密碼
+session_forgot=允許恢復忘記的密碼嗎？
+session_eforgot=除非先刪除<b>Virtualmin 密碼恢復</b>插件模組，否則無法啟用忘記密碼復原。這可以在 <a href='$1'>Webmin 模組</a> 頁面上完成。
+session_passresetdesc=密碼恢復限制
+session_passreset=阻止請求數超過 $1 的客戶端 $2 分鐘
+session_epassreset_failures=攔截請求缺失或無效
+session_passtimeoutdesc=密碼重設連結已過期
+session_passtimeout=密碼重設連結將在 $1 分鐘後過期
+session_epassreset_timeout=密碼重置逾時缺失或無效
 
 categories_lang=編輯語言類別：
 categories_langok=更改
@@ -373,7 +394,8 @@ themes_tabinstall=安裝主題
 themes_tabdelete=刪除主題
 themes_tabexport=導出主題
 
-themes_ok2=主題疊加成功更改..重定向到Webmin索引頁面。
+themes_ok=主題變更已成功重定向現在 ..
+themes_ok2=主題覆蓋已成功更改，現在重定向 ..
 themes_err4=更改疊加主題失敗
 themes_eoverlay=所選的疊加層與當前的全局主題不兼容
 
@@ -391,6 +413,34 @@ update_emins=缺少或無效的分鐘來更新
 standard_failed=無法下載模塊列表：$1
 
 third_title=選擇第三方模塊
+
+lock_mode=Webmin 要鎖定的文件
+lock_s=秒
+lock_m=分分鐘
+lock_h=小時
+lock_pid=PID
+lock_cmd=腳本
+lock_file=鎖定文件
+lock_files=鎖定文件
+lock_nfiles=沒有鎖定的文件
+lock_age=舉行時間
+lock_noneopen=目前沒有檔案被 Webmin 鎖定。
+lock_msg=下面列出的檔案目前已被 Webmin 進程鎖定。
+lock_kill=殺死選定的鎖
+lock_term=終止選定的鎖
+lock_return=鎖列表
+
+kill_title=拆鎖
+kill_err=解鎖失敗
+kill_enone=未選擇！
+kill_pid=終止進程 $1 ..
+term_pid=正在終止進程 $1 ..
+kill_gone=..進程不再存在！
+kill_gone2=..鎖不再存在！
+kill_dead=..殺死 $1 並釋放鎖 $2
+kill_alive=.. 已向 $1 發送終止訊號，但它沒有退出！
+kill_failed=.. 由於 $1，kill 失敗，但無論如何都釋放了鎖 $2
+kill_already=..釋放了 $1 上的鎖定
 
 ipkey_title1=創建SSL密鑰
 ipkey_title2=編輯SSL密鑰
@@ -436,7 +486,8 @@ advanced_err=保存高級選項失敗
 advanced_etemp=臨時文件目錄缺失或不存在
 advanced_etdir=$1的臨時文件目錄丟失或不存在
 advanced_etempallowed=臨時文件目錄 $1 是系統目錄
-advanced_pass=使密碼可用於Webmin程序嗎？<br><font size=-1>（啟用會話身份驗證後不起作用）</font>
+advanced_pass_desc=使密碼可供 Usermin 程式使用嗎？
+advanced_pass_help=啟用會話身份驗證時不起作用
 advanced_tempmods=每個模塊的臨時目錄
 advanced_tmod=模組
 advanced_tdir=目錄
@@ -463,7 +514,9 @@ advanced_headers=額外的HTTP標頭
 advanced_eheader=標頭的格式必須類似於<tt>Header：Value</tt>
 advanced_sortconfigs=保存按其鍵排序的配置文件？
 advanced_bufsize=網絡緩衝區大小（以字節為單位）
+advanced_bufsize_binary=下載的網路緩衝區大小（以位元組為單位）
 advanced_ebufsize=網絡緩衝區大小必須為大於零的數字
+advanced_ebufsize_binary=下載的網路緩衝區大小必須是大於零的數字
 
 syslog_errorlog=Webmin錯誤日誌
 
@@ -577,6 +630,7 @@ status_interval0=每一個
 status_mins=分鐘
 status_pkgs=收集可用的軟件包更新？
 status_temp=收集驅動器溫度？
+status_temp2=收集CPU溫度和風扇速度？
 status_units=溫度單位
 status_celsius=攝氏溫度
 status_fahrenheit=華氏溫度
@@ -607,6 +661,9 @@ sendmail_authdef=默認（當前為Cram-MD5）
 sendmail_from=來自Webmin的電子郵件的發件人地址
 sendmail_fromdef=默認值（$1）
 sendmail_fromaddr=地址
+sendmail_toaddr=通知的預設目標位址
+sendmail_to_def=未設定
+sendmail_etoaddr=目標地址缺失或格式不正確
 sendmail_err=保存郵件發送選項失敗
 sendmail_esmtp=缺少或無法解析的SMTP服務器主機名
 sendmail_eport=缺少或非數字SMTP端口
@@ -681,6 +738,7 @@ twofactor_title=兩要素認證
 twofactor_header=兩因素身份驗證選項
 twofactor_provider=認證提供者
 twofactor_none=沒有
+twofactor_totp=TOTP驗證器
 twofactor_apikey=Authy API密鑰
 twofactor_test=使用提供商的測試模式？
 twofactor_desc=兩因素身份驗證使Webmin用戶可以在登錄時啟用其他身份驗證設備，例如一次性密碼生成器。在此頁面上啟用所選身份驗證提供程序後，用戶必須分別向其註冊。
@@ -703,10 +761,9 @@ twofactor_eauthyotp=驗證令牌無效
 twofactor_enrolllink=現在，您可以在<a href='$1'>Webmin用戶</a>模塊中註冊兩因素身份驗證。
 twofactor_url=要了解有關$1的更多信息，請參見其網站，網址為<a href='$2' target=_blank>$2</a>。
 twofactor_etotpmodule=未安裝兩因素身份驗證所需的Perl模塊<tt>$1</tt>。使用Webmin中的<a href='$2'>Perl模塊</a>頁進行安裝。
-twofactor_qrcode=在Google Authenticator應用程序中輸入密碼$1，或掃描下面的QR碼。
+twofactor_qrcode=在 TOTP 應用程式中輸入密碼 $1，或掃描下面的二維碼。
 twofactor_etotpid=無效的TOTP base32編碼的機密
-twofactor_etotptoken=Google Authenticator令牌必須是數字
-twofactor_etotpmodule2=缺少Perl模塊$1
+twofactor_etotptoken=TOTP 令牌必須是數字
 twofactor_etotpmatch=錯誤的OTP碼
 twofactor_secret=個人密鑰
 twofactor_secret1=隨機產生
@@ -731,6 +788,7 @@ letsencrypt_ecert=找不到預期的證書文件$1
 letsencrypt_ekey=找不到預期的私鑰文件$1
 letsencrypt_doing=使用網站目錄$2來請求$1的新證書。
 letsencrypt_doingdns=使用DNS驗證為$1申請新證書。
+letsencrypt_doingcertbot=使用 Certbot Web 伺服器為 $1 請求新憑證。
 letsencrypt_failed=..請求失敗：$1
 letsencrypt_done=..請求成功！
 letsencrypt_show=新證書和私鑰已寫入以下文件：
@@ -747,6 +805,34 @@ letsencrypt_ecsr=無法生成CSR：$1
 letsencrypt_ekeygen=無法生成私鑰：$1
 letsencrypt_enative=本地的Let's Encrypt客戶端（certbot）先前在此系統上使用，並且必須用於以後的所有證書請求
 letsencrypt_eacmedns=僅官方的Let's Encrypt客戶端支持基於DNS的驗證
+letsencrypt_eacmecertbot=僅官方 Let's Encrypt 用戶端支援 Certbot 驗證
 
 announce_hide=隱藏此公告
 alert_hide=隱藏警報
+
+os_eol=作業系統 EOL 倒數通知
+os_eol_countdown=幾個月前
+os_eol_ecountdown=倒數之前的月份必須是整數
+os_eol_until=直到
+os_eol_type1=作業系統維護和安全支援
+os_eol_type2=作業系統擴充安全維護
+os_eol_years=年
+os_eol_year=年
+os_eol_months=月
+os_eol_month=月
+os_eol_weeks=週
+os_eol_week=星期
+os_eol_days=天
+os_eol_day=天
+os_eol_hours=小時
+os_eol_hour=小時
+os_eol_minutes=分分鐘
+os_eol_minute=分分鐘
+os_eol_seconds=秒
+os_eol_second=第二
+os_eol_reached=已達停產狀態
+os_eol_reaching=停產於
+os_eol_reaching2=即將停產
+
+qr_err=產生二維碼失敗
+qr_estr=缺少二維碼字串！

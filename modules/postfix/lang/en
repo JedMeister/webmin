@@ -169,7 +169,6 @@ opts_masquerade_exceptions=Masquerading exceptions
 opts_resolve_dequoted_address=Prevent use of @ in mailbox names?
 index_return=Postfix configuration
 
-
 opts_alias_maps=Alias databases used by the local delivery agent
 opts_alias_database=Alias databases built by &quot;newaliases&quot; command
 aliases_warning=Warning: <ul><li>when the first field is not empty, the default Postfix aliases-generation command is used to build up the corresponding databases ; <li>else the Sendmail compatibility command &quot;newaliases&quot; is used, this will use the second field's databases.</ul>
@@ -179,7 +178,6 @@ aliases_value=Alias to...
 
 new_alias=Create a new alias
 new_aliasmsg=Click this button to create a new alias
-
 
 local_delivery_ecannot=You are not allowed to edit local delivery options
 local_delivery_title=Local Delivery
@@ -207,7 +205,6 @@ opts_local_destination_recipient_limit_default=Default
 opts_prepend_delivered_header=Prepend a <tt>Delivered-To:</tt> when...
 opts_prepend_delivered_header_default=Default
 
-
 resource_title=General Resource Control
 resource_ecannot=You are not allowed to edit resource control parameters
 opts_bounce_size_limit=Max size of bounced message
@@ -227,7 +224,6 @@ opts_qmgr_message_recipient_limit=Max number of in-memory recipients
 opts_queue_minfree=Min free space in the queue file system
 opts_stale_lock_time=Max time after which stale lock is released
 opts_transport_retry_time=Time in seconds between attempts to contact a broken MDT
-
 
 opts_always_bcc=Address that receives bcc of each message
 opts_always_bcc_none=None
@@ -249,7 +245,6 @@ opts_mydomain_default=Default (provided by system)
 opts_myhostname=Internet hostname of this mail system
 opts_myhostname_default=Default (provided by system)
 opts_mynetworks=Local networks
-opts_mynetworks_default=Default (all attached networks)
 opts_mynetworks_style=Automatic local networks
 opts_mynetworks_subnet=Same IP subnet
 opts_mynetworks_class=Same network class
@@ -305,7 +300,7 @@ smtp_title=SMTP Client Options
 smtp_ecannot=You are not allowed to edit the SMTP client options
 opts_best_mx_transport=Action when listed as best MX host
 opts_best_mx_transport_default=Default (bounce message)
-opts_fallback_relay=Hosts/domains to hand off mail to on invalid destination 
+opts_fallback_relay=Hosts/domains to hand off mail to on invalid destination
 opts_ignore_mx_lookup_error=Ignore MX lookup error
 opts_smtp_skip_4xx_greeting=Skip 4xx greeting
 opts_smtp_skip_quit_response=Skip wait for the QUIT command
@@ -319,9 +314,13 @@ opts_smtp_data_init_timeout=Timeout on waiting for answer to DATA
 opts_smtp_data_xfer_timeout=Timeout on waiting for answer to transmit of message content
 opts_smtp_data_done_timeout=Timeout on waiting for answer to ending &quot;.&quot;
 opts_smtp_quit_timeout=Timeout on waiting for answer to QUIT
-opts_smtp_use_tls=Use TLS for SMTP connections?
 opts_smtp_sasl_security_options=SASL security options
 opts_smtp_tls_security_level=SMTP TLS client security level
+opts_inet_protocols=Internet protocols to enable
+opts_inet_protocols_all=All available
+opts_smtp_address_preference=Preferred SMTP client protocol
+opts_smtp_address_preference_any=Either
+opts_smtp_balance_inet_protocols=Validate SMTP client protocols
 
 rate_title=Delivery rates
 rate_ecannot=You are not allowed to edit the delivery rates options
@@ -333,7 +332,6 @@ opts_maximal_queue_lifetime=Max time (days) in queue before message is undeliver
 opts_minimal_backoff_time=Min time (secs) between attempts to deliver a deferred message
 opts_queue_run_delay=Time (secs) between scanning the deferred queue
 opts_defer_transports=Transports that should not be delivered
-
 
 debug_title=Debugging features
 debug_ecannot=You are not allowed to edit the debugging features
@@ -463,6 +461,8 @@ acl_postfinger=Can check postfix configuration?
 acl_manual=Can edit config file?
 acl_dir=Allowed directory for map files
 acl_bcc=Can edit BCC mapping?
+acl_body=Can edit body checks?
+acl_dependent=Can edit sender dependent transport maps?
 
 boxes_title=User Mailboxes
 boxes_user=User
@@ -512,6 +512,15 @@ mail_forward=Forward
 mail_rfc=From line
 mail_move=Move to:
 mail_eexists=Message no longer exists!
+mail_qfile=Mail queue file
+mail_qlast=Last retried at
+mail_qdir=Mail queue status
+mail_qdir_active=Active
+mail_qdir_incoming=Incoming
+mail_qdir_deferred=Deferred
+mail_qdir_corrupt=Corrupt
+mail_qdir_hold=On hold
+mail_qdir_maildrop=Mail drop
 
 view_title=Read Email
 view_desc=Message $1 in $2
@@ -610,7 +619,7 @@ mailq_ecannot=You are not allowed to view the mail queue
 mailq_egone=The message is no longer in the queue
 mailq_status=Status
 mailq_flush=Flush Mail Queue
-mailq_flushdesc=Click this button to force the immediate delivery of all messages in the queue, and display the results.
+mailq_flushdesc=Click this button to force the immediate delivery of all messages in the queue in the background.
 mailq_refresh=Refresh Mail Queue
 mailq_refreshdesc=Reload this page to show the current state of the mail queue.
 mailq_deleteall=Clear Mail Queue
@@ -622,9 +631,11 @@ mailq_active=Active
 mailq_deferred=Deferred
 mailq_hold=Hold Selected
 mailq_unhold=Un-Hold Selected
+mailq_dir=Queue state
 
 flushq_title=Flush Queue
 flushq_desc=Forcing the attempted delivery of mail with the command $1 ..
+flushq_desc2=.. check the mail log for results
 
 qview_title=Queued Message
 qview_desc=From file $1
@@ -832,6 +843,10 @@ opts_broken_sasl_auth_clients=Handle non-compliant SMTP clients?
 sasl_opts=SMTP security options
 sasl_noanonymous=Reject anonymous logins
 sasl_noplaintext=Reject plain-text logins
+sasl_noactive=Reject Disallow subject to active (non-dictionary) attack
+sasl_nodictionary=Reject methods subject to passive (dictionary) attack
+sasl_forward_secrecy=Only allow methods that support forward secrecy
+sasl_mutual_auth=Only allow methods that provide mutual authentication
 opts_smtpd_delay_reject=Delay clients with failed logins?
 sasl_recip=SMTP recipient restrictions
 sasl_relay=SMTP relay restrictions
@@ -853,6 +868,7 @@ opts_smtpd_tls_key_file=TLS private key file
 opts_smtpd_tls_CAfile=TLS certificate authority file
 opts_smtpd_use_tls=Enable TLS encryption?
 opts_smtp_enforce_tls=Require TLS encryption?
+opts_smtputf8_enable=Enable SMTPUTF8 support?
 sasl_err=Failed to save SMTP authentication and encryption
 sasl_ecert=Missing or invalid TLS certificate file
 sasl_ekey=Missing or invalid TLS key file

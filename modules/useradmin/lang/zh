@@ -40,7 +40,6 @@ extra=额外选项
 pass=口令
 none1=第一次登录时询问
 none2=无需口令
-nologin=不允许登录
 encrypted=加密口令
 nochange=不做改变
 clear=明文口令
@@ -148,7 +147,6 @@ usave_efromroot=您无权从 / 移动用户主目录
 usave_etoroot=您无权把用户主目录移动到 /
 
 logins_title=已经记录的登录
-logins_head=$1 的已经记录的登录
 logins_from=登录自
 logins_tty=TTY
 logins_in=登录在

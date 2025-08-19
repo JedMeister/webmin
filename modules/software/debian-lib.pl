@@ -49,12 +49,13 @@ return lc($_[0]) =~ /^[a-e]/ ? "A-E" :
        lc($_[0]) =~ /^[u-z]/ ? "U-Z" : "Other";
 }
 
-# package_info(package)
+# package_info(package, [version])
 # Returns an array of package information in the order
 #  name, class, description, arch, version, vendor, installtime
 sub package_info
 {
-local $qm = quotemeta($_[0]);
+local ($pkg, $ver) = @_;
+local $qm = quotemeta($pkg);
 
 # First check if it is really installed, and not just known to the package
 # system in some way
@@ -67,6 +68,7 @@ if ($lines[$#lines] !~ /^.[ih]/) {
 # Get full status
 local $out;
 if (&has_command("apt-cache")) {
+	$qm .= "=".quotemeta($ver) if ($ver);
 	$out = &backquote_command("apt-cache show $qm 2>&1", 1);
 	$out =~ s/[\0-\177]*\r?\n\r?\n(Package:)/\\1/;	# remove available ver
 	}
@@ -75,6 +77,41 @@ else {
 	}
 return () if ($? || $out =~ /Package .* is not available/i);
 local @rv = ( $_[0], &alphabet_name($_[0]) );
+push(@rv, $out =~ /Description(-en)?:\s+((.*\n)(\s+.*\n)*)/i ? $2
+						   : $text{'debian_unknown'});
+push(@rv, $out =~ /Architecture:\s+(\S+)/i ? $1 : $text{'debian_unknown'});
+push(@rv, $out =~ /Version:\s+(\S+)/i ? $1 : $text{'debian_unknown'});
+push(@rv, $out =~ /Maintainer:\s+(.*)/i ? &html_escape($1)
+					 : $text{'debian_unknown'});
+push(@rv, $text{'debian_unknown'});
+return @rv;
+}
+
+# virtual_package_info(package)
+# Returns an array of package information for a virtual package, usually called
+# if "package_info" returns nothing.
+sub virtual_package_info
+{
+my ($pkg) = @_;
+my $qpkg = quotemeta($pkg);
+my $apt_cache_cmd = &has_command("apt-cache");
+return ( ) if (!$apt_cache_cmd);
+my $out = &backquote_command("$apt_cache_cmd showpkg $qpkg 2>&1", 1);
+
+# Get the package that provides this virtual package
+my ($vpkg);
+if ($out =~ /Reverse Provides:\s*(\S+\s+\S+)/) {
+	my ($rpkg, $rver) = split(/\s+/, $1, 2);
+	$vpkg = $rpkg;
+	$qvpkg = quotemeta($vpkg)."=".quotemeta($rver);
+	}
+return ( ) if (!$vpkg);
+
+# Get full status
+$out = &backquote_command("$apt_cache_cmd show $qvpkg 2>&1", 1);
+$out =~ s/[\0-\177]*\r?\n\r?\n(Package:)/\\1/;	# remove available ver
+return () if ($? || $out =~ /Package .* is not available/i);
+local @rv = ( $vpkg, &alphabet_name($vpkg) );
 push(@rv, $out =~ /Description(-en)?:\s+((.*\n)(\s+.*\n)*)/i ? $2
 						   : $text{'debian_unknown'});
 push(@rv, $out =~ /Architecture:\s+(\S+)/i ? $1 : $text{'debian_unknown'});
@@ -245,6 +282,35 @@ if ($? || $out =~ /which isn.t installed/i) {
 	return "<pre>$out</pre>";
 	}
 return undef;
+}
+
+# package_dependencies(name, [version])
+# Returns a list of packages that this one depends on, as hash refs
+sub package_dependencies
+{
+my ($pkg, $ver) = @_;
+my $out = &backquote_command(
+	"apt-cache show ".quotemeta($pkg)." 2>/dev/null");
+return () if ($?);
+$out =~ /\nDepends:\s+(.*)/ || return ();
+my @rv;
+foreach my $w (split(/,\s+/, $1)) {
+	if ($w =~ /^(\S+)\s+\(([<>=]+)\s+(\S+)\)/) {
+		# Depends on a specific version
+		push(@rv, { 'package' => $1,
+			    'compare' => $2,
+			    'version' => $3 });
+		}
+	elsif ($w =~ /^(\S+)$/) {
+		# Depends on some package
+		push(@rv, { 'package' => $1 });
+		}
+	elsif ($w =~ /^(\S+)\s+\|/) {
+		# Depends on one of several packages, but just show the first
+		push(@rv, { 'package' => $1 });
+		}
+	}
+return @rv;
 }
 
 sub package_system

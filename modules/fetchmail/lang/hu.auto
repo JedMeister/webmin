@@ -1,4 +1,5 @@
 index_active=Aktív?
+index_fadd=Fetchmail szerver hozzáadása a felhasználóhoz
 index_cron=Ütemezett ellenőrzés
 index_crondesc=Kattintson erre a gombra egy Cron feladat létrehozásához, módosításához vagy eltávolításához, hogy a Fetchmail automatikusan ütemezett módon működjön, és ellenőrizze, és töltsön le e-maileket a fenti konfiguráció segítségével.
 index_crondesc2=Kattintson erre a gombra egy Cron feladat létrehozásához, megváltoztatásához vagy eltávolításához, hogy a Fetchmail automatikusan ütemezett módon futtassa az összes felsorolt felhasználó e-mailjeinek letöltését és letöltését.
@@ -9,6 +10,9 @@ index_show=Előadás
 index_toomany=A rendszeren túl sok felhasználó jelenik meg.
 
 poll_auth=Hitelesítési módszer
+poll_folder=IMAP mappa az ellenőrzéshez
+poll_inbox=Alapértelmezett (INBOX)
+poll_efolder=Hiányzó mappanév
 poll_eboth=Az a lehetőség, hogy az üzeneteket a kiszolgálón hagyja, és az összes üzenetet mindig lehívja, nem kompatibilisek
 poll_eusername=A felhasználó nem létezik!
 poll_foruser=$1 felhasználó számára

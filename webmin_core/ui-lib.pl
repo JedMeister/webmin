@@ -859,36 +859,38 @@ sub ui_bytesbox
 {
 my ($name, $bytes, $size, $dis, $tags, $defaultunits) = @_;
 my $units = 1;
+my $omorfi_unit;
+
 if ($bytes eq '' && $defaultunits) {
 	$units = $defaultunits;
 	}
-elsif ($bytes >= 10*1024*1024*1024*1024) {
-	$units = 1024*1024*1024*1024;
-	}
-elsif ($bytes >= 10*1024*1024*1024) {
-	$units = 1024*1024*1024;
-	}
-elsif ($bytes >= 10*1024*1024) {
-	$units = 1024*1024;
-	}
-elsif ($bytes >= 10*1024) {
-	$units = 1024;
-	}
 else {
-	$units = 1;
+	for(my $i=1; $i<=4; $i++) {
+		my $u = 1024**$i;
+		if ($bytes >= $u) {
+			$units = $u;
+			$omorfi_unit = $units
+				if ($bytes % $u == 0 && $bytes/$u <= $u);
+			}
+		}
+	$units = $omorfi_unit
+		if ($omorfi_unit && $bytes*4 % $units != 0);
 	}
 if ($bytes ne "") {
 	$bytes = sprintf("%.2f", ($bytes*1.0)/$units);
 	$bytes =~ s/\.00$//;
+	# Remove trailing zeros in decimal part
+	$bytes =~ s/(\.\d*?[1-9])0+$/$1/;
 	}
 $size = &ui_max_text_width($size || 8);
 return &ui_textbox($name, $bytes, $size, $dis, undef, $tags)." ".
        &ui_select($name."_units", $units,
-		 [ [ 1, "bytes" ],
-		   [ 1024, "kB" ],
-		   [ 1024*1024, "MB" ],
-		   [ 1024*1024*1024, "GB" ],
-		   [ 1024*1024*1024*1024, "TB" ] ], undef, undef, undef, $dis);
+		 [ [ 1, $text{"nice_size_b"} ],
+		   [ 1024, $text{"nice_size_kiB"} ],
+		   [ 1024*1024, $text{"nice_size_MiB"} ],
+		   [ 1024*1024*1024, $text{"nice_size_GiB"} ],
+		   [ 1024*1024*1024*1024, $text{"nice_size_TiB"} ],
+		   [ 1024*1024*1024*1024*1024, $text{"nice_size_PiB"} ] ], undef, undef, undef, $dis);
 }
 
 =head2 ui_upload(name, size, [disabled?], [tags])
@@ -1051,7 +1053,8 @@ if ($missing) {
 if (!defined($width)) {
 	$width = "200";
 	}
-my $wstyle = $width ? "style='width:$width'" : "";
+$width .= "px" if ($width =~ /^\d+$/);
+my $wstyle = $width ? "style='min-width:$width'" : "";
 
 if (!$main::ui_multi_select_donejs++) {
 	$rv .= &ui_multi_select_javascript();
@@ -1199,6 +1202,53 @@ if ( $value =~ /^[0-9,.E]+$/ || !$value) {
 }
 return &ui_radio($name, $value, [ [ $yes, $text{'yes'} ],
 				  [ $no, $text{'no'} ] ], $dis);
+}
+
+=head2 ui_radio_row(name, value, &arrref, [new-line])
+
+Radio buttons, with a HTML elements places after each one, and
+dependent HTML elements disabled if the radio button is not selected.
+
+=item name - HTML name of the inputs.
+
+=item value - Option selected by default, typically 1 or 0.
+
+=item array reference of elements, each containing a submited value and displayed HTML.
+
+Array reference of elements, each containing:
+
+  1. The value for the radio button
+  2. An array reference of HTML elements to be displayed after the radio button
+    2.1. A label for the radio button
+    2.2. A list (array) of HTML elements to be displayed after the radio button
+
+=item newline - Set to 1 to start a new line after each radio button.
+
+=cut
+sub ui_radio_row
+{
+return &theme_ui_radio_row(@_) if (defined(&theme_ui_radio_row));
+my ($name, $value, $arrref, $newline) = @_;
+$newline = "<br>" if ($newline == 1);
+my $id = &substitute_pattern('[a-f0-9]{20}');
+my $rv = "<span class='ui_radio_row_wrap ui_radio_row_wrap_${id}'>";
+for (my $i = 0; $i < @$arrref; $i++) {
+	$rv .= &ui_radio($name, $value, [ [ $arrref->[$i]->[0], $arrref->[$i]->[1]->[0] ] ], $dis);
+	shift @{$arrref->[$i]->[1]};
+	my $arrref_html = join('', map { "<span class='ui_radio_row_inner_${i}'>$_</span>" }
+		@{$arrref->[$i]->[1]});
+	$rv .= "<span class='ui_radio_row ui_radio_row_$arrref->[$i]->[0]'>".
+	 		$arrref_html.
+	 	"</span>" if ($arrref->[$i]->[1]->[0]);
+	$rv .= $newline;
+	}
+$rv .= "</span>";
+my $js = <<EOF;
+<script type='text/javascript'>
+!function(){const e="ui_radio_row",t='[type="radio"]',n=document.querySelector("."+e+"_wrap_$id"),c=n.querySelectorAll("input"+t),o=n.querySelector("input"+t+":checked"),i=new Event("input");c.forEach((function(c){c.addEventListener("input",(function(){n.querySelectorAll("select, input:not("+t+")").forEach((function(e){e.disabled=!1})),c.checked&&n.querySelectorAll("."+e+":not(."+e+"_"+this.value+") select, ."+e+":not(."+e+"_"+this.value+") input:not("+t+")").forEach((function(e){e.disabled=!0}))}))})),o.dispatchEvent(i)}();
+</script>
+EOF
+return $rv.$js;
 }
 
 =head2 ui_checkbox(name, value, label, selected?, [tags], [disabled?])
@@ -1388,11 +1438,14 @@ a field with radio buttons next to it. The parameters are :
 
 =item tags - Additional HTML attributes for the text box
 
+=item type - HTML input type, which defaults to "text"
+
 =cut
 sub ui_opt_textbox
 {
 return &theme_ui_opt_textbox(@_) if (defined(&theme_ui_opt_textbox));
-my ($name, $value, $size, $opt1, $opt2, $dis, $extra, $max, $tags) = @_;
+my ($name, $value, $size, $opt1, $opt2, $dis, $extra, $max, $tags, $type) = @_;
+$type ||= "text";
 my $dis1 = &js_disable_inputs([ $name, @$extra ], [ ]);
 my $dis2 = &js_disable_inputs([ ], [ $name, @$extra ]);
 my $rv;
@@ -1400,7 +1453,7 @@ $size = &ui_max_text_width($size);
 $rv .= &ui_radio($name."_def", $value eq '' ? 1 : 0,
 		 [ [ 1, $opt1, "onClick='$dis1'" ],
 		   [ 0, $opt2 || " ", "onClick='$dis2'" ] ], $dis)."\n";
-$rv .= "<input class='ui_opt_textbox' type='text' ".
+$rv .= "<input class='ui_opt_textbox' type='$type' ".
        "name=\"".&quote_escape($name)."\" ".
        "id=\"".&quote_escape($name)."\" ".
        "size=$size value=\"".&quote_escape($value)."\"".
@@ -1640,7 +1693,7 @@ if (!$tconfig{'nohr'} && !$tconfig{'nobottomhr'}) {
 return $rv;
 }
 
-=head2 ui_print_header(subtext, image, [help], [config], [nomodule], [nowebmin], [rightside], [head-stuff], [body-stuff], [below])
+=head2 ui_print_header(subtext, title, image, [help], [config], [nomodule], [nowebmin], [rightside], [head-stuff], [body-stuff], [below])
 
 Print HTML for a header with the post-header line. The args are the same
 as those passed to header(), defined in web-lib-funcs.pl, with the addition
@@ -1667,8 +1720,6 @@ of the subtext parameter :
 =item body-stuff - HTML attributes to be include in the <body> tag.
 
 =item below - HTML to be displayed below the title. Typically this is used for application or server version information.
-
-
 
 =cut
 sub ui_print_header
@@ -2280,6 +2331,67 @@ for(var i=0; i<values.length; i++) {
 EOF
 }
 
+=head2 ui_switch_theme_javascript()
+
+The subroutine is designed to load JavaScript
+for switching themes using hotkeys.
+
+Hotkeys are:
+	To activate theme switch mode:
+	Use: `Ctrl+Alt+T` (or `Control+Option+T` on Mac).
+
+	Immediately after, within 1 second, select your desired theme by pressing:
+	- `Shift + A`: Authentic theme
+	- `Shift + G`: Gray theme
+	- `Shift + L`: Legacy theme.
+
+=cut
+
+sub ui_switch_theme_javascript
+{
+return &theme_ui_switch_theme_javascript(@_) if (defined(&theme_ui_switch_theme_javascript));
+my $webprefix = &get_webprefix();
+my $switch_script .= <<EOF;
+<script type="text/javascript">
+(function () {
+    let firstCombinationPressed = false;
+    document.addEventListener("keydown", function (event) {
+        // Check for Ctrl+Alt+T or Control+Option+T
+        if (event.ctrlKey && event.altKey && event.keyCode === 84) {
+            firstCombinationPressed = true;
+
+            // Set a timeout to reset the state after a short period (e.g., 1 seconds)
+            setTimeout(() => {
+                firstCombinationPressed = false;
+            }, 1000);
+        }
+        if (firstCombinationPressed && event.shiftKey &&
+            (event.keyCode === 65 ||
+             event.keyCode === 70 || event.keyCode === 71 ||
+             event.keyCode === 76)) {
+            const theme =
+                // Shift + A : Authentic theme
+                event.keyCode === 65 ? 1 :
+                // Shift + F / Shift + G : Framed theme / Gray theme
+                (event.keyCode === 70 || event.keyCode === 71) ? 2 :
+                // Shift + L : Legacy theme
+                event.keyCode === 76 ? 3 : null;
+            firstCombinationPressed = false;
+            try {
+                top.document.documentElement.style.filter = 'grayscale(100%) blur(0.5px) brightness(0.75) opacity(0.5)';
+                top.document.documentElement.style.cursor = 'wait';
+                top.document.documentElement.style.pointerEvents = 'none';
+            } catch (error) {}
+            top.location.href = "$webprefix/switch_theme.cgi?theme=" + theme + "";
+        }
+    });
+})();
+document.currentScript.remove();
+</script>
+EOF
+return $switch_script;
+}
+
 ####################### grid layout functions
 
 =head2 ui_grid_table(&elements, columns, [width-percent], [&tds], [tabletags], [title])
@@ -2509,7 +2621,7 @@ if ($type eq "success") { $color = "#3c763d"; }
 elsif ($type eq "info") { $color = "#31708f"; }
 elsif ($type eq "warn") { $color = "#8a6d3b"; }
 elsif ($type eq "danger") { $color = "#a94442"; }
-return "<span class=\"ui_text_color text_type_$type\" style=\"color: $color\">$text</span>\n";
+return "<span class=\"ui_text_color text_type_$type\" style=\"color: $color\">$text</span>";
 }
 
 =head2 ui_alert_box(msg, type)
@@ -2689,23 +2801,28 @@ foreach $f (@{$_[2]}) {
 return $_[3] ? "$_[3]='$rv'" : $rv;
 }
 
-=head2 js_redirect(url, [window-object])
+=head2 js_redirect(url, [window-object], [timeout])
 
 Returns HTML to trigger a redirect to some URL.
 
 =cut
 sub js_redirect
 {
-my ($url, $window) = @_;
+my ($url, $window, $timeout) = @_;
 if (defined(&theme_js_redirect)) {
 	return &theme_js_redirect(@_);
 	}
 $window ||= "window";
+$timeout ||= 0;
 if ($url =~ /^\//) {
 	# If the URL is like /foo , add webprefix
 	$url = &get_webprefix().$url;
 	}
-return "<script type='text/javascript'>${window}.location = '".&quote_escape($url)."';</script>\n";
+return "<script type='text/javascript'>
+		setTimeout(function(){
+			${window}.location = '".&quote_escape($url)."';
+		}, $timeout);
+	</script>";
 }
 
 =head2 ui_webmin_link(module, page)
@@ -2779,8 +2896,8 @@ if (defined(&theme_ui_details)) {
 
 my $rv;
 if (!$c->{'html'}) {
-	$c->{'title'} = &html_escape($c->{'title'});
-	$c->{'content'} = &html_escape($c->{'content'});
+	$c->{'title'} = &html_escape($c->{'title'}, 1);
+	$c->{'content'} = &html_escape($c->{'content'}, 1);
 	}
 $c->{'class'} = " class=\"@{[&quote_escape($c->{'class'})]}\"" if($c->{'class'});
 $o = ' open' if ($o);
@@ -3218,6 +3335,429 @@ if ($tail) {
 if ($head) {
     return $head . $chomped_msg;
 	}
+}
+
+=head2 ui_note(text)
+
+Returns a note as a small font size text
+
+=cut
+sub ui_note
+{
+return &theme_ui_note(@_) if (defined(&theme_ui_note));
+my ($text) = @_;
+return "<font style='font-size:92%;opacity:0.66'>&nbsp;&nbsp;ⓘ&nbsp;&nbsp;".
+	"$text</font>";
+}
+
+=head2 ui_brh()
+
+Returns a break line with ability to style height
+
+=cut
+sub ui_brh
+{
+return &theme_ui_brh() if (defined(&theme_ui_brh));
+return "<br data-x-br>\n";
+}
+
+# ui_tag_start(tag, [attrs], [no-new-line])
+# Function to create an opening HTML tag with optional attributes.
+# Attributes are passed as a hash reference and its values are quote escaped.
+sub ui_tag_start
+{
+return theme_ui_tag_start(@_) if (defined(&theme_ui_tag_start));
+my ($tag, $attrs, $nnl) = @_;
+
+# Ensure every tag gets a proper marker class
+$attrs ||= {};
+$attrs->{'class'} = defined($attrs->{class})
+	? "ui--$tag $attrs->{class}"
+	: "ui--$tag";
+
+# Start building tag
+my $rv = "<$tag";
+
+# Add attributes if provided
+if ($attrs && ref($attrs) eq 'HASH') {
+	foreach my $key (keys %$attrs) {
+		my $value = $attrs->{$key};
+		if (defined($value)) {
+			$value = &quote_escape($value, '"');
+			$value =~ tr/\n\t//d;
+			$value =~ s/\s+/ /g;
+			$rv .= " $key=\"$value\"" ;
+			}
+		elsif ($key) {
+			$rv .= " $key";
+			}
+		}
+	}
+
+# Close the opening tag
+$rv .= $nnl ? ">" : ">\n";
+
+# Handle special case for <html> tag
+$rv = "<!DOCTYPE html>\n$rv" if ($tag eq 'html');
+
+return $rv;
+}
+
+# ui_tag_content(content)
+# Function to handle the content of an HTML tag.
+sub ui_tag_content
+{
+return theme_ui_tag_content(@_) if (defined(&theme_ui_tag_content));
+my ($content) = @_;
+my $rv;
+$rv = $content."\n" if (defined($content));
+return $rv;
+}
+
+# ui_tag_end(tag)
+# Function to create a closing HTML tag.
+sub ui_tag_end
+{
+return theme_ui_tag_end(@_) if (defined(&theme_ui_tag_end));
+my ($tag) = @_;
+return "</$tag>\n";
+}
+
+# ui_tag(tag, [content], [attrs])
+# Function to create a complete HTML tag with optional content and attributes.
+sub ui_tag
+{
+return theme_ui_tag(@_) if (defined(&theme_ui_tag));
+my ($tag, $content, $attrs) = @_;
+my $rv = ui_tag_start($tag, $attrs, !defined($content));
+$rv .= ui_tag_content($content) if (defined($content));
+my %void_tags = map { $_ => 1 }
+	qw(
+		area base br col embed hr img input link
+		meta param source track wbr
+	);
+$rv .= ui_tag_end($tag) if (!exists($void_tags{lc($tag)}));
+return $rv;
+}
+
+# ui_alert(content, type, [icon], [attrs])
+# Generates an HTML alert with the specified content, type, and optional icon
+# and attributes.
+#
+# Parameters:
+#   content - The main message/body of the alert
+#   type    - Alert style: "success", "info", "warning", "danger", "danger-fatal"
+#   icon    - Optional. Controls icon and title display:
+#             - If undefined: uses default icon and title for the alert type
+#             - If string: uses as icon class with default title
+#             - If array ref [icon, title, no_break]:
+#               - icon: Icon class
+#               - title: Custom title (if undef, uses default for type)
+#               - no_break: If 1, no line break after title (space instead)
+#   attrs   - Optional hash ref of additional HTML attributes for the alert div
+#
+# Examples:
+#   ui_alert("Operation completed", "success");
+#   ui_alert("Access denied", "danger", "fa-lock");
+#   ui_alert("Settings changed", "info", ["fa-info-circle", "", 1]);
+#   ui_alert("Server offline", "warning", undef, {id => "server-status"});
+sub ui_alert
+{
+return theme_ui_alert(@_) if (defined(&theme_ui_alert));
+my ($content, $type, $icon, $attrs) = @_;
+
+# Default alert type
+$type ||= 'info';
+
+# Default icons and titles based on type
+my %type_defaults = (
+	'success' => {
+		'icon' => 'fa-check-circle',
+		'title' => $text{'ui_success'}
+	},
+	'info' => {
+		'icon' => 'fa-info-circle',
+		'title' => $text{'ui_info'}
+	},
+	'warning' => {
+		'icon' => 'fa-exclamation-triangle',
+		'title' => $text{'ui_warning'}
+	},
+	'danger' => {
+		'icon' => 'fa-bolt',
+		'title' => $text{'ui_error'}
+	},
+	'danger-fatal' => {
+		'icon' => 'fa-exclamation-triangle',
+		'title' => $text{'ui_error_fatal'}
+	}
+);
+
+my $use_icon = '';
+my $use_title = '';
+my $use_br = 1;  # Default to using line break
+
+# Process icon parameter
+if (!defined($icon)) {
+	# Use defaults based on type
+	if ($type_defaults{$type}) {
+		$use_icon = $type_defaults{$type}{'icon'};
+		$use_title = $type_defaults{$type}{'title'};
+		}
+	}
+elsif (ref($icon)) {
+	# Array format [icon_class, title, no_br]
+	if (defined($icon->[0])) {
+		$use_icon = $icon->[0];
+		}
+	else {
+		$use_icon = $type_defaults{$type}{'icon'};
+		}
+
+	# Title: if provided use it, else use default for type
+	if (defined($icon->[1])) {
+		$use_title = $icon->[1];
+		}
+	elsif ($type_defaults{$type}) {
+		$use_title = $type_defaults{$type}{'title'};
+		}
+
+	# Line break flag: 1 = no break, anything else = break
+	$use_br = $icon->[2] ? 0 : 1 if (defined($icon->[2]));
+	}
+else {
+	# String format: just the icon class
+	$use_icon = $icon;
+	$use_title = $type_defaults{$type} ? $type_defaults{$type}{'title'} : '';
+	}
+
+# Prepare attributes for the alert div
+my $all_attrs = $attrs || {};
+
+# Add alert class
+my $class = 'alert';
+$class .= ' alert-'.$type if ($type);
+
+$all_attrs->{'class'} = $all_attrs->{'class'}
+	? "$class $all_attrs->{'class'}"
+	:  $class;
+
+# Build alert
+my $rv = '';
+
+# Start alert container
+$rv .= ui_tag_start('div', $all_attrs);
+
+# Add icon and title if either is available
+if ($use_icon || $use_title) {
+	# Add icon if available
+	if ($use_icon) {
+		$rv .= ui_tag('i', undef, { 'class' => "fa fa-fw $use_icon" });
+		$rv .= ' ';
+		}
+
+	# Add title if available
+	if ($use_title) {
+		$rv .= ui_tag('strong', $use_title);
+		}
+
+	# Add line break if needed
+	if ($use_br) {
+		$rv .= '<br>';
+		}
+	else {
+		$rv .= ' ';
+		}
+	$rv .= "\n";
+	}
+
+# Add main content
+$rv .= ui_tag_content(ui_tag('span', $content));
+
+# Close alert container
+$rv .= ui_tag_end('div');
+
+return $rv;
+}
+
+# ui_button_icon(text, icon, [attrs])
+# Creates a button with an icon and text
+# Parameters:
+#   text    - The text/label for the button
+#   icon    - Icon class
+#   attrs   - Optional hash ref of additional HTML attributes
+#
+# Examples:
+#   ui_button_icon("Save", "save", {class => "primary"})
+#   ui_button_icon("Delete", "trash", {type => "submit", name => "delete"})
+sub ui_button_icon
+{
+return theme_ui_button_icon(@_) if (defined(&theme_ui_button_icon));
+my ($text, $icon, $attrs) = @_;
+
+# Default to button type if not specified
+my $all_attrs = $attrs || {};
+$all_attrs->{'type'} ||= 'button';
+
+# Button class
+my $btn_cls = $all_attrs->{'class'};
+$all_attrs->{'class'} = "btn " . ($btn_cls 
+	? ($btn_cls =~ /^btn-/ ? $btn_cls
+	: "btn-$btn_cls") : 'btn-default');
+
+# Build the button
+my $rv = ui_tag_start('button', $all_attrs);
+
+# Add icon if specified
+if ($icon) {
+	my $icon_class = "";
+
+	# Check if icon specifies a specific bundle (fa2)
+	if ($icon =~ /^fa2-/) {
+		$icon_class = "fa2 $icon";
+		}
+	# Check if it already has fa- prefix
+	elsif ($icon =~ /^fa-/) {
+		$icon_class = "fa $icon";
+		}
+	# Otherwise add the default fa- prefix
+	else {
+		$icon_class = "fa fa-$icon";
+		}
+	$rv .= ui_tag('i', undef, {'class' => $icon_class});
+	$rv .= "&nbsp;&nbsp;";
+	}
+
+# Add text
+$rv .= ui_tag_content($text) if defined($text);
+
+# Close the button
+$rv .= ui_tag_end('button');
+
+return $rv;
+}
+
+# ui_link_icon(href, text, [icon], [attrs])
+# Creates a link with an icon and text
+# Parameters:
+#   href    - The URL for the link
+#   text    - The text/label for the link
+#   icon    - Icon class
+#   attrs   - Optional hash ref of additional HTML attributes
+#
+# Examples:
+#   ui_link_icon("view.cgi?id=1", "View Details", "eye", {class => "primary"})
+#   ui_link_icon("docs.html", "Documentation", "book", {target => "_blank"})
+sub ui_link_icon
+{
+return theme_ui_link_icon(@_) if (defined(&theme_ui_link_icon));
+my ($href, $text, $icon, $attrs) = @_;
+
+# Create attribute hash and set href
+my $all_attrs = $attrs || {};
+$all_attrs->{'href'} = $href if (defined($href));
+
+# Button class
+my $btn_cls = $all_attrs->{'class'};
+$all_attrs->{'class'} = "btn " . ($btn_cls 
+	? ($btn_cls =~ /^btn-/ ? $btn_cls
+	: "btn-$btn_cls") : 'btn-default');
+
+# Build the link
+my $rv = ui_tag_start('a', $all_attrs);
+
+# Add icon if specified
+if ($icon) {
+	my $icon_class = "";
+
+	# Check if icon specifies a specific bundle (fa2)
+	if ($icon =~ /^fa2-/) {
+		$icon_class = "fa2 $icon";
+		}
+	# Check if it already has fa- prefix
+	elsif ($icon =~ /^fa-/) {
+		$icon_class = "fa $icon";
+		}
+	# Otherwise add the default fa- prefix
+	else {
+		$icon_class = "fa fa-$icon";
+		}
+	$rv .= ui_tag('i', undef, {'class' => $icon_class});
+	$rv .= "&nbsp;&nbsp;";
+	}
+
+# Add text
+$rv .= ui_tag_content($text) if (defined($text));
+
+# Close the link
+$rv .= ui_tag_end('a');
+
+return $rv;
+}
+
+# ui_icon(icon, [attrs])
+# Creates an icon element
+# Parameters:
+#   icon    - Icon class (with or without fa- prefix)
+#   attrs   - Optional hash ref of additional HTML attributes
+#
+# Examples:
+#   ui_icon("search")                  # Standard icon
+#   ui_icon("fa2-warning")             # Extended icon set
+sub ui_icon
+{
+return theme_ui_icon(@_) if (defined(&theme_ui_icon));
+my ($icon, $attrs) = @_;
+
+return "" if (!defined($icon)) || $icon eq '';
+
+# Create attribute hash
+my $all_attrs = $attrs || {};
+
+# Process icon class
+my $icon_class = "";
+
+# Check if icon is in a specific bundle
+if ($icon =~ /^fa2-/) {
+	$icon_class = "fa2 $icon";
+	}
+elsif ($icon =~ /^fa-/) {
+	$icon_class = "fa $icon";
+	}
+else {
+	$icon_class = "fa fa-$icon";
+	}
+
+# Make icon always fixed width unless specified otherwise
+$icon_class .= " fa-fw" if ($all_attrs->{'class'} !~ /fa-dw/);
+
+# Add icon class to any existing classes
+if ($all_attrs->{'class'}) {
+	$all_attrs->{'class'} .= " $icon_class";
+} else {
+	$all_attrs->{'class'} = $icon_class;
+	}
+
+# Build the icon tag
+return ui_tag('i', undef, $all_attrs);
+}
+
+# ui_br([attrs])
+# Creates a line break element
+sub ui_br
+{
+return theme_ui_br(@_) if (defined(&theme_ui_br));
+my ($attrs) = @_;
+return ui_tag('br', undef, $attrs);
+}
+
+# ui_p(content, [attrs])
+# Creates a paragraph element with optional content
+sub ui_p
+{
+return theme_ui_p(@_) if (defined(&theme_ui_p));
+my ($content, $attrs) = @_;
+return ui_tag('p', $content, $attrs);
 }
 
 1;

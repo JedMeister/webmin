@@ -1,6 +1,6 @@
-version=2.102
-longdesc=Background system status collection libraries
 desc=System Status
-category=system
+longdesc=Background system status collection libraries
 hidden=1
-depends=proc cron 2.102
+category=system
+depends=proc cron 2.402
+version=2.402

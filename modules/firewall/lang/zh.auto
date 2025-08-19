@@ -1,6 +1,7 @@
 index_title=Linux IPTables防火墙
 index_title_v=IPv4防火墙
 index_title_v6=IPv6防火墙
+index_position=显示规则 $1 到 $2（共 $3）
 index_editing=规则文件 $1
 index_ecommand=在系统上找不到命令 $1。 Webmin需要此命令来配置IPtables。
 index_ekernel=检查您当前的IPtables配置时发生错误： $1这可能表明您的内核不支持IPtables。
@@ -16,7 +17,6 @@ index_chain=连锁 $1
 index_action=行动
 index_desc=条件
 index_comm=评论
-index_no_comment=
 index_move=移动
 index_none=没有为此链定义任何规则。
 index_policy=将默认操作设置为：
@@ -155,13 +155,13 @@ desc_args--match-set=IP设置 $1中包含 $2
 desc_src=资源
 desc_dest=目的地
 
-redhat_einstalled=找不到<tt>iptables（6）</tt>引导操作，表明您的系统上未安装IPtables软件包
+redhat_einstalled2=未找到 <tt>$1</tt> 启动操作，表明您的系统上未安装 IPtables 包
 redhat_eoutput=从命令 $1获取IPtables状态时发生错误。这可能表明您的系统已配置为使用IP链而不是IPtable。
 
 gentoo_escript=在您的系统上找不到Gentoo IPtables启动脚本 $1。
 
-eiptables=未知的IPtables保存文件行： $1
-eip6tables=未知的ip6tables保存文件行： $1
+eiptables2=未知的 IPtables 保存文件条目位于第 $2 行：$1
+eip6tables2=未知的 IP6tables 保存文件条目位于第 $2 行：$1
 
 edit_title1=添加规则
 edit_title2=编辑规则

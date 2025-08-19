@@ -1,15 +1,23 @@
 index_refresh=Modülleri Yenile
 index_refreshmsg=Yüklü sunucular için tüm Webmin modüllerini yeniden kontrol edin ve 'Kullanılmayan modüller' kategorisinde görünenleri güncelleyin.
 
+access_desc=Webmin, bu formu kullanarak yalnızca belirli IP adreslerinden erişimi reddedecek veya izin verecek şekilde yapılandırılabilir. Ana bilgisayar adları (foo.bar.com gibi) ve IP ağları (10.254.3.0 veya 10.254.1.0/255.255.255.128 veya 10.254.1.0/25 veya 10.254.1.5-10.254.97.127 veya 2001:DB8::A0BC:0001 veya 2001:DB8::/32 gibi) da girilebilir. Webmin'e erişimi, özellikle İnternet'ten erişilebilirse, güvenilir adreslerle sınırlamalısınız. Aksi takdirde, parolanızı tahmin eden herkes sisteminiz üzerinde tam kontrole sahip olacaktır.
 access_ip=İzin verilen IP adresleri
 access_local=Yerel ağı listeye dahil et
 access_ecidr='$1' geçerli bir CIDR numarası değil
 access_eip6='$1' tam bir IPv6 veya ağ adresi değil
 access_ecidr6='$1' geçerli bir IPv6 ağ boyutu değil
 access_ecidr8=IPv6 ağ boyutu '$1' 8 ile bölünebilir olmalıdır
-access_trust=Proxy'ler tarafından sağlanan uzak IP adresine güveniyor musunuz?
+access_trust_lvl=Proxy başlıkları için güven düzeyi
+access_trust_lvl0=Hayır, proxy'den gelen hiçbir başlığa güvenmeyin
+access_trust_lvl1=Evet, proxy'ler tarafından sağlanan uzak IP adresine güvenin
+access_trust_lvl2=Evet, hem uzak IP'ye hem de proxy'ler tarafından sağlanan SSL sertifikasına güvenin
 
 bind_firewall=Güvenlik duvarında yeni bağlantı noktaları açılsın mı?
+bind_websocport=WebSockets bağlantıları için temel port numarası
+bind_websocport_none=Varsayılan (555)
+bind_websoc_host=WebSocket bağlantıları için ana bilgisayar adı
+bind_websoc_host_auto=Otomatik
 bind_resolv_myname=Bağlı IP adresi ters çözüm mü?
 bind_ipv6=IPv6 bağlantıları kabul edilsin mi?
 bind_eipv6=$1 Perl modülü kurulu olmadığı sürece IPv6 etkinleştirilemez
@@ -28,6 +36,7 @@ bind_maxlifetime_secs=saniye
 bind_emaxlifetime=Maksimum işlem ömrü 60 saniyeden büyük bir sayı olmalıdır
 
 log_status=Günlük kaydı etkin mi?
+log_trust=Proxy arkasındayken istemci IP adresini günlüğe kaydetmek?
 log_clear2=Günlük dosyaları periyodik olarak temizlensin mi?
 log_period=Evet, her $1 saatte bir
 log_forusers=Kullanıcılar Webmin işlemlerini
@@ -125,7 +134,7 @@ os_eversion=İşletim sistemi sürümü eksik
 os_eiversion=Dahili işletim sistemi sürümü eksik
 os_incorrect=$1 işletim sistemi $2 sürümüne yükseltildi
 os_release_notes=Sürüm notları
-os_fix=Algılanan İşletim Sistemini Güncelle
+os_fix=Algılanan Değişiklikleri Onayla
 os_usermin=Ayrıca Usermin İşletim Sistemini de güncelleyin
 
 lang_title=Dil ve Yerel Ayar
@@ -201,11 +210,13 @@ ssl_letserr2=Alternatif olarak, <tt>letsencrypt</tt> komutunun doğru yolunu kul
 ssl_letsdesc2=Bu sayfa, Webmin'de yapılandırılmış olan diğer herhangi birinin üzerine yazacak yeni bir sertifika istemek için kullanılabilir. Ancak, Let's Encrypt hizmeti, bu sistemin etki alanı için web sitesini barındırdığını kontrol ederek sertifika etki alanı sahipliğinizin doğrulanmasını gerektirir. Bu, web sitesinin belge dizinine küçük bir geçici dosya yerleştirerek yapılır.
 ssl_letsheader=Yeni SSL sertifikası seçenekleri
 ssl_letsdoms=Sertifika için ana bilgisayar adları
-ssl_webroot=Doğrulama dosyası için web sitesi kök dizini
-ssl_webroot0=Apache sanal ana makine ile eşleşen ana makine adı
-ssl_webroot1=Farklı bir Apache sanal ana bilgisayarı
-ssl_webroot2=Diğer dizin
-ssl_webroot3=Doğrulama için DNS alan adlarını kullanma
+ssl_subset=Doğrulanamayan ana bilgisayar adları atlansın mı?
+ssl_letsmode=Doğrulama yöntemini şifreleyelim
+ssl_letsmode0=Ana bilgisayar adıyla eşleşen Apache sanal ana bilgisayarı
+ssl_letsmode1=Seçilen Apache sanal konağı
+ssl_letsmode2=Diğer web sunucusu belge dizini
+ssl_letsmode3=BIND kullanarak DNS doğrulaması
+ssl_letsmode4=Certbot yerleşik web sunucusu
 ssl_letsok=Sertifika İste
 ssl_letsonly=Sadece Yenilemeyi Güncelle
 ssl_usewebmin=Yeni anahtar ve sertifika Webmin'e kopyalansın mı?
@@ -229,6 +240,7 @@ startpage_moduleup=Modül güncellemeleri Sistem Bilgisi sayfasında gösterilsi
 
 upgrade_descdeb=Bu form, Debian paketini yükselterek tüm Webmin kurulumunuzu yeni bir sürüme yükseltmenizi sağlar. Yerel bir.deb dosyasından, yüklenen bir dosyadan veya <a href=http://www.webmin.com/>www.webmin.com</a> adresindeki en son sürümden yükleme yapabilirsiniz. Manuel yükseltmede olduğu gibi, tüm yapılandırma ayarlarınız ve üçüncü taraf modüller korunacaktır.
 upgrade_descsun-pkg=Bu form, Webmin kurulumunuzun tamamını Sun tarafından sağlanan Solaris paketinden yeni bir sürüme yükseltmenizi sağlar. Yerel bir Solaris paket dosyasından veya yüklenen bir dosyadan yükleyebilirsiniz. En son paketleri <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a> adresinde bulabilirsiniz. Manuel yükseltmede olduğu gibi, tüm yapılandırma ayarlarınız ve üçüncü taraf modüller korunacaktır.
+upgrade_repo=$1 deposundaki en son sürüm
 upgrade_edeb=Geçerli bir Webmin Debian paket dosyası değil
 upgrade_setup=Webmin'i yükseltmek için <tt>setup.sh</tt> komut dosyası çalıştırılıyor ..
 upgrade_setuprpm=Webmin'i yükseltmek için <tt>RPM</tt> çalıştırılıyor ..
@@ -270,6 +282,7 @@ ca_notafter=Tarihine kadar geçerlidir
 
 session_ptimeout=Şifre zaman aşımları
 session_pblock=Giriş blokları başarısız oldu
+session_blockhost=$2 saniye boyunca $1'den fazla başarısız oturum açma işlemi olan istemci IP'lerini engelleyin.
 session_blockuser=$2 saniye boyunca $1 oturum açma başarısız olan kullanıcıları engelleyin.
 session_syslog3=Günlük hataları <tt>syslog</tt>?
 session_stype=Kimlik Doğrulama Türü
@@ -303,6 +316,14 @@ session_passapi=Uzaktan şifre değiştirme API'si etkinleştirilsin mi?
 session_passapi0=API devre dışı
 session_passapi1=Unix kullanıcıları için API etkinleştirildi
 session_passurl=Etkinleştirildiğinde, kullanıcı parolaları bir POST isteği aracılığıyla $1 olarak değiştirilebilir
+session_forgot=Unutulan şifrenin kurtarılmasına izin verilsin mi?
+session_eforgot=Unutulan şifre kurtarma, <b>Virtualmin Password Recovery</b> eklenti modülü ilk önce kaldırılmadığı sürece etkinleştirilemez. Bu, <a href='$1'>Webmin Modülleri</a> sayfasında yapılabilir.
+session_passresetdesc=Şifre kurtarma kısıtlaması
+session_passreset=$1'den fazla isteği olan istemcileri $2 dakika boyunca engelle
+session_epassreset_failures=Eksik veya geçersiz engelleme istekleri
+session_passtimeoutdesc=Şifre sıfırlama bağlantısının süresi doldu
+session_passtimeout=Şifre sıfırlama bağlantısı $1 dakika içinde sona eriyor
+session_epassreset_timeout=Eksik veya geçersiz parola sıfırlama zaman aşımı
 
 categories_lang=Kategorileri dilde düzenle:
 categories_langok=Değişiklik
@@ -341,7 +362,8 @@ themes_tabdelete=Temaları sil
 themes_tabexport=Temaları dışa aktarma
 
 themes_line=$2 içindeki $1 ($3 kB)
-themes_ok2=Tema yer paylaşımı başarıyla değişti.. Webmin dizin sayfasına yönlendiriliyor.
+themes_ok=Tema başarıyla değiştirildi, şimdi yönlendiriliyorsunuz ..
+themes_ok2=Tema yerleşimi başarıyla değiştirildi, şimdi yönlendiriliyorsunuz ..
 themes_err4=Yer paylaşımı teması değiştirilemedi
 themes_eoverlay=Seçilen yer paylaşımı geçerli genel temayla uyumlu değil
 
@@ -357,6 +379,34 @@ update_fixes=Sorunu giderir
 update_mtype=$1 modülü, bir $2 paketinden yüklendiği için güncellenemiyor
 
 third_title=Üçüncü Taraf Modülünü Seçin
+
+lock_mode=Webmin'in kilitleyeceği dosyalar
+lock_s=saniye
+lock_m=dakika
+lock_h=saat
+lock_pid=PID
+lock_cmd=Senaryo
+lock_file=Kilitli dosya
+lock_files=Kilitli Dosyalar
+lock_nfiles=Kilitli Dosya Yok
+lock_age=için tutuldu
+lock_noneopen=Şu anda hiçbir dosya Webmin tarafından kilitlenmemiştir.
+lock_msg=Aşağıda listelenen dosyalar şu anda bir Webmin işlemi tarafından kilitlenmiştir.
+lock_kill=Seçilen Kilitleri Öldür
+lock_term=Seçilen Kilitleri Sonlandır
+lock_return=kilit listesi
+
+kill_title=Kilitlerin Çıkarılması
+kill_err=Kilitler kaldırılamadı
+kill_enone=Hiçbiri seçilmedi!
+kill_pid=Öldürme işlemi $1 ..
+term_pid=$1 işlemi sonlandırılıyor ..
+kill_gone=.. süreç artık mevcut değil!
+kill_gone2=.. kilit artık mevcut değil!
+kill_dead=.. $1'i öldürdü ve $2 kilidini serbest bıraktı
+kill_alive=.. $1'e öldürme sinyali gönderdi ama çıkış yapmadı!
+kill_failed=.. öldürme $1 nedeniyle başarısız oldu, ancak yine de $2 kilidi serbest bırakıldı
+kill_already=.. $1'in kilidi açıldı
 
 ipkey_title1=SSL Anahtarı Oluştur
 ipkey_title2=SSL Anahtarını Düzenle
@@ -402,7 +452,8 @@ advanced_err=Gelişmiş seçenekler kaydedilemedi
 advanced_etemp=Eksik veya var olmayan geçici dosyalar dizini
 advanced_etdir=$1 için eksik veya var olmayan geçici dosyalar dizini
 advanced_etempallowed=Geçici dosyalar dizini $1 bir sistem dizini
-advanced_pass=Webmin programları için şifre kullanılabilir mi? <br><font size=-1> (Oturum kimlik doğrulaması etkinleştirildiğinde çalışmaz) </font>
+advanced_pass_desc=Şifre Usermin programlarının kullanımına sunulsun mu?
+advanced_pass_help=Oturum kimlik doğrulaması etkinleştirildiğinde çalışmaz
 advanced_tempmods=Modül başına geçici dizinler
 advanced_tmod=modül
 advanced_tdir=rehber
@@ -429,7 +480,9 @@ advanced_headers=Ekstra HTTP başlıkları
 advanced_eheader=Üstbilgiler <tt>Üstbilgi: Değer</tt> gibi biçimlendirilmelidir
 advanced_sortconfigs=Yapılandırma dosyaları anahtarlarına göre sıralanmış olarak kaydedilsin mi?
 advanced_bufsize=Bayt cinsinden ağ arabellek boyutu
+advanced_bufsize_binary=Bayt cinsinden indirmeler için ağ arabellek boyutu
 advanced_ebufsize=Ağ arabellek boyutu sıfırdan büyük bir sayı olmalıdır
+advanced_ebufsize_binary=İndirmeler için ağ arabellek boyutu sıfırdan büyük bir sayı olmalıdır
 
 syslog_errorlog=Webmin hata günlüğü
 
@@ -543,6 +596,7 @@ status_interval0=Her
 status_mins=dakika
 status_pkgs=Mevcut paket güncellemeleri toplansın mı?
 status_temp=Sürüş sıcaklıkları toplansın mı?
+status_temp2=CPU sıcaklıklarını ve fan hızlarını topla?
 status_units=Sıcaklık birimleri
 status_celsius=Selsius
 status_fahrenheit=fahrenhayt
@@ -573,6 +627,9 @@ sendmail_authdef=Varsayılan (şu anda Cram-MD5)
 sendmail_from=Webmin'den gelen e-posta adresi
 sendmail_fromdef=Varsayılan ($1)
 sendmail_fromaddr=Adres
+sendmail_toaddr=Bildirimler için varsayılan hedef adresi
+sendmail_to_def=Hiçbiri ayarlanmadı
+sendmail_etoaddr=Eksik veya yanlış biçimlendirilmiş hedef adresi
 sendmail_err=Posta gönderme seçenekleri kaydedilemedi
 sendmail_esmtp=Eksik veya çözümlenemeyen SMTP sunucusu ana bilgisayar adı
 sendmail_eport=Eksik veya sayısal olmayan SMTP bağlantı noktası
@@ -647,6 +704,7 @@ twofactor_title=İki Faktörlü Kimlik Doğrulama
 twofactor_header=İki faktörlü kimlik doğrulama seçenekleri
 twofactor_provider=Kimlik doğrulama sağlayıcısı
 twofactor_none=Yok
+twofactor_totp=TOTP Kimlik Doğrulayıcı
 twofactor_apikey=Authy API anahtarı
 twofactor_test=Sağlayıcının test modu kullanılsın mı?
 twofactor_desc=İki faktörlü kimlik doğrulama, Webmin kullanıcılarının oturum açarken tek seferlik şifre üreticisi gibi ek bir kimlik doğrulama cihazının kullanılmasına olanak tanır. Kullanıcılar, bu sayfada etkinleştirildikten sonra seçilen kimlik doğrulama sağlayıcısına bireysel olarak kaydolmalıdır.
@@ -669,10 +727,9 @@ twofactor_eauthyotp=Authy jetonu geçersiz
 twofactor_enrolllink=Artık <a href='$1'>Webmin Users</a> modülüne iki öğeli kimlik doğrulaması için kaydolabilirsiniz.
 twofactor_url=$1 hakkında daha fazla bilgi edinmek için <a href='$2' target=_blank>$2</a> adresindeki web sitesine bakın.
 twofactor_etotpmodule=İki faktörlü kimlik doğrulaması için gereken Pertt modülü <tt>$1</tt> kurulu değil. Yüklemek için Webmin'deki <a href='$2'>Perl Modülleri</a> sayfasını kullanın.
-twofactor_qrcode=Google Şifrematik uygulamasına gizli kodu $1 girin veya aşağıdaki QR kodunu tarayın.
+twofactor_qrcode=TOTP uygulamasına $1 gizli kodunu girin veya aşağıdaki QR kodunu tarayın.
 twofactor_etotpid=TOTP base32 kodlu gizli geçersiz
-twofactor_etotptoken=Google Şifrematik jetonu bir sayı olmalıdır
-twofactor_etotpmodule2=Perl modülü eksik $1
+twofactor_etotptoken=TOTP belirteci bir sayı olmalıdır
 twofactor_etotpmatch=Yanlış OTP kodu
 twofactor_secret=Kişisel gizli anahtar
 twofactor_secret1=Rastgele oluşturuldu
@@ -697,6 +754,7 @@ letsencrypt_ecert=Beklenen sertifika dosyası $1 bulunamadı
 letsencrypt_ekey=Beklenen özel anahtar dosyası $1 bulunamadı
 letsencrypt_doing=$2 web sitesi dizinini kullanarak $1 için yeni bir sertifika isteniyor.
 letsencrypt_doingdns=DNS doğrulamasını kullanarak $1 için yeni bir sertifika isteniyor.
+letsencrypt_doingcertbot=Certbot web sunucusunu kullanarak $1 için yeni bir sertifika isteniyor ..
 letsencrypt_failed=.. istek başarısız oldu : $1
 letsencrypt_done=.. istek başarılı!
 letsencrypt_show=Yeni sertifika ve özel anahtar aşağıdaki dosyalara yazılmıştır :
@@ -713,6 +771,34 @@ letsencrypt_ecsr=CSR oluşturulamadı : $1
 letsencrypt_ekeygen=Özel anahtar oluşturulamadı : $1
 letsencrypt_enative=Yerel Let's Encrypt istemcisi (certbot) daha önce bu sistemde kullanıldı ve gelecekteki tüm sertifika istekleri için kullanılmalıdır
 letsencrypt_eacmedns=Yalnızca resmi Let's Encrypt istemcisi DNS tabanlı doğrulamayı destekler
+letsencrypt_eacmecertbot=Yalnızca resmi Let's Encrypt istemcisi Certbot doğrulamasını destekler
 
 announce_hide=Bu Duyuruyu Gizle
 alert_hide=Uyarıyı Gizle
+
+os_eol=İşletim Sistemi EOL geri sayım bildirimi
+os_eol_countdown=aylar önce
+os_eol_ecountdown=Geri sayımdan önceki ay bir tam sayı olmalıdır
+os_eol_until=Değin
+os_eol_type1=İşletim sistemi bakımı ve güvenlik desteği
+os_eol_type2=İşletim sistemi genişletilmiş güvenlik bakımı
+os_eol_years=yıllar
+os_eol_year=yıl
+os_eol_months=aylar
+os_eol_month=ay
+os_eol_weeks=haftalar
+os_eol_week=hafta
+os_eol_days=günler
+os_eol_day=gün
+os_eol_hours=saat
+os_eol_hour=saat
+os_eol_minutes=dakika
+os_eol_minute=dakika
+os_eol_seconds=saniye
+os_eol_second=ikinci
+os_eol_reached=EOL'ye ulaşıldı
+os_eol_reaching=EOL girişi
+os_eol_reaching2=EOL yakında
+
+qr_err=QR kodu oluşturulamadı
+qr_estr=QR kod dizesi eksik!

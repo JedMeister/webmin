@@ -10,7 +10,8 @@ require './config-lib.pl';
 $m = $in{'module'} || $ARGV[0];
 %module_info = &get_module_info($m);
 %module_info || &error($text{'config_emodule'});
-&foreign_available($m) || &error($text{'config_eaccess'});
+&foreign_available($m) || $module_info{'noacl'} ||
+	&error($text{'config_eaccess'});
 %access = &get_module_acl(undef, $m);
 $access{'noconfig'} &&
 	&error($text{'config_ecannot'});
@@ -24,6 +25,7 @@ else {
 		 $text{'config_title'}, "", $help, 0, 1);
 
 print &ui_form_start("config_save.cgi", "post");
+print &hidden_config_cparams(\%in);
 print &ui_hidden("module", $m),"\n";
 print &ui_table_start(&text('config_header', $module_info{'desc'}),
 		      "width=100%", 2);
@@ -51,5 +53,5 @@ if (!$func) {
 print &ui_table_end();
 print &ui_form_end([ [ "save", $text{'save'} ] ]);
 
-&ui_print_footer("/$m", $text{'index'});
+&ui_print_footer(&link_config_cparams($m, \%in), $text{'index'});
 

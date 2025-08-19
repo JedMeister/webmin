@@ -1,12 +1,15 @@
 index_zone=Zon
-index_mem2=<b>Verkligt minne:</b> $1 totalt / $2 gratis
-index_mem3=<b>Verkligt minne:</b> $1 totalt / $2 gratis / $3 cachelagrat
-index_swap2=<b>Byt utrymme:</b> $1 totalt / $2 gratis
-index_burst=<b>Burstable-minne:</b> $1 totalt
+index_memreal=Verkligt minne:
+index_memswap=Byt utrymme:
+index_memburst=Burstable minne:
+index_memtf=$1 totalt / $2 gratis
+index_memtfc=$1 totalt / $2 ledig / $3 cachad
 index_loadname=CPU-medelvärden:
 index_loadnums=$1 (1 min), $2 (5 min), $3 (15 minuter)
 index_cpuname=CPU-typ:
-index_inzone=I zon $1 
+index_inzone=I zon $1
+index_core=$1 kärna
+index_cores=$1 kärnor
 
 stime=Satte igång
 sclass=IO schemaläggningsklass
@@ -53,7 +56,7 @@ sysv_stime=Satte igång
 sysv_task=Uppgifts-ID
 sysv_zone=Zonnamn
 
-log_renice=Ändrad prioritet för process $2 till $1 
+log_renice=Ändrad prioritet för process $2 till $1
 
 acl_manage_def=Nuvarande Webmin-användare
 acl_edit=Kan döda och renisera processer?
@@ -72,10 +75,10 @@ open_type=Typ
 open_proto=Protokoll
 open_desc=detaljer
 open_fd=Filbeskrivare
-open_listen1=Lyssnar på port $1 
-open_listen2=Lyssnar på adress $1 port $2 
-open_recv=Mottar på $1:$2 
-open_conn=Ansluten från $1 till $2 i tillstånd $3 
+open_listen1=Lyssnar på port $1
+open_listen2=Lyssnar på adress $1 port $2
+open_recv=Mottar på $1:$2
+open_conn=Ansluten från $1 till $2 i tillstånd $3
 open_cwd=Nuvarande dir
 open_rtd=Root dir
 open_txt=Programkod
@@ -90,7 +93,7 @@ open_file=Väg
 
 trace_title=Spårningsprocess
 trace_start=Starta systemsamtal för $1 ..
-trace_doing=Spårning av systemsamtal för $1  :
+trace_doing=Spårning av systemsamtal för $1 :
 trace_done=.. processen har avslutats.
 trace_failed=.. spårning misslyckades!
 trace_sorry=Denna sida kräver Java-stöd i din webbläsare. Justera modulkonfigurationen för att använda en textspårningsprocess.

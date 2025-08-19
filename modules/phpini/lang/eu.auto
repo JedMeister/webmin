@@ -5,13 +5,15 @@ index_efiles2=Ez da PHP konfigurazio fitxategirik aurkitu. Egokatu <a href='$1'>
 index_file=Konfigurazio fitxategia
 index_desc=helburua
 index_actions=Ekintzak
-index_edit=kudeatu
+index_medit=kudeatu
 index_manual=Editatu eskuz
-index_anyfile=Editatu beste PHP konfigurazio fitxategia:
+index_anyfile=Editatu beste PHP konfigurazio fitxategia
 index_return=konfigurazio fitxategiak
+index_pkgs=PHP paketeak kudeatu
+index_pkgsdesc=Instalatu eta kendu PHP bertsioak zure sistemaren software paketeen biltegitik, hemen konfiguratu eta Virtualminen erabili ahal izateko.
 
 file_global=PHP konfigurazio globala
-file_eread=Ezin izan da irakurri $1 : $2 
+file_eread=Ezin izan da irakurri $1 : $2
 
 manual_title=Editatu konfigurazioa eskuz
 manual_desc=Orrialde hau PHP konfigurazio fitxategia eskuz editatzeko erabil daiteke. Hori kontu handiz egin beharko da, ez baita sintaxirik edo beste baliozkotasun egiaztapenik egingo zure aldaketetan.
@@ -24,6 +26,7 @@ list_efile=Editatzeko fitxategiak bide absolutua izan behar du
 list_return=PHP konfigurazioa
 list_format_ini=INI formatua
 list_format_fpm=FPM formatua
+list_bin=PHP $2 bertsioa $1ean
 
 vars_title=PHP aldagaiak
 vars_header=PHP aldagaien sorrera eta aurrekontu aukerak
@@ -38,14 +41,11 @@ dirs_title=Direktorioko ezarpenak
 dirs_header=PHP script eta hedapen direktorioen ezarpenak
 dirs_include=Bilaketa-direktorioetarako elementuak
 dirs_below=Jarraian agertzen dira ..
-dirs_ext=Luzapenak egiteko direktorioa
-dirs_exts=Kargatzeko luzapenak
 dirs_upload=Baimendu fitxategiak kargatzea?
 dirs_utmp=Kargatutako fitxategien behin-behineko direktorio
 dirs_err=Ezin izan da direktorioaren ezarpenak gorde
 dirs_eincs=Ez da sartu bilaketa direktoriorik sartu
 dirs_eutmp=Aldi baterako fitxategien direktorio falta edo baliogabea
-dirs_eext=Luzapenen direktorio falta da
 
 db_title=Datu-basearen ezarpenak
 db_header1=MySQL datu-basearen konexio-ezarpenak
@@ -152,6 +152,49 @@ misc_path=CGI Konpondu bideen informazioa?
 misc_timezone=PHP Ordu-eremua
 misc_charset=Lehenetsitako karaktere-multzoa
 
+disable_title=Desgaitutako Ezaugarriak
+disable_header=PHP funtzioak eta ezaugarriak desgaituta
+disable_funcs=Desgaitutako funtzioak
+disable_exec=exec (Exekutatu komandoa)
+disable_passthru=passthru (Exekutatu komandoa eta bistaratu irteera)
+disable_shell_exec=shell_exec (Exekutatu komandoa shell bidez)
+disable_system=sistema (Exekutatu komandoa eta bistaratu irteera)
+disable_proc_open=proc_open (Exekutatu komandoa eta atera sarrera eta irteera)
+disable_popen=popen (Ireki kanalizazioa exekutatutako komandorako)
+disable_curl_exec=curl_exec (Exekutatu URL deskargatzeko saio bat)
+disable_curl_multi_exec=curl_multi_exec (Exekutatu hainbat URL deskargatzeko saio)
+disable_parse_ini_file=parse_ini_file (Irakurri PHP INI fitxategia)
+disable_show_source=show_source (Irteerako fitxategia PHP sintaxia nabarmenduta)
+disable_mail=posta (Bidali mezu elektronikoa)
+disable_leftover=Beste funtzio batzuk:
+disable_err=Ezin izan dira gorde desgaitutako eginbideak
+disable_classes=Desgaituta dauden klase integratuak
+
+mods_title=PHP luzapenak
+mods_edir=Ezin izan da PHP luzapenen direktorioa aurkitu!
+mods_ecannot=Ezin duzu gaituta dagoen PHP luzapenak editatzeko
+mods_desc=Orri hau sistema honetako erabiltzaile guztientzat PHP bertsioaren $1 luzapenak globalki gaitzeko eta desgaitzeko erabil daiteke.
+mods_enabled=Gaituta?
+mods_name=Luzapenaren izena
+mods_file=Konfigurazio fitxategia
+mods_pkg=Paketea
+mods_idesc=Sistema honetan oraindik instalatuta ez dauden PHP luzapenak konfiguratutako software paketeen biltegietatik instalatu daitezke.
+mods_newpkg=Gehitu PHP luzapena
+mods_install=Instalatu orain
+mods_err=Ezin izan dira gorde PHP luzapenak
+mods_egetver=Ezin izan da $1 konfigurazio fitxategiaren PHP bertsioa aurkitu
+mods_egetbin=Ezin izan da $1 konfigurazio fitxategirako PHP bitarra irudikatu
+mods_return=PHP luzapenak
+
+imod_title=Instalatu PHP modulua
+imod_err=Ezin izan da instalatu PHP modulua
+imod_emod=Ez da PHP modulurik sartu
+imod_alldoing=$1 PHP modulua instalatzen $2 PHP bertsiorako ..
+imod_alreadygot=PHP modulua $1 instalatuta dago jada
+imod_alldone=.. PHP modulua behar bezala instalatu da $1 paketetik eta orain erabilgarri dago.
+imod_allfailed=.. ezin izan da zehaztutako PHP modulurako software paketerik instalatu, $1 saiatu arren
+imod_missing=.. instalazioa amaitu da, baina PHP modulua ez da detektatu.
+
 log_manual=$1 fitxategia eskuz editatu
 log_vars=$1 aldatutako PHP aldagaiak
 log_dirs=$1 ean direktorioko ezarpenak aldatu dira
@@ -161,6 +204,9 @@ log_safe=$1 modu seguruko aukerak aldatu dira
 log_limits=Baliabideen mugak aldatu dira $1 ean
 log_errors=Aldatu egin da errorea $1 erregistratzean
 log_misc=Beste ezarpen batzuk aldatu dira $1 ean
+log_mods=Gaitutako moduluak eguneratu dira $1-n
+log_imod=$2 PHP modulua $1 n instalatu da
+log_delete_dpkgs=$1 PHP pakete desinstalatu dira
 
 acl_global=PHP konfigurazio globala editatu al dezakezu?
 acl_anyfile=PHP konfigurazio gisa edita daiteke edozein fitxategi?
@@ -170,3 +216,31 @@ acl_user=Irakurri eta idatzi fitxategiak erabiltzaile gisa
 
 opt_default=Balio lehenetsia: <tt>$1</tt>
 opt_default_unknown=Ezezaguna
+
+pkgs_title=PHP paketeak
+pkgs_name=Paketearen izena
+pkgs_ver=Paketearen bertsioa
+pkgs_phpver=PHP bertsioa
+pkgs_bin=Exekutagarria
+pkgs_shortver=Bertsio laburra
+pkgs_users=Erabilia
+pkgs_delete=Hautatutako paketeak ezabatu
+pkgs_none=Ez da PHP paketerik aurkitu zure sisteman!
+pkgs_none2=Ez da PHP bertsiorik aurkitu zure sisteman. Egin klik beheko botoian bat instalatzeko, zure software paketeen biltegian eskuragarri badago.
+pkgs_ecannot=Ez duzu PHP paketeak kudeatzeko baimenik!
+pkgs_ecannot2=Software paketeak ezin dira sistema honetan kudeatu
+pkgs_nousers=Domeinurik ez
+pkgs_ucount=$1 domeinu
+pkgs_newver=PHP paketea instalatzeko
+pkgs_install=Instalatu orain
+pkgs_return=PHP paketeak
+
+dpkgs_err=PHP paketeak ezabatzean huts egin da
+dpkgs_title=PHP paketeak ezabatzea
+dpkgs_doing=$1 paketea eta $2 PHP bertsioko moduluak desinstalatzen. ..
+dpkgs_failed=.. huts egin du  : $1
+dpkgs_done=.. behar bezala desinstalatu da
+dpkgs_enone=Ez da paketerik hautatu
+dpkgs_eexists=Paketea ez da existitzen!
+dpkg_eusers=Ezin da $1 bertsioko PHP paketea desinstalatu, oraindik $2 domeinuek erabiltzen ari direlako
+dpkgs_rusure=Ziur zaude hautatutako PHP paketeak kendu nahi dituzula : $1

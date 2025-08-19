@@ -245,6 +245,11 @@ $navigation_type ||= 'reload';
 my $html_editor_init_script =
 <<EOF;
 <script type="text/javascript">
+  function fn_${module_name}_quote_mail_iframe_loaded() {
+    const editor = fn_${module_name}_html_editor_init.editor;
+    editor.root.innerHTML = "\\n" + editor.root.innerHTML;
+    fn_${module_name}_quote_mail_iframe_loaded = null;
+  }
   function fn_${module_name}_html_editor_init() {
     const targ = document.querySelector('[$target_attr$target_type"$target_name"]'),
       qs = Quill.import('attributors/style/size'),
@@ -277,24 +282,53 @@ my $html_editor_init_script =
         theme: 'snow'
     });
 
-    // Google Mail editor like keybind for quoting
+    fn_${module_name}_html_editor_init.editor = editor;
+
+    // Google Mail like key bind for creating numbered list (Ctrl+Shift+7)
     editor.keyboard.addBinding({
-      key: '9',
-      shiftKey: true,
-      ctrlKey: !isMac,
-      metaKey: isMac,
-      format: ['blockquote'],
+        key: '7',
+        shiftKey: true,
+        ctrlKey: !isMac,
+        metaKey: isMac,
     }, function(range, context) {
-      this.quill.format('blockquote', false);
+        const currentFormat = this.quill.getFormat(range.index);
+        if (currentFormat.list === 'ordered') {
+            this.quill.format('list', false);
+        } else {
+            this.quill.format('list', 'ordered');
+        }
     });
+
+    // Google Mail like key bind for creating bullet list (Ctrl+Shift+8)
     editor.keyboard.addBinding({
-      key: '9',
-      shiftKey: true,
-      ctrlKey: !isMac,
-      metaKey: isMac,
+        key: '8',
+        shiftKey: true,
+        ctrlKey: !isMac,
+        metaKey: isMac,
     }, function(range, context) {
-      this.quill.format('blockquote', true);
+        const currentFormat = this.quill.getFormat(range.index);
+        if (currentFormat.list === 'bullet') {
+            this.quill.format('list', false);
+        } else {
+            this.quill.format('list', 'bullet');
+        }
     });
+
+    // Google Mail like key bind for creating blockquote (Ctrl+Shift+9)
+    editor.keyboard.addBinding({
+        key: '9',
+        shiftKey: true,
+        ctrlKey: !isMac,
+        metaKey: isMac,
+    }, function(range, context) {
+        const currentFormat = this.quill.getFormat(range.index);
+        if (currentFormat.blockquote) {
+            this.quill.format('blockquote', false);
+        } else {
+            this.quill.format('blockquote', true);
+        }
+    });
+
     editor.on('text-change', function() {
         // This should most probably go to onSubmit event
         targ.value = editor.root.innerHTML + "<br>";

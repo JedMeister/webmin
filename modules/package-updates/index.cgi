@@ -20,12 +20,10 @@ print &ui_tabs_start([ [ 'pkgs', $text{'index_tabpkgs'} ],
 # See if any security updates exist
 $in{'mode'} ||= 'updates';
 @avail = &list_for_mode($in{'mode'}, 0);
-($sec) = grep { $_->{'security'} } @avail;
 
 # Show mode selector (all, updates only, updates and new)
 @grid = ( );
-foreach $m ('current', 'updates', 'new',
-	    $sec || $in{'mode'} eq 'security' ? ( 'security' ) : ( )) {
+foreach $m ('current', 'updates', 'security', 'new') {
 	$mmsg = $text{'index_mode_'.$m};
 	if ($in{'mode'} eq $m) {
 		push(@mlinks, "<b>$mmsg</b>");
@@ -212,12 +210,14 @@ print &ui_table_row($text{'index_sched'},
 
 # Send email to
 print &ui_table_row($text{'index_email'},
-		    &ui_textbox("email", $config{'sched_email'}, 40));
+	    &ui_textbox("email", $config{'sched_email'} ||
+				 $gconfig{'webmin_email_to'}, 40));
 
 # Install or just notify?
 print &ui_table_row($text{'index_action'},
 		    &ui_radio("action", int($config{'sched_action'}),
-			       [ [ 0, $text{'index_action0'} ],
+			       [ [ -1, $text{'index_action-1'} ],
+			         [ 0, $text{'index_action0'} ],
 			         [ 1, $text{'index_action1'} ],
 			         [ 2, $text{'index_action2'} ] ]));
 
@@ -245,7 +245,7 @@ if ($has_repos) {
 				    "<font color=green>$text{'yes'}</font>" :
 				    "<font color=red>$text{'no'}</font>",
 				$r->{'url'},
-				], "", "d", $r->{'id'});
+				], "", "d", $r->{'id'}, undef, $r->{'cannot'});
 			}
 		print &ui_columns_end();
 		print &ui_form_end([
@@ -268,8 +268,7 @@ if ($has_repos) {
 	print &ui_tabs_end_tab("tab", "repos");
 	}
 
-print &ui_tabs_end();
-
+print &ui_tabs_end(1);
 
 &ui_print_footer("/", $text{'index'});
 

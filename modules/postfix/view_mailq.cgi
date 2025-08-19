@@ -51,7 +51,11 @@ if ($in{'headers'}) {
 		}
 	foreach $h (@{$mail->{'headers'}}) {
 		print &ui_table_row($h->[0],
-			&html_escape(&decode_mimewords($h->[1])));
+			&html_escape(&decode_mimewords($h->[1])), 1, [ "nowrap" ]);
+		}
+	if ($mail->{'file'}) {
+		print &ui_table_row($text{'mail_qfile'},
+			"<tt>".&html_escape($mail->{'file'})."</tt>");
 		}
 	}
 else {
@@ -67,6 +71,14 @@ else {
 		&html_escape($mail->{'header'}->{'date'}));
 	print &ui_table_row($text{'mail_subject'},
 		&html_escape($mail->{'header'}->{'subject'}));
+	}
+if ($mail->{'last_retry'}) {
+	print &ui_table_row($text{'mail_qlast'},
+		&make_date($mail->{'last_retry'}));
+	}
+if ($mail->{'dir'}) {
+	print &ui_table_row($text{'mail_qdir'},
+		$text{'mailq_'.$mail->{'dir'}} || $mail->{'dir'});
 	}
 print &ui_table_end();
 

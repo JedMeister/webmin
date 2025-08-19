@@ -150,13 +150,9 @@ desc_args--match-set=$2 està contingut al conjunt IP $1
 desc_src=origen
 desc_dest=destinació
 
-redhat_einstalled=No s'ha trobat cap acció d'engegada <tt>iptables(6)</tt> que indiqui que el paquet IPtables no està instal·lat al sistema
 redhat_eoutput=S'ha produït un error en buscar l'estat d'IPtables amb l'ordre $1. Això probablement indica que el sistema està configurat per utilitzar IPchains en lloc d'IPtables.
 
 gentoo_escript=No s'ha trobat al sistema el script $1 d'inici d'IPtables Gentoo.
-
-eiptables=Línia del fitxer d'IPtables desconeguda: $1
-eip6tables=Línia del fitxer de desat d'ip6tables desconeguda: $1
 
 edit_title1=Addició de Regla
 edit_title2=Edició de Regla
@@ -203,7 +199,7 @@ edit_state_established=Connexió existent
 edit_state_related=Relacionada amb l'existent
 edit_state_invalid=No és part de cap connexió
 edit_state_untracked=No traçada
-edit_state_snat=NATd origen	
+edit_state_snat=NATd origen
 edit_state_dnat=NATd destí
 edit_tos=Tipus de servei
 edit_rtoports=Ports objectiu per a redireccionar

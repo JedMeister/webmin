@@ -8,8 +8,6 @@ index_search=Busca
 index_zone=Zona
 index_run=Executar..
 index_return=lista de processos
-index_mem2=<b>Memória real:</b> $1 no total / $2 livres
-index_swap2=<b>Espaço de swap</b> $1 no total / $2 livres
 index_loadname=Médias de carga da CPU:
 index_loadnums=$1 (1 minuto) , $2 (5 minutos) , $3 (15 minutos)
 index_cpuname=Tipo de CPU:
@@ -158,10 +156,10 @@ acl_who1=Usuário Webmin atual
 acl_who2=Usuários listados ..
 
 kill_kill=Matar Processo
-kill_term= Interromper  
-kill_hup=  Reiniciar   
-kill_stop=    Parar    
-kill_cont=  Continuar  
+kill_term=Interromper  
+kill_hup=Reiniciar   
+kill_stop=Parar    
+kill_cont=Continuar  
 
 open_title=Abrir Arquivos e Conexões
 open_proc=Para o processo $1 (PID $2)

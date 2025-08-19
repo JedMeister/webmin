@@ -58,14 +58,16 @@ return &software::missing_install_link(
 
 # request_letsencrypt_cert(domain|&domains, webroot, [email], [keysize],
 # 			   [request-mode], [use-staging], [account-email],
-# 			   [reuse-key])
+# 			   [key-type], [reuse-key],
+# 			   [server-url, server-key, server-hmac],
+# 			   [allow-subset])
 # Attempt to request a cert using a generated key with the Let's Encrypt client
 # command, and write it to the given path. Returns a status flag, and either
 # an error message or the paths to cert, key and chain files.
 sub request_letsencrypt_cert
 {
 my ($dom, $webroot, $email, $size, $mode, $staging, $account_email,
-    $key_type, $reuse_key) = @_;
+    $key_type, $reuse_key, $server, $server_key, $server_hmac, $subset) = @_;
 my @doms = ref($dom) ? @$dom : ($dom);
 $email ||= "root\@$doms[0]";
 $mode ||= "web";
@@ -78,6 +80,11 @@ foreach my $d (@doms) {
 	if ($d =~ /^\*/) {
 		$wildcard = $d;
 		}
+	}
+
+if ($server && !$letsencrypt_cmd) {
+	return (0, "A non-standard server can only be used when the native ".
+		   "Let's Encrypt client is installed");
 	}
 
 if ($mode eq "web") {
@@ -134,6 +141,9 @@ elsif ($mode eq "dns") {
 				       "sub-domains exist on this system");
 		}
 	}
+elsif ($mode eq "certbot") {
+	# XXX what to cehck?
+	}
 else {
 	return (0, "Unknown mode $mode");
 	}
@@ -170,19 +180,50 @@ if ($letsencrypt_cmd) {
 	my $old_flags = "";
 	my $new_flags = "";
 	my $reuse_flags = "";
+	my $server_flags = "";
+	my $subset_flags = "";
 	$key_type ||= $config{'letsencrypt_algo'} || 'rsa';
-	if (&compare_version_numbers($cmd_ver, 1.11) < 0) {
+	if (&compare_version_numbers($cmd_ver, '<', 1.11)) {
 		$old_flags = " --manual-public-ip-logging-ok";
 		}
-	if (&compare_version_numbers($cmd_ver, 2.0) >= 0) {
+	if (&compare_version_numbers($cmd_ver, '>=', 2.0)) {
 		$new_flags = " --key-type ".quotemeta($key_type);
 		}
 	if ($reuse_key) {
 		$reuse_flags = " --reuse-key";
 		}
+	else {
+		$reuse_flags = " --no-reuse-key";
+		}
+	if ($subset) {
+		$subset_flags = " --allow-subset-of-names";
+		}
+	if (($reuse_key && $reuse_key == -1) ||
+	    &compare_version_numbers($cmd_ver, '<', '1.13.0')) {
+		$reuse_flags = ""
+		}
+	if ($server) {
+		$server_flags = " --server ".quotemeta($server);
+		if ($server_key) {
+			$server_flags .= " --eab-kid ".quotemeta($server_key);
+			}
+		if ($server_hmac) {
+			$server_flags .= " --eab-hmac-key ".
+					 quotemeta($server_hmac);
+			}
+		}
 	$dir =~ s/\/[^\/]+$//;
 	$size ||= 2048;
 	my $out;
+	my $common_flags = " --duplicate".
+			   " --force-renewal".
+			   " --non-interactive".
+			   " --agree-tos".
+			   " --config ".quotemeta($temp)."".
+			   " --rsa-key-size ".quotemeta($size).
+			   " --cert-name ".quotemeta($doms[0]).
+			   " --no-autorenew".
+			   ($staging ? " --test-cert" : "");
 	if ($mode eq "web") {
 		# Webserver based validation
 		&clean_environment();
@@ -191,17 +232,12 @@ if ($letsencrypt_cmd) {
 			" -a webroot ".
 			join("", map { " -d ".quotemeta($_) } @doms).
 			" --webroot-path ".quotemeta($webroot).
-			" --duplicate".
-			" --force-renewal".
+			$common_flags.
 			$reuse_flags.
 			$old_flags.
-			" --non-interactive".
-			" --agree-tos".
-			" --config ".quotemeta($temp)."".
+			$server_flags.
 			$new_flags.
-			" --rsa-key-size ".quotemeta($size).
-			" --cert-name ".quotemeta($doms[0]).
-			($staging ? " --test-cert" : "").
+			$subset_flags.
 			" 2>&1)");
 		&reset_environment();
 		}
@@ -215,17 +251,28 @@ if ($letsencrypt_cmd) {
 			" --preferred-challenges=dns".
 			" --manual-auth-hook $dns_hook".
 			" --manual-cleanup-hook $cleanup_hook".
-			" --duplicate".
-			" --force-renewal".
+			$common_flags.
 			$reuse_flags.
 			$old_flags.
-			" --non-interactive".
-			" --agree-tos".
-			" --config ".quotemeta($temp)."".
+			$server_flags.
 			$new_flags.
-			" --rsa-key-size $size".
-			" --cert-name ".quotemeta($doms[0]).
-			($staging ? " --test-cert" : "").
+			$subset_flags.
+			" 2>&1)");
+		&reset_environment();
+		}
+	elsif ($mode eq "certbot") {
+		# Use certbot's own webserver
+		&clean_environment();
+		$out = &backquote_logged(
+			"cd $dir && (echo A | $letsencrypt_cmd certonly".
+			" --standalone".
+			join("", map { " -d ".quotemeta($_) } @doms).
+			$common_flags.
+			$reuse_flags.
+			$old_flags.
+			$server_flags.
+			$new_flags.
+			$subset_flags.
 			" 2>&1)");
 		&reset_environment();
 		}
@@ -289,9 +336,9 @@ if ($letsencrypt_cmd) {
 
 	@rv = (1, $cert, $key, $chain);
 	}
-elsif ($mode eq "dns") {
-	# Python client doesn't support DNS
-	@rv = (0, $text{'letsencrypt_eacmedns'});
+elsif ($mode eq "dns" || $mode eq "certbot") {
+	# Python client doesn't support DNS or Certbot
+	@rv = (0, $text{'letsencrypt_eacme'.$mode});
 	}
 else {
 	# Fall back to local Python client

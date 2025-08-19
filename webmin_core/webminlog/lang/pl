@@ -32,8 +32,6 @@ index_long=Pokazywać pełne opisy zdarzeń?
 index_global=&lt;W żadnym module&gt;
 
 search_title=Wyniki poszukiwania
-search_date=Data
-search_time=Czas
 search_user=Użytkownik
 search_host=Adres IP klienta
 search_webmin=Serwer Webmina
@@ -48,7 +46,7 @@ search_critu=użytkownika $1
 search_critnu=dowolnego użytkownika oprócz $1
 search_critm=w module $1
 search_critt=pomiędzy $1 a $2
-search_critd=gdzie opis zawiera  <tt>$1</tt>
+search_critd=gdzie opis zawiera <tt>$1</tt>
 search_critt2=w dniu $1
 search_config=Zmieniono konfigurację modułu
 search_etime=Niepoprawny czas początkowy lub końcowy

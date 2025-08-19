@@ -18,6 +18,7 @@ our ($module_root_directory, %text, %gconfig, $root_directory, %config,
 do "$module_root_directory/gnupg-lib.pl";
 do "$module_root_directory/letsencrypt-lib.pl";
 do "$module_root_directory/twofactor-funcs-lib.pl";
+do "$module_root_directory/os-eol-lib.pl";
 use Socket;
 
 our @cs_codes = ( 'cs_page', 'cs_text', 'cs_table', 'cs_header', 'cs_link' );
@@ -106,6 +107,68 @@ our $realos_cache_file = "$module_var_directory/realos-cache";
 
 our $password_change_mod = "passwd";
 our $password_change_path = "/".$password_change_mod."/change_passwd.cgi";
+
+if (!defined($gconfig{'noselfwebminup'})) {
+	&has_repos();
+	}
+
+=head2 has_repos
+
+Checks if package manager repositories are
+available for Webmin and Usermin updates.
+
+=cut
+sub has_repos
+{
+my ($force) = @_;
+my $has_repos = 0;
+my @paths = (
+    '/etc/apt/sources.list',
+    '/etc/apt/sources.list.d',
+    '/etc/yum.repos.d'
+);
+my $pattern =
+	qr/webmin\.com|webmin\.dev|virtualmin\.com|virtualmin\.dev/i;
+my $process_file = sub {
+	my $file = shift;
+	return unless -f $file;
+	return unless $file =~ /\.list$|\.repo$/i;
+	open(my $fh, '<', $file) || return;
+	while (my $line = <$fh>) {
+		if ($line =~ /$pattern/) {
+			$has_repos = 1;
+			last;
+			}
+		}
+	close $fh;
+};
+# Check given repos paths
+foreach my $path (@paths) {
+	if (-d $path) {
+		# It's a directory, open and read each file
+		opendir(my $dh, $path) || next;
+		my @files = readdir($dh);
+		closedir($dh);
+		foreach my $file (@files) {
+			next if $file eq '.' or $file eq '..';
+			$process_file->("$path/$file");
+			}
+		}
+	elsif (-f $path) {
+		# It's a file
+		$process_file->($path);
+		}
+	}
+# Store the result in the config
+if ($force || !defined($gconfig{'noselfwebminup'}) ||
+    $gconfig{'noselfwebminup'} ne $has_repos) {
+	&lock_file("$config_directory/config");
+	$gconfig{'noselfwebminup'} = $has_repos;
+	&write_file("$config_directory/config", \%gconfig);
+	&unlock_file("$config_directory/config");
+	}
+return $has_repos;
+}
 
 =head2 setup_ca
 
@@ -579,7 +642,11 @@ else {
 			   "<tt>$mdir</tt>", $size);
 	if ($type eq 'rpm') {
 		# This module was installed from an RPM .. rpm -e it
-		&system_logged("rpm -e wbm-$m");
+		&system_logged("rpm -e ".quotemeta("wbm-$m"));
+		}
+	elsif ($type eq 'deb') {
+		# Installed from a Debian package
+		&system_logged("dpkg --remove ".quotemeta("webmin-$m"));
 		}
 	else {
 		# Module was installed from a .wbm file .. just rm it
@@ -1094,12 +1161,12 @@ my $key = &read_file_contents($keyfile);
 $key =~ /BEGIN (RSA |EC )?PRIVATE KEY/i ||  
 	&error(&text('ssl_ekey2', $keyfile));
 if (!$certfile) {
-	$key =~ /BEGIN CERTIFICATE/ || &error(&text('ssl_ecert2', $keyfile));
+	$key =~ /BEGIN (CERTIFICATE|PUBLIC KEY)/ || &error(&text('ssl_ecert2', $keyfile));
 	}
 else {
 	-r $certfile || return &error(&text('ssl_ecert', $certfile));
 	my $cert = &read_file_contents($certfile);
-	$cert =~ /BEGIN CERTIFICATE/ || &error(&text('ssl_ecert2', $certfile));
+	$cert =~ /BEGIN (CERTIFICATE|PUBLIC KEY)/ || &error(&text('ssl_ecert2', $certfile));
 	}
 }
 
@@ -1130,11 +1197,13 @@ if ($cache) {
 	}
 my $temp = &transname();
 my $perl = &get_perl_path();
-system("$root_directory/oschooser.pl $file $temp 1");
+system("$perl $root_directory/oschooser.pl ".
+       quotemeta($file)." ".quotemeta($temp)." 1");
 my %rv;
 &read_env_file($temp, \%rv);
 $rv{'time'} = time();
 &write_file($detect_operating_system_cache, \%rv);
+&unlink_file($temp);
 return %rv;
 }
 
@@ -1169,25 +1238,39 @@ my %miniserv;
 &get_miniserv_config(\%miniserv);
 &load_theme_library();	# So that UI functions work
 
-# Need OS upgrade, but only once per day
-# XXX use a cache
+# Need OS upgrade, but only once per day or if the system was rebooted
 my $now = time();
+my $uptime = &get_system_uptime();
 if (&foreign_available("webmin")) {
 	my %realos;
 	my @st = stat($realos_cache_file);
-	if (!@st || $now - $st[9] > 24*60*60) {
+	if (!@st || $now - $st[9] > 24*60*60 ||
+	    $uptime && $now - $st[9] > $uptime) {
 		%realos = &detect_operating_system(undef, 1);
 		&write_file($realos_cache_file, \%realos);
 		}
 	else {
 		&read_file($realos_cache_file, \%realos);
 		}
+	my $new_real = $realos{'real_os_version'};
+	my $old_real = $gconfig{'real_os_version'};
+	$new_real =~ s/\.\d+$//;
+	$old_real =~ s/\.\d+$//;
+	if ($realos{'real_os_type'} eq $gconfig{'real_os_type'} &&
+	    $new_real eq $old_real &&
+	    $realos{'real_os_version'} ne $gconfig{'real_os_version'}) {
+		# Only the minor OS version has changed, just silently update it
+		&lock_file("$config_directory/config");
+		$gconfig{'real_os_version'} = $realos{'real_os_version'};
+		$gconfig{'os_version'} = $realos{'os_version'};
+		&write_file("$config_directory/config", \%gconfig);
+		&unlock_file("$config_directory/config");
+		}
 	if (($realos{'os_version'} ne $gconfig{'os_version'} ||
 	     $realos{'real_os_version'} ne $gconfig{'real_os_version'} ||
 	     $realos{'os_type'} ne $gconfig{'os_type'}) &&
 	    $realos{'os_version'} && $realos{'os_type'} &&
 	    &foreign_available("webmin")) {
-
 		# Tell the user that OS version was updated
 		push(@notifs,
 		    &ui_form_start("@{[&get_webprefix()]}/webmin/fix_os.cgi").
@@ -1263,14 +1346,12 @@ if (&foreign_check("acl")) {
 	}
 
 # New Webmin version is available, but only once per day
-my %raccess = &get_module_acl('root');
-my %rdisallow = map { $_, 1 } split(/\s+/, $raccess{'disallow'} || "");
 my %access = &get_module_acl();
 my %disallow = map { $_, 1 } split(/\s+/, $access{'disallow'} || "");
 my %allow = map { $_, 1 } split(/\s+/, $access{'allow'} || "");
-if (&foreign_available($module_name) && !$gconfig{'nowebminup'} &&
-    !$noupdates && ($allow{'upgrade'} ||
-		    (!$disallow{'upgrade'} && !$rdisallow{'upgrade'}))) {
+if (&foreign_available($module_name) && !$gconfig{'nowebminup'} && 
+    !$gconfig{'noselfwebminup'} && !$noupdates &&
+    ($allow{'upgrade'} || !$disallow{'upgrade'})) {
 	if (!$config{'last_version_check'} ||
 	    $now - $config{'last_version_check'} > 24*60*60) {
 		# Cached last version has expired .. re-fetch
@@ -1368,7 +1449,8 @@ if (&foreign_check("package-updates") && &foreign_available("init")) {
 				}
 			}
 		}
-	if ($allow_reboot_required && &package_updates::check_reboot_required()) {
+	if ($allow_reboot_required &&
+	    &package_updates::check_reboot_required()) {
 		push(@notifs,
 			&ui_form_start("@{[&get_webprefix()]}/init/reboot.cgi").
 			$text{'notif_reboot'}."<p>\n".
@@ -2458,7 +2540,8 @@ foreach my $u (@$allupdates) {
 	next if (!%info && !$missing);
 
 	# Skip if module has a version, and we already have it
-	next if (%info && $info{'version'} && $info{'version'} >= $nver);
+	next if (%info && $info{'version'} &&
+		 &compare_version_numbers($info{'version'}, $nver) >= 0);
 
 	# Skip if not supported on this OS
 	my $osinfo = { 'os_support' => $u->[3] };
@@ -2576,6 +2659,10 @@ $gconfig{'real_os_type'} = $osinfo{'real_os_type'};
 $gconfig{'real_os_version'} = $osinfo{'real_os_version'};
 $gconfig{'os_type'} = $osinfo{'os_type'};
 $gconfig{'os_version'} = $osinfo{'os_version'};
+foreach my $key ('os_eol_db', 'os_eol_expired',
+		 'os_eol_expiring') {
+	delete($gconfig{$key});
+	}
 &write_file("$config_directory/config", \%gconfig);
 &unlock_file("$config_directory/config");
 
@@ -2584,21 +2671,15 @@ if (&foreign_installed("usermin")) {
 	&foreign_require("usermin");
 	my %miniserv;
 	&usermin::get_usermin_miniserv_config(\%miniserv);
-	my @ust = stat("$miniserv{'root'}/os_list.txt");
-	my @wst = stat("$root_directory/os_list.txt");
-	if ($ust[7] == $wst[7]) {
-		# os_list.txt is the same, so we can assume the same OS codes
-		# are supported
-		my %uconfig;
-		&lock_file($usermin::usermin_config);
-		&usermin::get_usermin_config(\%uconfig);
-		$uconfig{'real_os_type'} = $osinfo{'real_os_type'};
-		$uconfig{'real_os_version'} = $osinfo{'real_os_version'};
-		$uconfig{'os_type'} = $osinfo{'os_type'};
-		$uconfig{'os_version'} = $osinfo{'os_version'};
-		&usermin::put_usermin_config(\%uconfig);
-		&unlock_file($usermin::usermin_config);
-		}
+	my %uconfig;
+	&lock_file($usermin::usermin_config);
+	&usermin::get_usermin_config(\%uconfig);
+	$uconfig{'real_os_type'} = $osinfo{'real_os_type'};
+	$uconfig{'real_os_version'} = $osinfo{'real_os_version'};
+	$uconfig{'os_type'} = $osinfo{'os_type'};
+	$uconfig{'os_version'} = $osinfo{'os_version'};
+	&usermin::put_usermin_config(\%uconfig);
+	&unlock_file($usermin::usermin_config);
 	}
 }
 
@@ -2620,6 +2701,7 @@ my @doms = split(/\s+/, $config{'letsencrypt_doms'});
 my $webroot = $config{'letsencrypt_webroot'};
 my $mode = $config{'letsencrypt_mode'} || "web";
 my $size = $config{'letsencrypt_size'};
+my $usewebmin = !$config{'letsencrypt_nouse'};
 if (!@doms) {
 	print "No domains saved to renew cert for!\n";
 	return;
@@ -2638,6 +2720,9 @@ if (!$ok) {
 	print "Failed to renew certificate : $cert\n";
 	return;
 	}
+
+# If we don't want to update the Webmin SSL certificate, then just return
+return if (!$usewebmin);
 
 # Copy into place
 my %miniserv;
@@ -2734,6 +2819,41 @@ my @updates = &package_updates::updates_available();
 my ($wpkg) = grep { $_->{'name'} eq 'webmin' } @updates;
 return () if (!$wpkg);
 return ($wpkg->{'system'}, $wpkg->{'version'});
+}
+
+# list_active_locks()
+# Returns an array of structs containing details of currently open locks
+sub list_active_locks
+{
+my @rv;
+my $lockdir = $var_directory."/locks";
+&foreign_require("proc");
+my %pidmap = map { $_->{'pid'}, $_ } &proc::list_processes();
+opendir(DIR, $lockdir);
+foreach my $pid (readdir(DIR)) {
+	next if ($pid eq "." || $pid eq "..");
+	my $proc = { 'pid' => $pid,
+		     'proc' => $pidmap{$pid},
+		     'locks' => [ ] };
+	opendir(SUBDIR, "$lockdir/$pid");
+	foreach my $l (readdir(SUBDIR)) {
+		next if ($l eq "." || $l eq "..");
+		my ($t, $n) = split(/\-/, $l);
+		my $f = readlink("$lockdir/$pid/$l");
+		$f =~ s/\.lock$//;
+		if (&test_lock($f) == $pid) {
+			push(@{$proc->{'locks'}}, { 'time' => $t,
+						    'num' => $n,
+						    'lock' => $f });
+			}
+		}
+	closedir(SUBDIR);
+	if (@{$proc->{'locks'}}) {
+		push(@rv, $proc);
+		}
+	}
+closedir(DIR);
+return @rv;
 }
 
 1;

@@ -49,14 +49,13 @@ if (&compare_version_numbers($postfix_version, 2) <= 0) {
 &option_freefield("smtp_data_done_timeout", 15);
 &option_freefield("smtp_quit_timeout", 15);
 
-&option_yesno("smtp_use_tls");
 &option_freefield("smtp_sasl_security_options", 60);
 
 # TLS enforcement options
 if (&compare_version_numbers($postfix_version, 2.3) >= 0) {
 	$level = &get_current_value("smtp_tls_security_level");
 	print &ui_table_row($text{'opts_smtp_tls_security_level'},
-		&ui_select("smtp_tls_security_level", $level, 
+		&ui_select("smtp_tls_security_level_def", $level, 
 			   [ [ "", $text{'default'} ],
 			     [ "none", $text{'sasl_level_none'} ],
 			     [ "may", $text{'sasl_level_may'} ],
@@ -70,6 +69,40 @@ if (&compare_version_numbers($postfix_version, 2.3) >= 0) {
 	}
 else {
 	&option_yesno("smtp_enforce_tls");
+	}
+
+# Inet protocols
+%inet = map { $_, 1 } split(/\s*,\s*/, &get_current_value("inet_protocols"));
+$inet = !%inet ? "" :
+	$inet{'all'} ? "all" :
+	$inet{'ipv4'} ? "ipv4" :
+	$inet{'ipv6'} ? "ipv6" : join(" ", keys %inet);
+@opts = ( [ "", $text{'default'} ],
+	  [ "all", $text{'opts_inet_protocols_all'} ],
+	  [ "ipv4", "IPv4" ],
+	  [ "ipv6", "IPv6" ] );
+push(@opts, $inet) if (&indexof($inet, map { $_->[0] } @opts) < 0);
+print &ui_table_row($text{'opts_inet_protocols'},
+	&ui_radio("inet_protocols", $inet, \@opts));
+
+# SMTP client protocol preference
+if (&compare_version_numbers($postfix_version, 2.8) >= 0) {
+	$pref = &get_current_value("smtp_address_preference");
+	print &ui_table_row($text{'opts_smtp_address_preference'},
+		&ui_select("smtp_address_preference_def", $pref,
+		   [ [ "any", $text{'opts_smtp_address_preference_any'} ],
+		     [ "ipv4", "IPv4" ],
+		     [ "ipv6", "IPv6" ] ]));
+	}
+
+# Balance SMTP client protocols
+if (&compare_version_numbers($postfix_version, 3.3) >= 0) {
+	&option_yesno("smtp_balance_inet_protocols");
+	}
+
+# SMTPUTF8 support
+if (&compare_version_numbers($postfix_version, 3.0) >= 0) {
+	&option_yesno("smtputf8_enable");
 	}
 
 print &ui_table_end();

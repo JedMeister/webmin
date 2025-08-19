@@ -11,7 +11,6 @@ index_refresh=Oppfrisk moduler
 index_refreshmsg=Sjekk alle Webmin moduler på nytt, etter installerte tjenere, og oppdater de som forekommer i kategorien 'Ubrukte moduler'.
 
 access_title=IP Tilgangs kontroll
-access_desc=Webmin tjeneren kan settes opp til æ nekte eller tillate tilgang fra spesifikke IP adresser. Vertsnavn (som foo.bar.com) og IP nettverk (som 10.254.3.0 eller 10.254.1.0/255.255.255.128 eller 2001:DB8::A0BC:0001 eller 2001:DB8::/32) kan også brukes. Du bør begrense tilgangen på tjeneren til de adressene du stoler på, spesielt hvis tjeneren kan nås fra internett. Ellers alle som gjetter passordet ditt vil ha full kontroll over tjeneren......
 access_ip=Tillatte IP adresser
 access_local=Ta med lokalt nettverk i listen
 access_header=Innstillinger for tilgangskontroll
@@ -31,11 +30,10 @@ access_ecidr8=IPv6 nettverksstørrelse '$1' må være delelig med 8
 access_ehost=Finner ikke IP adresse for '$1'
 access_eself=Din gjeldende IP adresse ($1) ville blitt nektet
 access_always=Finne vertsnavn på vær forespørsel
-access_trust=Stol på ekstern IP-adresse angitt av proxyer?
 
 bind_title=Port og IP adresse
 bind_desc2=Dette skjemaet kan benyttes for å endre porten Webmin lytter på, eller be Webmin om kun å lytte på en enkelt IP adresse på systemet ditt. Du kan også konfigurere Webmin til å lytte på flere porter eller IP adresser. Merk - nettleseren din kan be deg om å logge inn på nytt etter at du har endret port eller adresse som Webmin lytter på.
-bind_header=IP Adresse og  Port
+bind_header=IP Adresse og Port
 bind_sockets=Lytt på IP-er og porter
 bind_firewall=Åpne nye porter i brannmuren?
 bind_sip=Lytt på IP adresse
@@ -294,7 +292,6 @@ os_name=Variabel navn
 os_value=Verdi
 os_eversion=Manglende operativsystem versjon
 os_eiversion=Manglende intern operativsystem versjon
-os_fix=Oppdater oppdaget operativsystem
 os_usermin=Oppdater også Usermin OS
 
 lang_intro=Her kan du velge hvilket språk Webmin skal bruke for å vise deg meldinger, oversikter osv.
@@ -398,11 +395,6 @@ ssl_letserr2=Sjekk <a href='$1'>modulkonfigurasjonen</a> for å være sikker på
 ssl_letsdesc2=Denne siden kan brukes til å be om et nytt sertifikat, som vil overskrive andre sertifikater som er konfiguert i Webmin. Vær imidlertid oppmerksom på at Let's Encrypt tjenesten kreves at ditt eierskap til domenet valideres ved å sjekke at dette systemet inneholder nettstedet for domenet. Dette gjøres ved å plassere en liten midlertidig fil i nettstedets dokument-katalog.
 ssl_letsheader=Innstillinger for nytt SSL sertifikat
 ssl_letsdoms=Vertsnavn for sertifikat
-ssl_webroot=Nettstedets rot-katalog for valideringsfile
-ssl_webroot0=Apache virtuell vert som matcher vertsnavn
-ssl_webroot1=En annen Apache virtuell vert
-ssl_webroot2=Annen katalog
-ssl_webroot3=Bruk DNS-domener for validering
 ssl_letsok=Be om sertifikat
 ssl_letsonly=Bare oppdater fornyelse
 ssl_usewebmin=Kopier ny nøkkel og sertifikat til Webmin?
@@ -577,7 +569,6 @@ session_ptimeout=Passord tidsavbrudd
 session_pdisable=Slå av passord "timeouts"
 session_penable=Slå på passord "timeouts"
 session_pblock=Feilede innloggings-blokker
-session_blockhost=Blokér verter med flere en $1 feil loggin forsøk med $2 sekunder.
 session_blockuser=Blokker brukere med mer enn $1 feilede innlogginger i $2 sekunder.
 session_syslog3=Loggfør feil til <tt>syslog</tt>?
 session_stype=Autentiserings-type
@@ -635,7 +626,7 @@ assignment_desc=Her kan du velge hvilke kategori modulene skal vises i på Webmi
 
 categories_title=Rediger kategorier
 categories_header=Kategori ID og beskrivelse
-categories_desc=Her kan du endre navn på eksisterende eller lage nye Webmin kategorier for å legge moduler under. I den øvre delen kan du endre beskrivelsen for de innebygde kategoriene, mens den nedre delen er  for å legge til nye kategorier og beskrivelse.
+categories_desc=Her kan du endre navn på eksisterende eller lage nye Webmin kategorier for å legge moduler under. I den øvre delen kan du endre beskrivelsen for de innebygde kategoriene, mens den nedre delen er for å legge til nye kategorier og beskrivelse.
 categories_ok=Lagre kategorier
 categories_err=Feilet under lagring av kategorier
 categories_edesc=Mangler beskrivelse for $1
@@ -726,8 +717,6 @@ themes_egzip=Filen er gzipped, men $1 kommandoen ble ikke funnet på ditt system
 themes_egzip2=Gunzip kommandoen feilet på filen : $1
 themes_erpm=Ikke gyldig Webmin theme RPM
 themes_eirpm=RPM installasjonen feilet : $1
-themes_ok=Theme endring ok .. går tilbake til Webmin index side.
-themes_ok2=Tema-overlegg endret .. redirigerer til Webmins indeks-side
 themes_delete=I denne boksen kan du slette et eller flere theme som ikke er i bruk.
 themes_delok=Theme som skal slettes :
 themes_return=tema-liste
@@ -843,7 +832,6 @@ advanced_eprecache=Manglende liste med shell-mønstere for forhånds-lagring
 advanced_err=Kunne ikke lagre avanserte innstillinger
 advanced_etemp=Manglende eller ikke-eksisterende katalog for midlertidige filer
 advanced_etdir=Manglende eller ikke-eksisterende katalog for midlertidige filer for $1
-advanced_pass=Gjør passord tilgjengelig for Webmin programmer?<br><font size=-1>(Virker ikke dersom sesjons-autentisering er i bruk)</font>
 advanced_tempmods=Per-modul kataloger for midlertidige filer
 advanced_tmod=Modul
 advanced_tdir=Katalog
@@ -1089,10 +1077,7 @@ twofactor_eauthyotp=Authy token er ugyldig
 twofactor_enrolllink=Du kan nå ta i bruk to-faktor autentisering i modulen <a href='$1'>Webmin Brukere</a>.
 twofactor_url=For å lære mer om $1 sjekk denne nettsted på <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=Perl-modulen <tt>$1</tt>, som er påkrevd for to-faktor autentisering, er ikke installert. Bruk modulen <a href='$2'>Perl moduler</a> i Webmin for å installere den.
-twofactor_qrcode=Angi hemmelig kode $1 i Google Authenticator app, eller scan QR koden nedenfor.
 twofactor_etotpid=Ugyldig TOTP base32-kodet hemmelighet
-twofactor_etotptoken=Google Authenticator token må være et tall
-twofactor_etotpmodule2=Mangler Perl modulen $1
 twofactor_etotpmatch=Ugyldig kode for engangspassord
 twofactor_secret=Personlig hemmelig nøkkel
 twofactor_secret1=Tilfeldig generert

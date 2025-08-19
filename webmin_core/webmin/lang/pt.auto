@@ -1,15 +1,23 @@
 index_refresh=Módulos de atualização
 index_refreshmsg=Verifique novamente todos os módulos Webmin em busca de servidores instalados e atualize aqueles que aparecem na categoria 'Módulos não utilizados'.
 
+access_desc=O Webmin pode ser configurado para negar ou permitir acesso somente de certos endereços IP usando este formulário. Nomes de host (como foo.bar.com) e redes IP (como 10.254.3.0 ou 10.254.1.0/255.255.255.128 ou 10.254.1.0/25 ou 10.254.1.5-10.254.97.127 ou 2001:DB8::A0BC:0001 ou 2001:DB8::/32) também podem ser inseridos. Você deve limitar o acesso ao Webmin a endereços confiáveis, especialmente se ele for acessível pela Internet. Caso contrário, qualquer um que adivinhar sua senha terá controle total do seu sistema.
 access_ip=Endereços IP permitidos
 access_local=Incluir rede local na lista
 access_ecidr='$1' não é um número CIDR válido
 access_eip6='$1' não é um endereço IPv6 ou de rede completo
 access_ecidr6='$1' não é um tamanho de rede IPv6 válido
 access_ecidr8=O tamanho da rede IPv6 '$1' deve ser divisível por 8
-access_trust=Confia no endereço IP remoto fornecido pelos proxies?
+access_trust_lvl=Nível de confiança para cabeçalhos de proxy
+access_trust_lvl0=Não, não confie em nenhum cabeçalho do proxy
+access_trust_lvl1=Sim, confie no endereço IP remoto fornecido pelos proxies
+access_trust_lvl2=Sim, confie tanto no IP remoto quanto no certificado SSL fornecido pelos proxies
 
 bind_firewall=Abrir novas portas no firewall?
+bind_websocport=Número da porta base para conexões WebSockets
+bind_websocport_none=Padrão (555)
+bind_websoc_host=Nome do host para conexões WebSocket
+bind_websoc_host_auto=Automático
 bind_resolv_myname=Resolução reversa do endereço IP conectado?
 bind_ipv6=Aceitar conexões IPv6?
 bind_eipv6=O IPv6 não pode ser ativado a menos que o módulo Perl $1 esteja instalado
@@ -28,6 +36,7 @@ bind_maxlifetime_secs=segundos
 bind_emaxlifetime=A vida útil máxima do processo deve ser um número maior que 60 segundos
 
 log_status=Log ativo?
+log_trust=Registrar endereço IP do cliente quando estiver atrás de um proxy?
 log_clear2=Limpar periodicamente os arquivos de log?
 log_period=Sim, a cada $1 horas
 log_forusers=Usuários para registrar ações Webmin para
@@ -117,9 +126,9 @@ os_syspath=Incluir o próprio caminho de pesquisa do sistema?
 os_perllib=Caminhos extras da biblioteca Perl
 os_eversion=Versão do sistema operacional ausente
 os_eiversion=Versão do sistema operacional interno ausente
-os_incorrect=O sistema operacional $1 foi atualizado para a versão $2 
+os_incorrect=O sistema operacional $1 foi atualizado para a versão $2
 os_release_notes=Notas de lançamento
-os_fix=Atualização do sistema operacional detectado
+os_fix=Confirmar alterações detectadas
 os_usermin=Atualize também o SO Usermin
 
 lang_title=Idioma e localidade
@@ -196,11 +205,13 @@ ssl_letserr2=Como alternativa, verifique a página de configuração do módulo 
 ssl_letsdesc2=Esta página pode ser usada para solicitar um novo certificado, que substituirá qualquer outro atualmente configurado no Webmin. No entanto, o serviço Let's Encrypt exige que sua propriedade do domínio de certificado seja validada, verificando se este sistema hospeda o site do domínio. Isso é feito colocando um pequeno arquivo temporário no diretório de documentos do site.
 ssl_letsheader=Opções para novo certificado SSL
 ssl_letsdoms=Nomes de host para certificado
-ssl_webroot=Diretório raiz do site para arquivo de validação
-ssl_webroot0=Host virtual Apache correspondente ao nome do host
-ssl_webroot1=Um host virtual Apache diferente
-ssl_webroot2=Outro diretório
-ssl_webroot3=Use domínios DNS para validação
+ssl_subset=Ignorar nomes de host não verificáveis?
+ssl_letsmode=Vamos criptografar o método de validação
+ssl_letsmode0=Host virtual Apache correspondente ao nome do host
+ssl_letsmode1=Host virtual Apache selecionado
+ssl_letsmode2=Outro diretório de documentos do servidor web
+ssl_letsmode3=Validação de DNS usando BIND
+ssl_letsmode4=Servidor web integrado Certbot
 ssl_letsok=Solicitar certificado
 ssl_letsonly=Just Update Renewal
 ssl_usewebmin=Copiar nova chave e certificado para o Webmin?
@@ -224,6 +235,7 @@ startpage_moduleup=Mostrar atualizações de módulo na página Informações do
 
 upgrade_descdeb=Este formulário permite que você atualize toda a instalação do Webmin para uma nova versão, atualizando o pacote Debian. Você pode instalar a partir de um arquivo.deb local, de um arquivo carregado ou da versão mais recente em <a href=http://www.webmin.com/>www.webmin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
 upgrade_descsun-pkg=Este formulário permite atualizar toda a instalação do Webmin para uma nova versão do pacote Solaris fornecido pela Sun. Você pode instalar a partir de um arquivo de pacote Solaris local ou de um arquivo carregado. Os pacotes mais recentes podem ser encontrados em <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
+upgrade_repo=Versão mais recente do repositório $1
 upgrade_edeb=Não é um arquivo de pacote Webmin Debian válido
 upgrade_setup=Executando o script <tt>setup.sh</tt> para atualizar o Webmin ..
 upgrade_setuprpm=Executando <tt>RPM</tt> para atualizar o Webmin ..
@@ -261,6 +273,7 @@ ca_notafter=Válido até
 
 session_ptimeout=Tempo limite da senha
 session_pblock=Blocos de login com falha
+session_blockhost=Bloqueie IPs de clientes com mais de $1 logins com falha por $2 segundos.
 session_blockuser=Bloqueie usuários com mais de $1 logins com falha por $2 segundos.
 session_syslog3=Falhas de log no <tt>syslog</tt>?
 session_stype=Tipo de Autenticação
@@ -293,7 +306,15 @@ session_blocklock=Também bloqueia usuários com logins com falha
 session_passapi=Ativar API de alteração de senha remota?
 session_passapi0=API desativada
 session_passapi1=API habilitada para usuários Unix
-session_passurl=Quando habilitado, as senhas do usuário podem ser alteradas por meio de uma solicitação POST para $1 
+session_passurl=Quando habilitado, as senhas do usuário podem ser alteradas por meio de uma solicitação POST para $1
+session_forgot=Permitir recuperação de senha esquecida?
+session_eforgot=A recuperação de senha esquecida não pode ser ativada a menos que o módulo do plugin <b>Recuperação de Senha do Virtualmin</b> seja removido primeiro. Isso pode ser feito na página <a href='$1'>Módulos do Webmin</a>.
+session_passresetdesc=Limitação de recuperação de senha
+session_passreset=Bloquear clientes com mais de $1 solicitações por $2 minutos
+session_epassreset_failures=Solicitações de bloqueio ausentes ou inválidas
+session_passtimeoutdesc=Expiração do link de redefinição de senha
+session_passtimeout=O link para redefinição de senha expira em $1 minutos
+session_epassreset_timeout=Tempo limite de redefinição de senha ausente ou inválido
 
 categories_lang=Edite categorias no idioma:
 categories_langok=mudança
@@ -331,7 +352,8 @@ themes_tabinstall=Instalar tema
 themes_tabdelete=Excluir temas
 themes_tabexport=Exportar temas
 
-themes_ok2=A sobreposição do tema foi alterada com êxito. Redirecionando para a página de índice do Webmin.
+themes_ok=Tema alterado com sucesso redirecionando agora ..
+themes_ok2=Sobreposição de tema alterada, redirecionando agora com sucesso ..
 themes_err4=Falha ao alterar o tema de sobreposição
 themes_eoverlay=A sobreposição selecionada não é compatível com o tema global atual
 
@@ -346,6 +368,34 @@ referers_ehost='$1' não é um nome de host confiável válido
 update_mtype=O módulo $1 não pode ser atualizado, pois foi instalado a partir de um pacote $2
 
 third_title=Selecione o módulo de terceiros
+
+lock_mode=Arquivos para Webmin bloquear
+lock_s=segundos
+lock_m=minutos
+lock_h=horas
+lock_pid=PID
+lock_cmd=Roteiro
+lock_file=Arquivo bloqueado
+lock_files=Arquivos bloqueados
+lock_nfiles=Nenhum arquivo bloqueado
+lock_age=Retido por
+lock_noneopen=Nenhum arquivo está atualmente bloqueado pelo Webmin.
+lock_msg=Os arquivos listados abaixo estão atualmente bloqueados por um processo Webmin.
+lock_kill=Mate os bloqueios selecionados
+lock_term=Encerrar bloqueios selecionados
+lock_return=lista de bloqueios
+
+kill_title=Removendo bloqueios
+kill_err=Falha ao remover bloqueios
+kill_enone=Nenhum selecionado!
+kill_pid=Eliminando processo $1 ..
+term_pid=Encerrando processo $1 ..
+kill_gone=.. o processo não existe mais!
+kill_gone2=.. o bloqueio não existe mais!
+kill_dead=.. matou $1 e liberou o bloqueio $2
+kill_alive=.. enviou sinal de eliminação para $1 mas não saiu!
+kill_failed=.. kill falhou devido a $1, mas liberou o bloqueio $2 mesmo assim
+kill_already=.. liberou o bloqueio em $1
 
 ipkey_title1=Criar chave SSL
 ipkey_title2=Editar chave SSL
@@ -391,7 +441,8 @@ advanced_err=Falha ao salvar opções avançadas
 advanced_etemp=Diretório de arquivos temporários ausente ou inexistente
 advanced_etdir=Diretório de arquivos temporários ausente ou inexistente para $1
 advanced_etempallowed=A pasta de ficheiros temporários $1 éuma pasta do sistema
-advanced_pass=Tornar a senha disponível para os programas Webmin? <br><font size=-1> (Não funciona quando a autenticação de sessão está ativada) </font>
+advanced_pass_desc=Disponibilizar senha para programas Usermin?
+advanced_pass_help=Não funciona quando a autenticação de sessão está habilitada
 advanced_tempmods=Diretórios temporários por módulo
 advanced_tmod=Módulo
 advanced_tdir=Diretório
@@ -418,7 +469,9 @@ advanced_headers=Cabeçalhos HTTP extras
 advanced_eheader=Cabeçalhos devem ser formatados como <tt>Cabeçalho: Valor</tt>
 advanced_sortconfigs=Salvar arquivos de configuração classificados por suas chaves?
 advanced_bufsize=Tamanho do buffer de rede em bytes
+advanced_bufsize_binary=Tamanho do buffer de rede para downloads em bytes
 advanced_ebufsize=O tamanho do buffer de rede deve ser um número maior que zero
+advanced_ebufsize_binary=O tamanho do buffer de rede para downloads deve ser um número maior que zero
 
 syslog_errorlog=Log de erro do Webmin
 
@@ -532,6 +585,7 @@ status_interval0=Cada
 status_mins=minutos
 status_pkgs=Coletar atualizações de pacotes disponíveis?
 status_temp=Coletar temperaturas da unidade?
+status_temp2=Coletar temperaturas da CPU e velocidade dos ventiladores?
 status_units=Unidades para temperaturas
 status_celsius=Celsius
 status_fahrenheit=Fahrenheit
@@ -562,6 +616,9 @@ sendmail_authdef=Padrão (atualmente Cram-MD5)
 sendmail_from=Endereço do email para Webmin
 sendmail_fromdef=Padrão ($1)
 sendmail_fromaddr=Endereço
+sendmail_toaddr=Endereço de destino padrão para notificações
+sendmail_to_def=Nenhum definido
+sendmail_etoaddr=Endereço de destino ausente ou formatado incorretamente
 sendmail_err=Falha ao salvar as opções de envio de email
 sendmail_esmtp=Nome do host do servidor SMTP ausente ou não resolvível
 sendmail_eport=Porta SMTP ausente ou não numérica
@@ -636,6 +693,7 @@ twofactor_title=Autenticação de dois fatores
 twofactor_header=Opções de autenticação de dois fatores
 twofactor_provider=Provedor de autenticação
 twofactor_none=Nenhum
+twofactor_totp=Autenticador TOTP
 twofactor_apikey=Chave da API Authy
 twofactor_test=Usar o modo de teste do provedor?
 twofactor_desc=A autenticação de dois fatores permite que os usuários do Webmin habilitem o uso de um dispositivo de autenticação adicional ao efetuar login, como um gerador de senha único. Os usuários devem se registrar individualmente no provedor de autenticação selecionado depois que ele for ativado nesta página.
@@ -658,10 +716,9 @@ twofactor_eauthyotp=O token automático é inválido
 twofactor_enrolllink=Agora você pode se inscrever para autenticação de dois fatores no módulo <a href='$1'>Usuários Webmin</a>.
 twofactor_url=Para saber mais sobre $1, consulte o site em <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=O módulo Perl <tt>$1</tt> necessário para autenticação de dois fatores não está instalado. Use a página <a href='$2'>Perl Modules</a> no Webmin para instalá-lo.
-twofactor_qrcode=Digite o código secreto $1 no aplicativo Google Authenticator ou digitalize o código QR abaixo.
+twofactor_qrcode=Digite o código secreto $1 no aplicativo TOTP ou escaneie o código QR abaixo.
 twofactor_etotpid=Segredo codificado em base32 TOTP inválido
-twofactor_etotptoken=O token do Google Authenticator deve ser um número
-twofactor_etotpmodule2=Módulo Perl ausente $1
+twofactor_etotptoken=O token TOTP deve ser um número
 twofactor_etotpmatch=Código OTP incorreto
 twofactor_secret=Chave secreta pessoal
 twofactor_secret1=Gerado aleatoriamente
@@ -686,6 +743,7 @@ letsencrypt_ecert=O arquivo de certificado esperado $1 não foi encontrado
 letsencrypt_ekey=O arquivo de chave privada esperado $1 não foi encontrado
 letsencrypt_doing=Solicitando um novo certificado para $1, usando o diretório do site $2 ..
 letsencrypt_doingdns=Solicitando um novo certificado para $1, usando a validação de DNS.
+letsencrypt_doingcertbot=Solicitando um novo certificado para $1, usando o servidor web Certbot ..
 letsencrypt_failed=.. solicitação falhou : $1
 letsencrypt_done=.. pedido efetuado com sucesso!
 letsencrypt_show=O novo certificado e chave privada foram gravados nos seguintes arquivos :
@@ -702,6 +760,34 @@ letsencrypt_ecsr=Falha ao gerar o CSR : $1
 letsencrypt_ekeygen=Falha ao gerar a chave privada : $1
 letsencrypt_enative=O cliente Let's Encrypt criptografado (certbot) foi usado anteriormente neste sistema e deve ser usado para todas as solicitações futuras de certificado
 letsencrypt_eacmedns=Somente o cliente oficial Let's Encrypt suporta validação baseada em DNS
+letsencrypt_eacmecertbot=Somente o cliente oficial Let's Encrypt oferece suporte à validação Certbot
 
 announce_hide=Ocultar este anúncio
 alert_hide=Ocultar alerta
+
+os_eol=Notificação de contagem regressiva do SO EOL
+os_eol_countdown=meses antes
+os_eol_ecountdown=O mês anterior à contagem regressiva deve ser um número inteiro
+os_eol_until=Até
+os_eol_type1=Manutenção do sistema operacional e suporte de segurança
+os_eol_type2=Manutenção de segurança estendida do sistema operacional
+os_eol_years=anos
+os_eol_year=ano
+os_eol_months=meses
+os_eol_month=mês
+os_eol_weeks=semanas
+os_eol_week=semana
+os_eol_days=dias
+os_eol_day=dia
+os_eol_hours=horas
+os_eol_hour=hora
+os_eol_minutes=minutos
+os_eol_minute=minuto
+os_eol_seconds=segundos
+os_eol_second=segundo
+os_eol_reached=EOL alcançado
+os_eol_reaching=EOL em
+os_eol_reaching2=EOL iminente
+
+qr_err=Falha ao gerar código QR
+qr_estr=Falta a sequência do código QR!

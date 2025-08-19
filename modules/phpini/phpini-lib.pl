@@ -162,6 +162,10 @@ for(my $i=0; $i<@old || $i<@values; $i++) {
 		else {
 			# Just add at the end
 			$lastfile = @$conf ? $conf->[0]->{'file'} : undef;
+			if (!$lastfile) {
+				my @allfiles = keys %get_config_cache;
+				$lastfile = $allfiles[0] if (@allfiles == 1);
+				}
 			$lastfile || &error("Don't know which file to add to");
 			$lref = &read_file_lines_as_user($lastfile);
 			$lastline = scalar(@$lref);
@@ -281,6 +285,49 @@ my %done;
 return grep { !$done{$_->[0]}++ } @rv;
 }
 
+# get_php_ini_dir(file)
+# Given a file like /etc/php.ini, return the include directory for additional
+# .ini files that load modules, like /etc/php.d
+sub get_php_ini_dir
+{
+my ($file) = @_;
+my $file1 = $file;
+my $file2 = $file;
+my $file3 = $file;
+$file1 =~ s/\/php.ini$/\/php.d/;
+$file2 =~ s/\/php.ini$/\/conf.d/;
+$file3 =~ s/\/php-fpm.conf$/\/php.d/;
+return -d $file1 ? $file1 :
+       -d $file2 ? $file2 :
+       -d $file3 ? $file3 : undef;
+}
+
+# get_php_info(name, version)
+# Returns PHP version and short version, and the binary path
+sub get_php_info
+{
+my ($name, $version) = @_;
+$version =~ s/\-.*$//;
+my $bin;
+foreach my $b ($name, $name."-cgi", $name."-fpm", "php-".$version) {
+	if ($bin = &has_command($b)) {
+		last;
+		}
+	}
+if ($bin) {
+	my $out = &backquote_command("$bin -v 2>&1");
+	if ($out =~ /(^|\n)PHP\s+([\d\.]+)/) {
+		$version = $2;
+		}
+	}
+my $shortver = $version;
+$shortver =~ s/^(\d+\.\d+).*$/$1/;
+if ($shortver =~ /^5\./) {
+	$shortver = "5";
+	}
+return ($version, $shortver, $bin);
+}
+
 # get_php_ini_binary(file)
 # Given a php.ini path, try to guess the PHP command for it
 # Examples: 
@@ -295,6 +342,7 @@ return grep { !$done{$_->[0]}++ } @rv;
 sub get_php_ini_binary
 {
 my ($file) = @_;
+my $ver;
 
 # Possible php.ini under domain's home dir
 if (&foreign_check("virtual-server")) {
@@ -302,7 +350,7 @@ if (&foreign_check("virtual-server")) {
 	my %vmap = map { $_->[0], $_ }
 		       &virtual_server::list_available_php_versions();
 	if ($file =~ /etc\/php(\S+)\/php.ini/) {
-		my $ver = $1;
+		$ver = $1;
 		my $nodot = $ver;
 		$nodot =~ s/\.//g;
 		my $php = $vmap{$ver} || $vmap{$nodot};
@@ -319,21 +367,52 @@ if (&foreign_check("virtual-server")) {
 # Debian/Ubuntu /etc/php/8.3/fpm/pool.d/www.conf
 #   RHEL and derivatives   Debian/Ubuntu
 if ($file =~ /php(\d+)/ || $file =~ /php\/([\d\.]+)/) {
-	my $ver = $1;
-	my $binary = &has_command("php$ver");
+	$ver = $1;
+	my $binary = &has_command("php$ver") ||
+		     &has_command("php$ver-cgi");
 	return $binary if ($binary);
 	}
 
 # Given PHP version, e.g. `php7.4` as a string try to get binary
 if ($file =~ /^php.*?([\d\.]+)$/) {
-	my $ver = $1;
+	$ver = $1;
 	my $nodot = $ver;
 	$nodot =~ s/\.//g;
 	my $binary = &has_command("php$ver") ||
-	             &has_command("php$nodot");
+	             &has_command("php$nodot") ||
+		     &has_command("php$ver-cgi") ||
+                     &has_command("php$nodot-cgi");
 	return $binary if ($binary);
 	}
-return &has_command("php");
+
+return $ver ? undef : &has_command("php");
+}
+
+# get_php_ini_version(file)
+# Given an ini file, return the version number for it if possible
+sub get_php_ini_version
+{
+my ($file) = @_;
+my $ver;
+
+# Try to get version from the path, e.g.
+# RHEL and derivatives /etc/opt/remi/php83
+# Debian/Ubuntu /etc/php/8.3/fpm/pool.d/www.conf
+#   RHEL and derivatives   Debian/Ubuntu
+if ($file =~ /php(\d+)/ || $file =~ /php\/([\d\.]+)/) {
+	my $ver = $1;
+	$ver =~ s/^(\d)(\d+)$/$1.$2/;
+	return $ver;
+	}
+
+# Given PHP version, e.g. `php7.4` as a string try to get binary
+if ($file =~ /^php.*?([\d\.]+)$/) {
+	my $ver = $1;
+	$ver =~ s/^(\d)(\d+)$/$1.$2/;
+	return $ver;
+	}
+
+return undef;
 }
 
 # get_php_binary_version(file|version-string)
@@ -352,8 +431,44 @@ my ($file) = @_;
 my $phpbinary = &get_php_ini_binary($file || $in{'file'});
 return undef if (!$phpbinary);
 my $phpver = &backquote_command("$phpbinary -v 2>&1");
-($phpver) = $phpver =~ /^PHP\s+([\d\.]+)/;
-return $phpver;
+if ($phpver =~ /(^|\n)PHP\s+([\d\.]+)/) {
+	return $2;
+	}
+return undef;
+}
+
+# get_php_ini_bootup(file)
+# Given an ini file, return the bootup action for it
+sub get_php_ini_bootup
+{
+my ($file) = @_;
+return undef if (!&foreign_installed("init"));
+&foreign_require("init");
+# Versioned PHP-FPM config, e.g. /etc/php/8.3/fpm/php.ini on Debian
+# or /etc/opt/remi/php83/php-fpm.conf on EL systems
+if ($file =~ /php(\d{1,2})/ || $file =~ /php\/(\d\.\d)/) {
+	my $shortver = $1;
+	my $nodot = $shortver;
+	$nodot =~ s/\.//;
+	foreach my $init ("php${shortver}-fpm",
+                          "php-fpm${shortver}",
+                          "rh-php${nodot}-php-fpm",
+                          "php${nodot}-php-fpm") {
+                my $st = &init::action_status($init);
+		if ($st) {
+			return $init;
+			}
+		}
+	}
+# Default /etc/php-fpm.conf config primarily on EL systems
+elsif ($file =~ /\/(php-fpm)\.conf/) {
+	my $init = $1;
+	my $st = &init::action_status($init);
+	if ($st) {
+		return $init;
+		}
+	}
+return undef;
 }
 
 # php_version_test_against(version, comparison-operator, [file|version-string])
@@ -446,26 +561,11 @@ if (&foreign_installed("apache")) {
 		&reset_environment();
 		}
 	}
-if ($file && &get_config_fmt($file) eq "fpm" &&
-    &foreign_check("virtual-server")) {
-	# Looks like FPM format ... maybe a pool restart is needed
-	&foreign_require("virtual-server");
-	if (defined(&virtual_server::restart_php_fpm_server)) {
-		my $conf;
-		if (-r $file) {
-			my @conf;
-			@conf = grep { &is_under_directory($_->{'dir'}, $file) }
-				     &virtual_server::list_php_fpm_configs();
-			if (@conf) {
-				$conf = &virtual_server::get_php_fpm_config(
-						$conf[0]->{'shortversion'});
-				}
-			}
-		&virtual_server::push_all_print();
-		&virtual_server::set_all_null_print();
-		&virtual_server::restart_php_fpm_server($conf);
-		&virtual_server::pop_all_print();
-		}
+my $init = &get_php_ini_bootup($file);
+if ($init) {
+	# There's an associated FPM bootup action
+	&foreign_require("init");
+	&init::reload_action($init);
 	}
 if ($file && &get_config_fmt($file) eq "ini" &&
 	&foreign_installed("virtual-server") && 
@@ -619,6 +719,359 @@ my $optdef = defined($php_opt_default) ? $php_opt_default : "<em>$text{'opt_defa
 $php_opt_default = "<strong>".&text('opt_default', "<br>$opt = $optdef")."</strong>";
 my $link = "https://www.php.net/$opt_name";
 return "@{[&ui_text_wrap($text)]}".&ui_link($link, &ui_help($php_opt_default), 'ui_link_help', 'target="_blank"');
+}
+
+sub list_known_disable_functions
+{
+return ( "exec", "passthru", "shell_exec", "system", "proc_open", "popen", "curl_exec", "curl_multi_exec", "parse_ini_file", "show_source", "mail" );
+}
+
+# list_php_ini_modules(dir)
+# Returns a list of hash refs with details of PHP module include files in
+# a directory
+sub list_php_ini_modules
+{
+my ($dir) = @_;
+my @rv;
+opendir(DIR, $dir);
+foreach my $f (readdir(DIR)) {
+	next if ($f !~ /\.ini$/);
+	my $path = "$dir/$f";
+	my $ini = { 'file' => $f,
+		    'path' => $path,
+		    'dir' => $dir,
+		  };
+	# Check for the extension line
+	my $lref = &read_file_lines($path, 1);
+	foreach my $l (@$lref) {
+		if ($l =~ /^\s*(;?)\s*(zend_)?extension\s*=\s*(\S+(\.so)?)/) {
+			$ini->{'enabled'} = $1 ? 0 : 1;
+			$ini->{'mod'} = $3;
+			$ini->{'mod'} =~ s/\.so$//;
+			}
+		}
+	if (-l $path) {
+		# Debian-style, where the link means that the module is enabled
+		$ini->{'link'} = &resolve_links($path);
+		$ini->{'enabled'} = 1;
+		}
+	push(@rv, $ini);
+	}
+closedir(DIR);
+my $availdir = &simplify_path("$dir/../../mods-available");
+if (opendir(DIR, $availdir)) {
+	# On debian, there is another directory of link destinations for all
+	# modules that are available
+	foreach my $f (readdir(DIR)) {
+		next if ($f !~ /\.ini$/);
+		my $path = "$availdir/$f";
+		my ($already) = grep { $_->{'link'} eq $path } @rv;
+		next if ($already);
+		my $ini = { 'file' => $f,
+			    'path' => $path,
+			    'dir' => $dir,
+			    'enabled' => 0,
+			    'available' => 1,
+			  };
+		my $lref = &read_file_lines($path, 1);
+		foreach my $l (@$lref) {
+			if ($l =~ /^\s*(;?)\s*(zend_)?extension\s*=\s*(\S+(\.so)?)/) {
+				$ini->{'mod'} = $3;
+				$ini->{'mod'} =~ s/\.so$//;
+				}
+			}
+		push(@rv, $ini);
+		}
+	closedir(DIR);
+	}
+return sort { $a->{'mod'} cmp $b->{'mod'} } @rv;
+}
+
+# enable_php_ini_module(&ini, enabled?)
+# Enable or disable a module loaded from a php.ini include file
+sub enable_php_ini_module
+{
+my ($ini, $enable) = @_;
+return if ($ini->{'enabled'} == $enable);
+if ($ini->{'link'} || $ini->{'available'}) {
+	# Enable is done via a symlink
+	if ($enable && $ini->{'available'}) {
+		# Create the link
+		my ($dis) = glob($ini->{'dir'}."/*-".$ini->{'mod'}.
+				 ".ini.disabled");
+		if ($dis) {
+			my $newlink = $dis;
+			$newlink =~ s/\.disabled$//;
+			&rename_logged($dis, $newlink);
+			}
+		else {
+			my $newlink = $ini->{'dir'}."/10-".$ini->{'mod'}.".ini";
+			&symlink_logged($ini->{'path'}, $newlink);
+			}
+		}
+	elsif (!$enable && $ini->{'link'}) {
+		# Rename the link
+		&rename_logged($ini->{'path'}, $ini->{'path'}.".disabled");
+		}
+	}
+else {
+	# Just edit the extension= line and comment in or out
+	&lock_file($ini->{'path'});
+	my $lref = &read_file_lines($ini->{'path'});
+	foreach my $l (@$lref) {
+		if ($enable && !$ini->{'enabled'}) {
+			$l =~ s/^\s*;\s*(extension\s*=\s*(\S+)(\.so)?)/$1/;
+			}
+		elsif (!$enable && $ini->{'enabled'}) {
+			$l =~ s/^\s*(extension\s*=\s*(\S+)(\.so)?)/;$1/;
+			}
+		}
+	&flush_file_lines($ini->{'path'});
+	&unlock_file($ini->{'path'});
+	}
+}
+
+# php_module_packages(mod, version, version-from-filename)
+# Returns possible package names for a given PHP module and PHP version
+sub php_module_packages
+{
+my ($m, $fullver, $filever) = @_;
+&foreign_require("software");
+my $ver = $fullver;
+$ver =~ s/^(\d+\.\d+)\..*$/$1/;
+my $nodotphpver = $ver;
+$nodotphpver =~ s/\.//;
+my @poss;
+if ($software::update_system eq "csw") {
+	# On Solaris, packages are named like php52_mysql
+	push(@poss, "php".$nodotphpver."_".$m);
+	}
+elsif ($software::update_system eq "ports") {
+	# On FreeBSD, names are like php52-mysql
+	push(@poss, "php".$nodotphpver."-".$m);
+	}
+else {
+	if ($software::update_system eq "apt") {
+		push(@poss, "php".$ver."-".$m);
+		}
+	else {
+		push(@poss, "php".$nodotphpver."-".$m);
+		push(@poss, "php".$nodotphpver."-php-pecl-".$m);
+		}
+	if ($software::update_system eq "apt" && $m eq "pdo_mysql") {
+		# On Debian, the pdo_mysql module is in the mysql module
+		push(@poss, "php".$ver."-mysql", "php-mysql");
+		}
+	elsif ($software::update_system eq "yum" &&
+	       ($m eq "domxml" || $m eq "dom") && $ver >= 5) {
+		# On Redhat, the domxml module is in php-domxml
+		push(@poss, "php".$nodotphpver."-xml", "php-xml");
+		}
+	if ($ver =~ /\./ && $software::update_system eq "yum") {
+		# PHP 5.3+ packages from software collections are
+		# named like php54-php-mysql or sometimes even
+		# php54-php-mysqlnd
+		unshift(@poss, "php".$nodotphpver."-php-".$m);
+		unshift(@poss, "rh-php".$nodotphpver."-php-".$m);
+		if ($m eq "mysql") {
+			unshift(@poss, "rh-php".$nodotphpver.
+					   "-php-mysqlnd");
+			}
+		}
+	elsif ($software::update_system eq "yum" &&
+	       $fullphpver =~ /^5\.3/) {
+		# If PHP 5.3 is being used, packages may start with
+		# php53- or rh-php53-
+		my @vposs = grep { /^php5-/ } @poss;
+		push(@poss, map { my $p = $_;
+				  $p =~ s/php5/php53/;
+				  ($p, "rh-".$p) } @vposs);
+		}
+	unshift(@poss, "php-".$m) if (!$filever);
+	}
+return @poss;
+}
+
+# list_php_base_packages()
+# Returns a list of hash refs, one per PHP version installed, with the
+# following keys :
+# name - Package name
+# system - Package system
+# ver - Package version
+# phpver - PHP version
+sub list_php_base_packages
+{
+&foreign_require("software");
+my $n = &software::list_packages();
+my @rv;
+my %done;
+for(my $i=0; $i<$n; $i++) {
+	my $name = $software::packages{$i,'name'};
+	next unless ($name =~ /^((?:rh-)?(php(?:\d[\d.]*)??)(?:-php)?-common|php\d*[\d.]*)$/);
+	$name = $2 || $1;
+	my ($phpver, $shortver, $bin) =
+		&get_php_info($name, $software::packages{$i,'version'});
+	push(@rv, { 'name' => $software::packages{$i,'name'},
+		    'system' => $software::packages{$i,'system'},
+		    'ver' => $software::packages{$i,'version'},
+		    'shortver' => $shortver,
+		    'phpver' => $phpver,
+		    'binary' => $bin, });
+	}
+# Fill in missing binary path for the default version that is later discarded
+# from the view
+my %bin;
+foreach my $pkg (@rv) {
+	$pkg->{'binary'} ||= $bin{$pkg->{'shortver'}};
+	$bin{$pkg->{'shortver'}} ||= $pkg->{'binary'};
+	}
+# Sort and remove duplicates
+@rv = sort { $b->{'name'} cmp $a->{'name'} } @rv;
+@rv = grep { !$done{$_->{'shortver'}}++ } @rv;
+return sort { &compare_version_numbers($a->{'ver'}, $b->{'ver'}) } @rv;
+}
+
+# list_all_php_module_packages(base-package)
+# Returns all install packages for PHP extensions of a given base package
+sub list_all_php_module_packages
+{
+my ($base) = @_;
+$base =~ s/-common$//;
+my @rv;
+&foreign_require("software");
+my $n = &software::list_packages();
+for(my $i=0; $i<$n; $i++) {
+	my $name = $software::packages{$i,'name'};
+	next if ($name !~ /^\Q$base\E-/);
+	push(@rv, { 'name' => $name,
+		    'system' => $software::packages{$i,'system'},
+		    'ver' => $software::packages{$i,'version'},
+		  });
+	}
+return @rv;
+}
+
+# list_available_php_packages()
+# Returns a list of hash refs, one per PHP version available, with the
+# following keys :
+# name - Package name
+# ver - Package version
+# shortver - Short PHP version
+# phpver - PHP version
+sub list_available_php_packages
+{
+&foreign_require("package-updates");
+my @rv;
+foreach my $pkg (&package_updates::list_available()) {
+	my $name = $pkg->{'name'};
+	next unless ($name =~ /^((?:rh-)?(php(?:\d[\d.]*)??)(?:-php)?-common|php\d*[\d.]*)$/);
+	$name = $2 || $1;
+	# Skip the standard php-common meta package on Debian and Ubuntu, which
+	# never have a dash
+	next if ($pkg->{'system'} eq 'apt' &&
+		 $pkg->{'name'}   eq 'php-common' &&
+		 $pkg->{'version'} !~ /-/);
+	my ($phpver, $shortver, $bin) = &get_php_info($name, $pkg->{'version'});
+	push(@rv, { 'name' => $pkg->{'name'},
+		    'ver' => $pkg->{'version'},
+		    'shortver' => $shortver,
+                    'phpver' => $phpver,
+		  });
+	}
+return sort { &compare_version_numbers($a->{'ver'}, $b->{'ver'}) } @rv;
+}
+
+# list_best_available_php_packages()
+# Returns the best available PHP package for the system prioritizing common
+# packages on Linux distributions and normal PHP package name on FreeBSD
+sub list_best_available_php_packages
+{
+my @rv = &list_available_php_packages();
+my %best;
+foreach my $pkg (@rv) {
+	$best{$pkg->{'shortver'}} //= $pkg;
+	$best{$pkg->{'shortver'}} = $pkg if ($pkg->{'name'} =~ /-common$/);
+	}
+@rv = values(%best) if (%best);
+return sort { &compare_version_numbers($a->{'ver'}, $b->{'ver'}) } @rv;
+}
+
+# get_virtualmin_php_map()
+# Return a hash mapping PHP versions like 5 or 7.2 to a list of domains, or
+# undef if Virtualmin isn't installed
+sub get_virtualmin_php_map
+{
+my %vmap;
+&foreign_check("virtual-server") || return undef;
+&foreign_require("virtual-server");
+foreach my $d (&virtual_server::list_domains()) {
+	my $v = $d->{'php_mode'} eq 'fpm' ? $d->{'php_fpm_version'}
+					  : $d->{'php_version'};
+	if ($v) {
+		$vmap{$v} ||= [ ];
+		push(@{$vmap{$v}}, $d);
+		}
+	}
+return \%vmap;
+}
+
+# list_all_php_version_packages(&base-pkg)
+# Returns all package names for installed packages related to one PHP package,
+# such as those for extensions
+sub list_all_php_version_packages
+{
+my ($pkg) = @_;
+&foreign_require("software");
+my @rv = map { $_->{'name'} }
+	     &list_all_php_module_packages($pkg->{'name'});
+my $base = $pkg->{'name'};
+$base =~ s/-php-common$//;
+$base =~ s/-common$//;
+my @poss = ( $base."-runtime", $base );
+foreach my $p (@poss) {
+	my @info = &software::package_info($p);
+	next if (!@info);
+	push(@rv, $p);
+	}
+return @rv;
+}
+
+# extend_installable_php_packages(&packages)
+# Given a list of PHP packages to install, create a new list with the version
+# and name to include packages that also need to be installed, such as -cli or
+# -fpm.
+sub extend_installable_php_packages
+{
+my ($pkgs) = @_;
+my @pkgs;
+my @extra = ('cli', 'fpm');
+foreach my $pkg (@{$pkgs}) {
+	my $p = { 'name' => $pkg->{'name'},
+		  'ver'  => $pkg->{'shortver'} };
+	$p->{'name'} .= ' '.join(' ', map { "$1-$_" } @extra)
+		if ($p->{'name'} =~ /^(.*)-common$/);
+	push(@pkgs, $p);
+	}
+return @pkgs;
+}
+
+# delete_php_base_package(&package, &installed)
+# Delete a PHP package, and return undef on success or an error on failure
+sub delete_php_base_package
+{
+my ($pkg, $installed) = @_;
+my @targets = &list_all_php_version_packages($pkg);
+my $deb_want_deps = (grep { $_ eq 'php-common' } @targets) && @{$installed} > 1;
+foreach my $p (@targets) {
+	my @info = &software::package_info($p);
+	next if (!@info);
+	my $err = &software::delete_package($p,
+		{ nodeps => 1,
+		  purge => 1,
+		  ( !$deb_want_deps ? ( depstoo => 1 ) : () ) });
+	return &html_strip($err) if ($err);
+	}
+return undef;
 }
 
 1;

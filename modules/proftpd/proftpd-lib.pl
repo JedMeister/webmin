@@ -5,6 +5,40 @@ BEGIN { push(@INC, ".."); };
 use WebminCore;
 &init_config();
 
+# Check if a list of supported modules needs to be built. This is done
+# if the ProFTPd binary changes, when Webmin is upgraded
+my @st = stat($config{'proftpd_path'});
+my %oldsite;
+&read_file("$module_config_directory/site", \%site);
+if ($oldsite{'size'} != $st[7] ||
+    !$oldsite{'version'} ||
+    !$oldsite{'fullversion'} ||
+    $oldsite{'webmin'} != &get_webmin_version()) {
+	# Check if it really is proftpd and the right version
+	my ($ver, $fullver) = &get_proftpd_version(\$out);
+	if ($ver) {
+		# Store the detected versions
+		my %site;
+		$site{'size'} = $st[7];
+		$site{'version'} = $ver;
+		$site{'fullversion'} = $fullver;
+		$site{'webmin'} = &get_webmin_version();
+
+		# Get the list of modules
+		my @mods;
+		open(MODS, "$config{'proftpd_path'} -vv 2>/dev/null |");
+		while(<MODS>) {
+			s/\r|\n//g;
+			if (/^\s*(?<mod_built_in>\S+)\.c$|\s*(?<mod_loaded>mod_[a-zA-Z0-9_]+)\//) {
+				push(@mods, $+{mod_loaded} || $+{mod_built_in});
+				}
+			}
+		close(MODS);
+		$site{'modules'} = join(" ", @mods);
+		&write_file("$module_config_directory/site", \%site);
+		}
+	}
+
 # Load the site-specific information on the server executable
 &read_file("$module_config_directory/site", \%site);
 @ftpaccess_files = split(/\s+/, $site{'ftpaccess'});
@@ -302,18 +336,15 @@ return @rv;
 # Displays a 2-column list of options, for use inside a table
 sub generate_inputs
 {
-local($e, $sw, @args, @rv, $func);
-foreach $e (@{$_[0]}) {
-	if (!$sw) { print "<tr>\n"; }
-
+my ($edits, $dirs) = @_;
+foreach my $e (@$edits) {
 	# Build arg list for the editing function. Each arg can be a single
 	# directive struct, or a reference to an array of structures.
-	$func = "edit";
-	undef(@args);
-	foreach $ed (split(/\s+/, $e->{'name'})) {
-		local(@vals);
+	my $func = "edit";
+	my @args;
+	foreach my $ed (split(/\s+/, $e->{'name'})) {
 		$func .= "_$ed";
-		@vals = &find_directive_struct($ed, $_[1]);
+		my @vals = &find_directive_struct($ed, $_[1]);
 		if ($e->{'multiple'}) { push(@args, \@vals); }
 		elsif (!@vals) { push(@args, undef); }
 		else { push(@args, $vals[$#vals]); }
@@ -321,25 +352,15 @@ foreach $e (@{$_[0]}) {
 	push(@args, $e);
 
 	# call the function
-	@rv = &$func(@args);
+	my @rv = &$func(@args);
 	if ($rv[0] == 2) {
 		# spans 2 columns..
-		if ($sw) {
-			# need to end this row
-			print "<td colspan=2></td> </tr><tr>\n";
-			}
-		else { $sw = !$sw; }
-		print "<td valign=top width=25%><b>$rv[1]</b></td>\n";
-		print "<td nowrap valign=top colspan=3 width=75%>$rv[2]</td>\n";
+		print &ui_table_row($rv[1], $rv[2], 3);
 		}
 	else {
 		# only spans one column
-		print "<td valign=top width=25%><b>$rv[1]</b></td>\n";
-		print "<td nowrap valign=top width=25%>$rv[2]</td>\n";
+		print &ui_table_row($rv[1], $rv[2], 1);
 		}
-
-	if ($sw) { print "</tr>\n"; }
-	$sw = !$sw;
 	}
 }
 
@@ -372,12 +393,7 @@ for($i=0; $i<@chname; $i++) {
 # opt_input(value, name, default, size, [units])
 sub opt_input
 {
-return sprintf "<input type=radio name=$_[1]_def value=1 %s> $_[2]\n".
-	       "<input type=radio name=$_[1]_def value=0 %s>\n".
-	       "<input name=$_[1] size=$_[3] value='%s'> %s\n",
-	defined($_[0]) ? "" : "checked",
-	defined($_[0]) ? "checked" : "",
-	$_[0], $_[4];
+return &ui_opt_textbox($_[1], $_[0], $_[3], $_[2]).($_[4] ? " ".$_[4] : "");
 }
 
 # parse_opt(name, regexp, error)
@@ -399,11 +415,8 @@ sub choice_input
 local($i, $rv);
 for($i=3; $i<@_; $i++) {
 	$_[$i] =~ /^([^,]*),(.*)$/;
-	$rv .= sprintf "<input type=radio name=$_[1] value=\"$2\" %s> $1\n",
-		lc($2) eq lc($_[0]) ||
-		lc($2) eq 'on' && lc($_[0]) eq 'yes' ||
-		lc($2) eq 'off' && lc($_[0]) eq 'no' ||
-		!defined($_[0]) && lc($2) eq lc($_[2]) ? "checked" : "";
+	$rv .= &ui_oneradio($_[1], $2, $1, lc($2) eq lc($_[0]) ||
+				!defined($_[0]) && lc($2) eq lc($_[2]))."\n";
 	}
 return $rv;
 }
@@ -415,9 +428,8 @@ sub choice_input_vert
 local($i, $rv);
 for($i=3; $i<@_; $i++) {
 	$_[$i] =~ /^([^,]*),(.*)$/;
-	$rv .= sprintf "<input type=radio name=$_[1] value=\"$2\" %s> $1<br>\n",
-		lc($2) eq lc($_[0]) || !defined($_[0]) &&
-				       lc($2) eq lc($_[2]) ? "checked" : "";
+	$rv .= &ui_oneradio($_[1], $2, $1, lc($2) eq lc($_[0]) ||
+			    !defined($_[0]) && lc($2) eq lc($_[2]))."<br>\n";
 	}
 return $rv;
 }
@@ -432,15 +444,16 @@ else { return ( [ $in{$_[0]} ] ); }
 # select_input(value, name, default, [choice]+)
 sub select_input
 {
-local($i, $rv);
-$rv = "<select name=\"$_[1]\">\n";
+my($i, @sel);
+my $selv;
 for($i=3; $i<@_; $i++) {
 	$_[$i] =~ /^([^,]*),(.*)$/;
-	$rv .= sprintf "<option value=\"$2\" %s>$1</option>\n",
-		lc($2) eq lc($_[0]) || !defined($_[0]) && lc($2) eq lc($_[2]) ? "selected" : "";
+	if (lc($2) eq lc($_[0]) || !defined($_[0]) && lc($2) eq lc($_[2])) {
+		$selv = $2;
+		}
+	push(@sel, [ $2, $1 || "&nbsp;" ]);
 	}
-$rv .= "</select>\n";
-return $rv;
+return &ui_select($_[1], $selv, \@sel, 1);
 }
 
 # parse_choice(name, default)
@@ -800,17 +813,21 @@ else {
 }
 
 # get_proftpd_version([&output])
+# Returns the proftpd version as a decimal, like 1.36
 sub get_proftpd_version
 {
-local $out = &backquote_command("$config{'proftpd_path'} -v 2>&1");
-${$_[0]} = $out if ($_[0]);
+my ($rv) = @_;
+my $out = &backquote_command("$config{'proftpd_path'} -v 2>&1");
+my @rv;
+$$rv = $out if ($rv);
 if ($out =~ /ProFTPD\s+Version\s+(\d+)\.([0-9\.]+)/i ||
     $out =~ /ProFTPD\s+(\d+)\.([0-9\.]+)/i) {
-	local ($v1, $v2) = ($1, $2);
+	my $fullver = $1.".".$2;
+	my ($v1, $v2) = ($1, $2);
 	$v2 =~ s/\.//g;
-	return "$v1.$v2";
+	@rv = ("$v1.$v2", $fullver);
 	}
-return undef;
+return wantarray ? @rv : $rv[0];
 }
 
 # apply_configuration()
@@ -824,7 +841,8 @@ local $st = &find_directive("ServerType", $conf);
 if ($st eq 'inetd') {
 	return $text{'stop_einetd'};
 	}
-if (&get_proftpd_version() > 1.22) {
+my $ver = $site{'version'} || &get_proftpd_version();
+if ($ver > 1.22) {
 	# Stop and re-start
 	local $err = &stop_proftpd();
 	return $err if ($err);

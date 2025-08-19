@@ -36,6 +36,7 @@ my ($configref, $file, $module, $canconfig, $cbox, $section) = @_;
 my %config = %$configref;
 
 my $auto = $gconfig{"langauto_$remote_user"};
+my $neutral = $gconfig{"langneutral_$remote_user"};
 if (!defined($auto)) {
 my $glangauto = $gconfig{'langauto'};
 if (defined($glangauto)) {
@@ -55,6 +56,8 @@ foreach $o (@lang_order_list) {
 	&read_file("$file.$o", \%info, \@info_order);
 	&read_file("$file.$o.auto", \%info, \@info_order)
 		if ($auto && -r "$file.$o.auto");
+	&read_file("$file.$o.neutral", \%info, \@info_order)
+		if ($neutral && -r "$file.$o.neutral");
 	}
 
 # Call any config pre-load function
@@ -405,6 +408,51 @@ if (-r $module_prefs_conf) {
 		}
 	&unlock_file($user_prefs_file);
 	}
+}
+
+# hidden_config_cparams(&in)
+# Return HTML for hidden inputs for params to pass back to whatever linked
+# to config.cgi
+sub hidden_config_cparams
+{
+my ($in) = @_;
+my $rv = "";
+foreach my $k (keys %$in) {
+	next if ($k !~ /^(_cparam_|_cscript)/);
+	foreach my $v (split(/\0/, $in{$k})) {
+		$rv .= &ui_hidden($k, $v)."\n";
+		}
+	}
+return $rv;
+}
+
+# link_config_cparams(module, &in, [add-cparam])
+# Returns a URL to link to after the config is saved
+sub link_config_cparams
+{
+my ($m, $in, $keep) = @_;
+my $url = "/$m/";
+my @w;
+if ($in->{'_cscript'}) {
+	if ($keep) {
+		push(@w, "_cscript=".&urlize($in->{'_cscript'}));
+		}
+	else {
+		$url .= $in->{'_cscript'};
+		}
+	}
+foreach my $k (keys %$in) {
+	if ($k =~ /^_cparam_(.*)$/) {
+		$n = $1;
+		foreach my $v (split(/\0/, $in{$k})) {
+			push(@w, &urlize($keep ? $k : $n)."=".&urlize($v));
+			}
+		}
+	}
+if (@w) {
+	$url .= "?".join("&", @w);
+	}
+return $url;
 }
 
 1;

@@ -18,7 +18,6 @@ index_restart=Redémarrer Usermin
 index_restartmsg=Cliquez sur ce bouton pour redémarrer le processus du serveur Usermin. Il se peut que ce soit nécessaire si vous avez récemment procédé à une mise à niveau de Perl.
 
 access_title=Contrôle d'accès IP
-access_desc=Le serveur Usermin peut être configuré pour interdire ou autoriser l'accès uniquement à partir de certaines adresses IP à l'aide de ce formulaire. Il est également posible de saisir des noms d'hôtes (comme titi.toto.com) et des réseaux IP (comme 10.254.3.0 ou 10.254.1.0/255.255.255.128). Vous devriez limiter l'accès à votre serveur aux adresses de confiance, en particulier s'il est accessible depuis Internet. Autrement, quiconque devine votre mot de passe peut avoir un contrôle complet de votre système.
 
 bind_title=Ports et adresses
 bind_desc2=Ce formulaire peut être utilisé pour changer le numéro de port sur lequel Usermin écoute ou ne lui faire écouter qu'une seule adresse IP sur votre système. Vous pouvez également le configurer pour accepter des connexions sur des ports multiples ou pour écouter sur plusieurs adresses IP. Remarque : votre navigateur web peut émettre une invite pour vous connecter à nouveau après avoir changé le port ou lié l'adresse.
@@ -119,7 +118,7 @@ configs_return=à la configuration du module Usermin
 configs_prefs=Les utilisateurs peuvent-ils modifier les préférences ?
 configs_sels=Seulement sélectionnés ..
 configs_global=Configuration globale du module
-configs_globaldesc=Les paramètres de ce formulaire s'appliquent à tous les utilisateurs du module et, en général,  activent les options relatives aux programmes et fichiers qu'il utilise.
+configs_globaldesc=Les paramètres de ce formulaire s'appliquent à tous les utilisateurs du module et, en général, activent les options relatives aux programmes et fichiers qu'il utilise.
 configs_user=Préférences utilisateurs par défaut
 configs_userdesc=Les paramètres de ce formulaire définissent les options par défaut pour les préférences de ce module modifiables par les utilisateurs . Sauf si vous le spécifiez, ils peuvent être modifiées par les utilisateurs.
 
@@ -253,7 +252,7 @@ upgrade_title=Mise à niveau de Usermin
 upgrade_title2=Installer Usermin
 upgrade_desc=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Usermin vers une nouvelle version. Vous pouvez installer à partir d'un fichier local, d'un fichier déposé sur le serveur ou à partir de la toute dernière version sur <a href=http://www.usermin.com/>www.usermin.com</a>. Tout comme pour une mise à niveau manuelle, tous vos paramètres de configuration et les modules tiers seront conservés.
 upgrade_descrpm=Ce formulaire vous permet de mettre à niveau la totalité de votre installation Usermin vers une nouvelle version à l'aide de l'option de mise à niveau de RPM. Vous pouvez effectuer l'installation à partir d'un fichier RPM local, d'un fichier téléchargé ou de la toute dernière version sur <a href=http://www.usermin.com/>www.usermin.com</a>. Tout comme pour une une mise à niveau manuelle, tous vos paramètres de configuration et les modules tiers seront conservés.
-upgrade_descdeb=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Usermin  en mettant à jour son paquet Debian. Vous pouvez installer à partir d'un fichier local .deb, téléchargé ou à partir de la dernière version sur <a href=http://www.usermin.com/>www.usermin.com</a>. Tous vos paramètres de configuration ainsi que vos modules seront conservés, de la même manière qu'avec une mise à jour manuelle.
+upgrade_descdeb=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Usermin en mettant à jour son paquet Debian. Vous pouvez installer à partir d'un fichier local .deb, téléchargé ou à partir de la dernière version sur <a href=http://www.usermin.com/>www.usermin.com</a>. Tous vos paramètres de configuration ainsi que vos modules seront conservés, de la même manière qu'avec une mise à jour manuelle.
 upgrade_local=À partir d'un fichier local
 upgrade_uploaded=À partir d'un fichier déposé sur le serveur
 upgrade_url=À partir de l'URL ftp ou http
@@ -484,7 +483,6 @@ descs_title=Titres de modules
 descs_info=Cette page vous permet de spécifier un autre titre pour les modules Usermin, de passer outre à leur descriptions standards.
 
 advanced_title=Options avancées
-advanced_pass=Rendre le mot de passe disponible aux programmes Usermin ?<br><font size=-1>(Ne fonctionne pas quand la session d'authentification est activée)</font>
 
 blocked_title=Utilisateurs et serveur bloqués
 blocked_none=Aucun serveur ou utilisateur n'est pour l'instant bloqué par Usermin

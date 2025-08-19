@@ -1,6 +1,6 @@
-os_support=*-linux
-version=2.102
-longdesc=Access disk devices across the network using the iSCSI protocol.
 desc=iSCSI Client
+os_support=*-linux
 category=hardware
-depends=fdisk mount lvm 2.102
+longdesc=Access disk devices across the network using the iSCSI protocol.
+depends=fdisk mount lvm 2.402
+version=2.402

@@ -18,7 +18,7 @@ index_restart=Restart Usermin
 index_restartmsg=Click this button to re-start the Usermin server process. This may be necessary if you have recently upgraded Perl.
 
 access_title=IP Access Control
-access_desc=The Usermin server can be configured to deny or allow access only from certain IP addresses using this form. Hostnames (like foo.bar.com) and IP networks (like 10.254.3.0 or 10.254.1.0/255.255.255.128 or 10.254.1.0/25 or 10.254.1.5-10.254.97.127) can also be entered. You should limit access to your server to trusted addresses, especially if it is accessible from the Internet. Otherwise, anyone who guesses your password will have complete control of your system.
+access_desc=Usermin can be configured to deny or allow access only from certain IP addresses using this form. Hostnames (like foo.bar.com) and IP networks (like 10.254.3.0 or 10.254.1.0/255.255.255.128 or 10.254.1.0/25 or 10.254.1.5-10.254.97.127) can also be entered. You should limit access to Usermin to trusted addresses, especially if it is accessible from the Internet. Otherwise, anyone who guesses your password will have complete control of your system.
 
 bind_title=Ports and Addresses
 bind_desc2=This form can be used to change the port number that Usermin listens on, or have it listen on only a single IP address on your system. You can also configure it to accept connections on multiple ports, or to listen on several IP addresses. Note - your web browser may prompt you to log in again after changing the port or binding address.
@@ -57,8 +57,8 @@ lang_title2=Usermin Language and Locale
 lang_intro=This page allows you to choose which language Usermin will use for displaying titles, prompts and messages
 
 session_title=Authentication
+session_header=Authentication and session options
 session_desc1=When enabled, password timeouts protect your Usermin server from brute-force password cracking attacks by adding a continuously expanding delay between each failed login attempt for the same user.
-session_desc2=When session authentication is enabled, each logged in users' session will be tracked by Usermin, making it possible for idle users to be automatically logged out. Be aware that enabling or disabling session authentication may force all users to re-login.
 session_remember=Offer to remember login permanently?
 session_hostname=Show hostname on login screen?
 session_realname=Show real hostname instead of name from URL?
@@ -79,6 +79,7 @@ session_blank=Prompt users with empty password to choose one at first login?
 session_homedir=Create missing home directories after login?
 session_homedir_perms=Permissions for new directory
 session_ehomedir_perms=Missing or invalid octal home directory permissions
+session_forgot=Allow forgotten password recovery?
 
 themes_title=Usermin Themes
 themes_desc=Themes control the appearance of the Usermin user interface, including icons, colours, backgrounds and possibly the layout of pages. The selection box below can be used to choose one of the themes installed on your system that will be the default for Usermin users.
@@ -250,6 +251,12 @@ ui_hnm1=Hostname from URL
 ui_hnm2=Domain name from URL
 ui_hnm3=Other name..
 ui_tabs=Categorize modules?
+ui_show=Display on the dashboard​
+ui_show_host=System hostname
+ui_show_os=Operating system
+ui_show_ver=Usermin version
+ui_show_tver=Theme version
+ui_show_time=Time on system
 
 upgrade_title=Upgrade Usermin
 upgrade_title2=Install Usermin
@@ -486,7 +493,8 @@ descs_title=Module Titles
 descs_info=This page allows you to specify alternate titles for Usermin modules, to override their standard descriptions.
 
 advanced_title=Advanced Options
-advanced_pass=Make password available to Usermin programs?<br><font size=-1>(Does not work when session authentication is enabled)</font>
+advanced_pass_desc=Make password available to Usermin programs?
+advanced_pass_help=Does not work when session authentication is enabled
 
 blocked_title=Blocked Hosts and Users
 blocked_none=No hosts or users are currently blocked by Usermin.

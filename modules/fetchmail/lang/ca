@@ -8,7 +8,6 @@ index_run=Comprova tots els servidors
 index_global=Edita els valors per defecte.
 index_user=Usuari Unix
 index_conf=Configuració de Fetchmail
-index_ok=Afegeix servidor Fetchmail per a:
 index_file=Configuració Fetchmail de $1
 index_return=a la llista de servidors
 index_start=Inicia el Dimoni de Fetchmail
@@ -123,7 +122,7 @@ cron_user=Executa Fetchmail com a usuari
 cron_err=No s'ha pogut desar la comprovació planificada
 cron_efile=Hi falta el nom del fitxer de sortida o bé és invàlid
 cron_email=Hi falta l'adreça de correu o bé és invàlida
-cron_euser=Hi falta l'usuari Unix  o bé és invàlid
+cron_euser=Hi falta l'usuari Unix o bé és invàlid
 cron_errors=Dóna un missatge només si es produeix un error
 cron_ecannot2=No tens permís per configurar la comprovació planificada
 

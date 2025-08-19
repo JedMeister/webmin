@@ -88,6 +88,7 @@ while(my $l = <$fh>) {
 		$user{'modules'} = $acl{$user[0]};
 		$user{'lang'} = $gconfig{"lang_$user[0]"};
 		$user{'langauto'} = $gconfig{"langauto_$user[0]"};
+		$user{'langneutral'} = $gconfig{"langneutral_$user[0]"};
 		$user{'locale'} = $gconfig{"locale_$user[0]"};
 		$user{'dateformat'} = $gconfig{"dateformat_$user[0]"};
 		$user{'notabs'} = $gconfig{"notabs_$user[0]"};
@@ -104,6 +105,7 @@ while(my $l = <$fh>) {
 			[ split(/\s+/, $gconfig{"ownmods_$user[0]"} || "") ];
 		$user{'logouttime'} = $logout{$user[0]};
 		$user{'real'} = $gconfig{"realname_$user[0]"};
+		$user{'email'} = $user[14];
 		push(@rv, \%user);
 		}
 	}
@@ -482,7 +484,8 @@ else {
 		($user->{'temppass'} || ""),":",
 		($user->{'twofactor_provider'} || ""),":",
 		($user->{'twofactor_id'} || ""),":",
-		($user->{'twofactor_apikey'} || ""),
+		($user->{'twofactor_apikey'} || ""),":",
+		($user->{'email'} || ""),
 		"\n");
 	&close_tempfile($fh);
 	&unlock_file($miniserv{'userfile'});
@@ -625,7 +628,8 @@ else {
 	delete($miniserv{"preroot_".$username});
 	if ($user->{'theme'}) {
 		$miniserv{"preroot_".$user->{'name'}} =
-		  $user->{'theme'}.($user->{'overlay'} ? " ".$user->{'overlay'} : "");
+		  $user->{'theme'}.($user->{'overlay'} ?
+		  	" ".$user->{'overlay'} : "");
 		}
 	elsif (defined($user->{'theme'})) {
 		$miniserv{"preroot_".$user->{'name'}} = "";
@@ -672,7 +676,8 @@ else {
 				$user->{'temppass'},":",
 				$user->{'twofactor_provider'},":",
 				$user->{'twofactor_id'},":",
-				$user->{'twofactor_apikey'},
+				$user->{'twofactor_apikey'},":",
+				$user->{'email'},
 				"\n");
 			}
 		else {
@@ -703,11 +708,17 @@ else {
 	delete($gconfig{"lang_".$username});
 	$gconfig{"lang_".$user->{'name'}} = $user->{'lang'} if ($user->{'lang'});
 	delete($gconfig{"langauto_".$username});
-	$gconfig{"langauto_".$user->{'name'}} = $user->{'langauto'} if (defined($user->{'langauto'}));
+	$gconfig{"langauto_".$user->{'name'}} = $user->{'langauto'}
+		if (defined($user->{'langauto'}));
+	delete($gconfig{"langneutral_".$username});
+	$gconfig{"langneutral_".$user->{'name'}} = $user->{'langneutral'}
+		if (defined($user->{'langneutral'}));
 	delete($gconfig{"locale_".$username});
-	$gconfig{"locale_".$user->{'name'}} = $user->{'locale'} if (defined($user->{'locale'}));
+	$gconfig{"locale_".$user->{'name'}} = $user->{'locale'}
+		if (defined($user->{'locale'}));
 	delete($gconfig{"dateformat_".$username});
-	$gconfig{"dateformat_".$user->{'name'}} = $user->{'dateformat'} if (defined($user->{'dateformat'}));
+	$gconfig{"dateformat_".$user->{'name'}} = $user->{'dateformat'}
+		if (defined($user->{'dateformat'}));
 	delete($gconfig{"notabs_".$username});
 	$gconfig{"notabs_".$user->{'name'}} = $user->{'notabs'}
 		if ($user->{'notabs'});
@@ -720,7 +731,8 @@ else {
 	delete($gconfig{"theme_".$username});
 	if ($user->{'theme'}) {
 		$gconfig{"theme_".$user->{'name'}} =
-		  $user->{'theme'}.($user->{'overlay'} ? " ".$user->{'overlay'} : "");
+		  $user->{'theme'}.($user->{'overlay'} ?
+		  	" ".$user->{'overlay'} : "");
 		}
 	elsif (defined($user->{'theme'})) {
 		$gconfig{"theme_".$user->{'name'}} = '';
@@ -1299,6 +1311,19 @@ foreach my $u (split(/\s+/, $access{'users'})) {
 return 0;
 }
 
+=head2 can_module_acl(&mod)
+
+Returns 1 if the given module has ability to manage its own ACLs.
+
+=cut
+sub can_module_acl
+{
+my ($mod) = @_;
+my $mdir = &module_root_directory($mod);
+return 1 if (-f "$mdir/acl_security.pl" || -f "$mdir/config.info");
+return 0;
+}
+
 =head2 open_session_db(\%miniserv)
 
 Opens the session database, and ties it to the sessiondb hash. Parameters are :
@@ -1395,20 +1420,20 @@ foreach my $s (keys %sessiondb) {
 dbmclose(%sessiondb);
 }
 
-=head2 create_session_user(\%miniserv, user)
+=head2 create_session_user(\%miniserv, user, [lifetime])
 
 Creates a new session ID that's already logged in as the given user
 
 =cut
 sub create_session_user
 {
-my ($miniserv, $username) = @_;
+my ($miniserv, $username, $lifetime) = @_;
 return undef if (&is_readonly_mode());
 &open_session_db($miniserv);
 my $sid = &generate_random_session_id();
 return undef if (!$sid);
 my $t = time();
-$sessiondb{$sid} = "$username $t 127.0.0.1";
+$sessiondb{$sid} = "$username $t 127.0.0.1".($lifetime ? " ".$lifetime : "");
 dbmclose(%sessiondb);
 return $sid;
 }
@@ -1701,7 +1726,7 @@ elsif ($mode == 2) {
 	}
 else {
 	# Try detecting system default first
-	if (&foreign_available('useradmin')) {
+	if (&foreign_installed('useradmin')) {
 		&foreign_require('useradmin');
 		return &useradmin::encrypt_password($pass, $salt, 1);
 		}
@@ -2310,6 +2335,36 @@ if (!$sid) {
 	$sid = substr($sid, $offset, 32);
 	}
 return $sid eq 'bad' ? undef : $sid;
+}
+
+# generate_random_id()
+# Generate an ID string that can be used for a password reset link
+sub generate_random_id
+{
+if (open(my $RANDOM, "</dev/urandom")) {
+	my $sid;
+	my $tmpsid;
+	if (read($RANDOM, $tmpsid, 16) == 16) {
+		$sid = lc(unpack('h*',$tmpsid));
+		}
+	close($RANDOM);
+	return $sid;
+	}
+return undef;
+}
+
+# obsfucate_email(email)
+# Convert an email like foo@bar.com to f**@b**.com
+sub obsfucate_email
+{
+my ($email) = @_;
+my ($mailbox, $dom) = split(/\@/, $email);
+$mailbox = substr($mailbox, 0, 1) . ("*" x (length($mailbox)-1));
+my @doms;
+foreach my $d (split(/\./, $dom)) {
+	push(@doms, substr($d, 0, 1) . ("*" x (length($d)-1)));
+	}
+return $mailbox."\@".join(".", @doms);
 }
 
 1;

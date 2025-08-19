@@ -9,10 +9,35 @@ $pragma_no_cache = 1;
 #$ENV{'MINISERV_INTERNAL'} || die "Can only be called by miniserv.pl";
 &init_config();
 &ReadParse(undef, undef, undef, 2);
+
+# Redirect to the forgot page that this theme supports if generate in SPA theme
+if ($gconfig{'forgot_pass'} && $ENV{'REQUEST_URI'}) {
+	my ($forgot_id) = $ENV{'REQUEST_URI'} =~ /[?&]forgot=([0-9a-fA-F]{32})/;
+	if ($forgot_id) {
+		&redirect("@{[&get_webprefix()]}/forgot.cgi?id=$forgot_id");
+		return;
+		}
+	}
+
+# Redirect to forgot form if return param is set from SPA theme
+if ($gconfig{'forgot_pass'} && $ENV{'REQUEST_URI'} &&
+    $ENV{'REQUEST_URI'} =~ /[?&]return=(http?\S+)/) {
+	&redirect("@{[&get_webprefix()]}/forgot_form.cgi");
+	return;
+	}
+
+# If accessed via HTTPS, make this an SSL-only cookie
+&get_miniserv_config(\%miniserv);
+$sec = uc($ENV{'HTTPS'}) eq 'ON' ? "; secure" : "";
+if (!$miniserv{'no_httponly'}) {
+	$sec .= "; httpOnly";
+	}
+
+# Login banner
 if ($gconfig{'loginbanner'} && $ENV{'HTTP_COOKIE'} !~ /banner=1/ &&
     !$in{'logout'} && !$in{'failed'} && !$in{'timed_out'}) {
 	# Show pre-login HTML page
-	print "Set-Cookie: banner=1; path=/\r\n";
+	print "Set-Cookie: banner=1; path=/".$sec."\r\n";
 	&PrintHeader();
 	$url = $in{'page'};
 	open(BANNER, "<$gconfig{'loginbanner'}");
@@ -23,15 +48,10 @@ if ($gconfig{'loginbanner'} && $ENV{'HTTP_COOKIE'} !~ /banner=1/ &&
 	close(BANNER);
 	return;
 	}
-&get_miniserv_config(\%miniserv);
-$sec = uc($ENV{'HTTPS'}) eq 'ON' ? "; secure" : "";
-if (!$miniserv{'no_httponly'}) {
-	$sec .= "; httpOnly";
-}
 $sidname = $miniserv{'sidname'} || "sid";
-print "Set-Cookie: banner=0; path=/$sec\r\n" if ($gconfig{'loginbanner'});
-print "Set-Cookie: $sidname=x; path=/$sec\r\n" if ($in{'logout'});
-print "Set-Cookie: testing=1; path=/$sec\r\n";
+print "Set-Cookie: banner=0; path=/".$sec."\r\n" if ($gconfig{'loginbanner'});
+print "Set-Cookie: $sidname=x; path=/".$sec."\r\n" if ($in{'logout'});
+print "Set-Cookie: testing=1; path=/".$sec."\r\n";
 $title = $text{'session_header'};
 if ($gconfig{'showhost'}) {
         $title = &get_display_hostname()." : ".$title;
@@ -48,8 +68,9 @@ if ($tconfig{'inframe'}) {
 
 print "<center>\n";
 if (&miniserv_using_default_cert()) {
-    print "<h3>",&text('defcert_error',
-    	ucfirst(&get_product_name()), ($ENV{'MINISERV_KEYFILE'} || $miniserv{'keyfile'})),"</h3><p></p>\n";
+	print &ui_alert_box(&text('defcert_error',
+		ucfirst(&get_product_name()),
+		($ENV{'MINISERV_KEYFILE'} || $miniserv{'keyfile'})), 'warn');
 	}
 if (defined($in{'failed'})) {
 	if ($in{'twofactor_msg'}) {
@@ -110,8 +131,24 @@ print &ui_table_end(),"\n";
 print &ui_submit($text{'session_login'});
 print &ui_reset($text{'session_clear'});
 print &ui_form_end();
-print "</center>\n";
 
+if ($gconfig{'forgot_pass'}) {
+	# Show forgotten password link
+	my $link = &get_webmin_base_url();
+	my $param = '';
+	if ($link) {
+		my $src_link = ($ENV{'HTTPS'} eq 'ON'
+			? 'https'
+			: 'http').'://'.$ENV{'HTTP_HOST'};
+		$src_link .= ($gconfig{'webprefix'} || '')."/";
+		$param = "?return=".&urlize($src_link);
+		}
+	print &ui_form_start($link."forgot_form.cgi".$param, "post");
+	print &ui_hidden("failed", $in{'failed'});
+	print &ui_form_end([ [ undef, $text{'session_forgot'} ] ]);
+	}
+
+print "</center>\n";
 print "$text{'session_postfix'}\n";
 
 # Output frame-detection Javascript, if theme uses frames

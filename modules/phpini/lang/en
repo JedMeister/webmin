@@ -5,10 +5,12 @@ index_efiles2=No PHP configuration files were found. Adjust the <a href='$1'>mod
 index_file=Configuration file
 index_desc=Purpose
 index_actions=Actions
-index_edit=Manage
+index_medit=Manage
 index_manual=Edit Manually
-index_anyfile=Edit other PHP configuration file:
+index_anyfile=Edit other PHP configuration file
 index_return=configuration files
+index_pkgs=Manage PHP Packages
+index_pkgsdesc=Install and remove PHP versions from your system's software package repository, so that they can be configured here any used in Virtualmin.
 
 file_global=Global PHP configuration
 file_eread=Failed to read $1 : $2
@@ -24,6 +26,7 @@ list_efile=File to edit must be an absolute path
 list_return=PHP configuration
 list_format_ini=INI format
 list_format_fpm=FPM format
+list_bin=PHP version $2 at $1
 
 vars_title=PHP Variables
 vars_header=PHP variable creation and quoting options
@@ -38,14 +41,11 @@ dirs_title=Directory Settings
 dirs_header=PHP script and extension directory settings
 dirs_include=Search directories for includes
 dirs_below=Listed below..
-dirs_ext=Directory for extensions
-dirs_exts=Extensions to load
 dirs_upload=Allow file uploads?
 dirs_utmp=Temporary directory for uploaded files
 dirs_err=Failed to save directory settings
 dirs_eincs=No include search directories entered
 dirs_eutmp=Missing or invalid temporary files directory
-dirs_eext=Missing extensions directory
 
 db_title=Database Settings
 db_header1=MySQL database connection settings
@@ -152,6 +152,49 @@ misc_path=CGI Fix Path Info?
 misc_timezone=PHP Timezone
 misc_charset=Default character set
 
+disable_title=Disabled Features
+disable_header=Disabled PHP functions and features
+disable_funcs=Disabled functions
+disable_exec=exec (Execute command)
+disable_passthru=passthru (Execute command and display output)
+disable_shell_exec=shell_exec (Execute command via shell)
+disable_system=system (Execute command and display output)
+disable_proc_open=proc_open (Execute command and capture input and output)
+disable_popen=popen (Open pipe to executed command)
+disable_curl_exec=curl_exec (Execute a URL download session)
+disable_curl_multi_exec=curl_multi_exec (Execute multiple URL download sessions)
+disable_parse_ini_file=parse_ini_file (Read PHP INI file)
+disable_show_source=show_source (Output file with PHP syntax highlighting)
+disable_mail=mail (Send email)
+disable_leftover=Other functions:
+disable_err=Failed to save disabled features
+disable_classes=Disabled built-in classes
+
+mods_title=PHP Extensions
+mods_edir=Could not find PHP extensions directory!
+mods_ecannot=You are not allowed to edit enabled PHP extensions
+mods_desc=This page can be used to globally enable and disable PHP version $1 extensions for all users on this system.
+mods_enabled=Enabled?
+mods_name=Extension name
+mods_file=Config file
+mods_pkg=Package
+mods_idesc=PHP extensions that are not yet installed on this system can be installed from the configured software package repositories.
+mods_newpkg=Add PHP extension
+mods_install=Install Now
+mods_err=Failed to save PHP extensions
+mods_egetver=Could not figure out PHP version for config file $1
+mods_egetbin=Could not figure out PHP binary for config file $1
+mods_return=PHP extensions
+
+imod_title=Install PHP Module
+imod_err=Failed to install PHP module
+imod_emod=No PHP module entered
+imod_alldoing=Installing PHP module $1 for PHP version $2 ..
+imod_alreadygot=PHP module $1 is already installed
+imod_alldone=.. the PHP module was successfully installed from package $1 and is now available for use.
+imod_allfailed=.. no software packages for the specified PHP module could be installed, despite trying $1
+imod_missing=.. install completed, but the PHP module was not detected.
+
 log_manual=Manually edit file $1
 log_vars=Changed PHP variables in $1
 log_dirs=Changed directory settings in $1
@@ -161,6 +204,9 @@ log_safe=Changed safe mode options in $1
 log_limits=Changed resource limits in $1
 log_errors=Changed error logging in $1
 log_misc=Changed other settings in $1
+log_mods=Updated enabled modules in $1
+log_imod=Installed PHP module $2 in $1
+log_delete_dpkgs=Uninstalled $1 PHP packages
 
 acl_global=Can edit global PHP configuration?
 acl_anyfile=Can edit any file as a PHP configuration?
@@ -170,5 +216,33 @@ acl_user=Read and write files as user
 
 opt_default=Default Value: <tt>$1</tt>
 opt_default_unknown=Unknown
+
+pkgs_title=PHP Packages
+pkgs_name=Package name
+pkgs_ver=Package version
+pkgs_phpver=PHP version
+pkgs_bin=Executable
+pkgs_shortver=Short version
+pkgs_users=Used by
+pkgs_delete=Delete Selected Packages
+pkgs_none=No PHP packages were found on your system!
+pkgs_none2=No PHP versions were found on your system. Click the button below to install one, if available in your software package repository.
+pkgs_ecannot=You are not allowed to manage PHP packages!
+pkgs_ecannot2=Software packages cannot be managed on this system
+pkgs_nousers=No domains
+pkgs_ucount=$1 domains
+pkgs_newver=PHP package to install
+pkgs_install=Install Now
+pkgs_return=PHP packages
+
+dpkgs_err=Failed to delete PHP packages
+dpkgs_title=Deleting PHP Packages
+dpkgs_doing=Uninstalling package $1 and modules for PHP version $2 ..
+dpkgs_failed=.. failed : $1
+dpkgs_done=.. uninstalled successfully
+dpkgs_enone=No packages selected
+dpkgs_eexists=Package does not exist!
+dpkg_eusers=Package for PHP version $1 cannot be uninstalled, as it is still being used by $2 domains
+dpkgs_rusure=Are you sure you want to remove the selected PHP packages : $1
 
 __norefs=1

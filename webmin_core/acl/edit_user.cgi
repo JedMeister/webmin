@@ -159,6 +159,10 @@ print &ui_table_row($text{'edit_pass'},
 print &ui_table_row($text{'edit_real'},
 	&ui_textbox("real", $user{'real'}, 60));
 
+# Contact email for recovery
+print &ui_table_row($text{'edit_email'},
+	&ui_textbox("email", $user{'email'}, 60));
+
 # Storage type
 if ($in{'user'}) {
 	print &ui_table_row($text{'edit_proto'},
@@ -392,6 +396,7 @@ foreach my $c (sort { $b cmp $a } @cats) {
 	my @grid = ( );
 	my $sw = 0;
 	foreach my $m (@cmlist) {
+		next if ($m->{'noacl'});
 		my $md = $m->{'dir'};
 		my $fromgroup = $memg &&
 				&indexof($md, @{$memg->{'modules'}}) >= 0;
@@ -403,7 +408,8 @@ foreach my $c (sort { $b cmp $a } @cats) {
 			}
 		elsif ($mcan{$md}) {
 			my $label;
-			if ($access{'acl'} && $in{'user'} && !$safe) {
+			if ($access{'acl'} && $in{'user'} && !$safe &&
+			    &can_module_acl($m)) {
 				# Show link for editing ACL
 				$label = ui_link("edit_acl.cgi?" .
 				     "mod=" . urlize($m->{'dir'}) .
@@ -454,6 +460,9 @@ if ($in{'user'}) {
 		}
 	if ($access{'switch'} && $main::session_id && $in{'user'} ne $remote_user) {
 		push(@buts, [ "but_switch", $text{'edit_switch'} ]);
+		}
+	if ($gconfig{'forgot_pass'}) {
+		push(@buts, [ "but_forgot", $text{'edit_forgot'} ]);
 		}
 	if ($access{'delete'}) {
 		push(@buts, [ "but_delete", $text{'delete'} ]);

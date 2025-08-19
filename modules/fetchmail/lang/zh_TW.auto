@@ -1,4 +1,5 @@
 index_active=活性？
+index_fadd=為用戶新增 Fetchmail 伺服器
 index_cron=預定檢查
 index_crondesc=單擊此按鈕可以創建，更改或刪除Cron作業，以使Fetchmail按計劃自動運行，以使用上述配置檢查和下載電子郵件。
 index_crondesc2=單擊此按鈕可以創建，更改或刪除Cron作業，以使Fetchmail按計劃自動運行，以檢查和下載所有列出的用戶的電子郵件。
@@ -9,8 +10,11 @@ index_show=節目
 index_toomany=您的系統上有太多用戶無法顯示。
 
 poll_auth=身份驗證方法
+poll_folder=要檢查的 IMAP 資料夾
+poll_inbox=預設（收件匣）
 poll_usually=通常沒有
 poll_ssl=以SSL模式連接？
+poll_efolder=缺少資料夾名稱
 poll_eboth=將消息保留在服務器上並始終提取所有消息的選項不兼容
 poll_eusername=用戶不存在！
 poll_foruser=對於用戶 $1

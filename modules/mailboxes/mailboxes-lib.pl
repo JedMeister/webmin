@@ -605,7 +605,7 @@ if ($config{'webmin_from'} =~ /\@/) {
 	return $config{'webmin_from'};
 	}
 elsif (!$config{'webmin_from'}) {
-	return "webmin\@$host";
+	return "webmin-noreply\@$host";
 	}
 else {
 	return "$config{'webmin_from'}\@$host";
@@ -1122,7 +1122,7 @@ foreach my $folder (&list_user_folders($user)) {
 			&unlink_file($ifile);
 			}
 		else {
-			&unlink_file(glob("$ifile.{dir,pag,db}"));
+			&unlink_file(glob("\Q$ifile\E.{dir,pag,db}"));
 			}
 		&unlink_file("$ifile.ids");
 		}
@@ -1136,7 +1136,7 @@ foreach my $folder (&list_user_folders($user)) {
 		&unlink_file($ifile);
 		}
 	else {
-		&unlink_file(glob("$ifile.{dir,pag,db}"));
+		&unlink_file(glob("\Q$ifile\E.{dir,pag,db}"));
 		}
 	}
 # Remove read file
@@ -1145,7 +1145,7 @@ if (-r $read) {
 	&unlink_file($read);
 	}
 else {
-	&unlink_file(glob("$read.{dir,pag,db}"));
+	&unlink_file(glob("\Q$read\E.{dir,pag,db}"));
 	}
 }
 
@@ -1221,7 +1221,7 @@ foreach my $mail (@mail) {
 		}
 
 	# Date and size columns
-	push(@cols, &eucconv_and_escape(&simplify_date($mail->{'header'}->{'date'})));
+	push(@cols, &simplify_date($mail->{'header'}->{'date'}));
 	push(@cols, &nice_size($mail->{'size'}, 1024));
 	$rowtds[$#cols] .= " data-sort=".&parse_mail_date($mail->{'header'}->{'date'});
 
@@ -1280,11 +1280,10 @@ sub user_read_dbm_file
 {
 my ($user) = @_;
 my $rv = "$module_config_directory/$user.read";
-if (!glob($rv."*")) {
+if (!glob("\Q$rv\E.*")) {
 	$rv = "$module_var_directory/$user.read";
 	}
 return $rv;
 }
 
 1;
-

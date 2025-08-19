@@ -153,6 +153,49 @@ if ($pinfo[6]) {
 
 print &ui_table_end();
 
+# Dependencies, if we can get them
+my @deps = defined(&package_dependencies) ?
+		&package_dependencies($name, $ver) : ( );
+if (@deps) {
+	my $dtable = &ui_columns_start([ $text{'edit_dname'},
+					 $text{'edit_dtype'},
+					 $text{'edit_dvers'} ]);
+	foreach my $d (@deps) {
+		my @row;
+		if ($d->{'package'}) {
+			push(@row, &ui_link("edit_pack.cgi?package=".
+				&urlize($d->{'package'}), $d->{'package'}));
+			push(@row, $text{'edit_dpackage'});
+			}
+		elsif ($d->{'file'}) {
+			push(@row, &ui_link("file_info.cgi?file=".
+				&urlize($d->{'file'}), $d->{'file'}));
+			push(@row, $text{'edit_dfile'});
+			}
+		elsif ($d->{'library'}) {
+			push(@row, $d->{'library'});
+			push(@row, $text{'edit_dlibrary'});
+			}
+		else {
+			push(@row, $d->{'other'});
+			push(@row, $text{'edit_dother'});
+			}
+		if ($d->{'version'}) {
+			push(@row, (!$d->{'compare'} || $d->{'compare'} eq '=' ?
+				    '' : $d->{'compare'}.' ').$d->{'version'});
+			}
+		else {
+			push(@row, "");
+			}
+		$dtable .= &ui_columns_row(\@row);
+		}
+	$dtable .= &ui_columns_end();
+	print &ui_hidden_table_start($text{'edit_deps'}, "width=100%", 2,
+				     "deps", 0);
+	print &ui_table_row(undef, $dtable, 2);
+	print &ui_hidden_table_end();
+	}
+
 return @pinfo;
 }
 
@@ -200,7 +243,7 @@ sub missing_install_link
 local ($name, $desc, $return, $returndesc) = @_;
 return undef if (!defined(&update_system_resolve));
 return undef if (!&foreign_check($module_name));
-local $pkg = &update_system_resolve($name);
+local ($pkg, $flags) = &update_system_resolve($name);
 return undef if (!$pkg);
 local ($cpkg) = caller();
 local $caller = eval '$'.$cpkg.'::module_name';
@@ -208,6 +251,7 @@ return &ui_form_start("@{[&get_webprefix()]}/$module_name/install_pack.cgi", "ge
        &text('missing_msg', $desc, $text{$update_system."_name"})."\n".
        &ui_hidden("source", 3).
        &ui_hidden("update", $pkg).
+       &ui_hidden("flags", $flags).
        &ui_hidden("return", $return).
        &ui_hidden("returndesc", $returndesc).
        &ui_hidden("caller", $caller).

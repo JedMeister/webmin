@@ -5,6 +5,8 @@ client_enis=Схоже, на вашому пристрої не встановл
 switch_srcs=Джерела даних
 switch_return=послуги клієнтів
 
+order_=&nbsp;
+
 security_domain=Домен NIS
 
 eswitch_title=Служба редагування
@@ -16,7 +18,7 @@ eswitch_1=Друге джерело даних
 eswitch_2=Третє джерело даних
 eswitch_3=Четверте джерело даних
 eswitch_4=П'яте джерело даних
-eswitch_nth=Джерело даних $1 
+eswitch_nth=Джерело даних $1
 eswitch_success=На успіх
 eswitch_notfound=Якщо не знайдено
 eswitch_unavail=Якщо немає

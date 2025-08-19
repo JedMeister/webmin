@@ -1,5 +1,5 @@
 index_title=Usermin 設定
-index_econfig=Usermin 設定 ディレクトリー $1 あなたの システムにみつかりません。 おそらく Usermin がインストールされていないか,  あなたの<a href='$2'>module configuration</a>  が正しくありません.
+index_econfig=Usermin 設定 ディレクトリー $1 あなたの システムにみつかりません。 おそらく Usermin がインストールされていないか, あなたの<a href='$2'>module configuration</a> が正しくありません.
 index_return=Usermin 設定
 index_stop=Usermin をストップ
 index_stopmsg=Click this button to stop the Usermin server running on your system. Once stopped, no users will be able to login to it.
@@ -14,7 +14,6 @@ index_deb=Usermin Debian パッケージ導入
 index_restart=Usermin の再起動
 
 access_title=IP アクセス コントロール
-access_desc=The Usermin server can be configured to deny or allow access only from certain IP addresses using this form. Hostnames (like foo.bar.com) and IP networks (like 10.254.3.0 or 10.254.1.0/255.255.255.128 or 10.254.1.0/25 or 10.254.1.5-10.254.97.127) can also be entered. You should limit access to your server to trusted addresses, especially if it is accessible from the Internet. Otherwise, anyone who guesses your password will have complete control of your system.
 
 bind_title=ポートとアドレス
 
@@ -333,7 +332,6 @@ dav_eusers=ユーザが入力されていません
 descs_title=モジュール表題
 
 advanced_title=先進的なオプション
-advanced_pass=Usermin プログラムにパスワードを有効にしますか？<br><font size=-1>(セッション認証が有効でないと機能しません)</font>
 
 blocked_title=ブロックされたホストとユーザ
 blocked_user=Usermin ユーザ

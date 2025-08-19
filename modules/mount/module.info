@@ -1,10 +1,10 @@
-api_os_support=macos
-version=2.102
-longdesc=Mount filesystems and swap files usually configured in /etc/fstab or /etc/vfstab.
 name=Disk Manager
-os_support=*-linux solaris freebsd hpux openbsd netbsd 
-readonly=1
-desc=Disk and Network Filesystems
 category=system
+os_support=*-linux solaris freebsd hpux openbsd netbsd 
+api_os_support=macos
+desc=Disk and Network Filesystems
+depends=proc 2.402
+longdesc=Mount filesystems and swap files usually configured in /etc/fstab or /etc/vfstab.
+readonly=1
 novserver=1
-depends=proc 2.102
+version=2.402

@@ -163,6 +163,24 @@ if ($key) {
 return $out;
 }
 
+# resolve_current_value(parameter_name)
+# Returns the value of the parameter, with compatibility-level conditionals
+sub resolve_current_value
+{
+my ($parameter_name) = @_;
+
+my $raw_value = &get_current_value($parameter_name);
+my $compatibility_level = &get_current_value("compatibility_level");
+
+if ($raw_value =~ /\{\{\$compatibility_level\}\s*([<>=!]+)\s*\{(\d+)\}\s*\?\s*\{(.*?)\}\s*:\s*\{(.*?)\}\}/) {
+	my ($op, $lvl, $tval, $fval) = ($1, $2, $3, $4);
+	return undef if ($op !~ /^([<>]=?|==|!=)$/);
+	return eval "\$compatibility_level $op $lvl" ? $tval : $fval;
+	}
+
+return $raw_value;
+}
+
 # if_default_value(parameter_name)
 # returns if the value is the default value
 sub if_default_value
@@ -224,11 +242,10 @@ sub set_current_value
     }
     else
     {
-        local ($out, $ex);
-	$ex = &execute_command(
+	my $out = &backquote_logged(
 		"$config{'postfix_config_command'} -c $config_dir ".
-		"-e $_[0]=".quotemeta($value), undef, \$out, \$out);
-	$ex && &error(&text('query_set_efailed', $_[0], $_[1], $out).
+		"-e $_[0]=".quotemeta($value)." 2>&1");
+	$? && &error(&text('query_set_efailed', $_[0], $_[1], $out).
 		      "<br> $config{'postfix_config_command'} -c $config_dir ".
 		     "-e $_[0]=\"$value\" 2>&1");
         &unflush_file_lines($config{'postfix_config_file'}); # Invalidate cache
@@ -251,7 +268,6 @@ sub check_postfix
 }
 
 # reload_postfix()
-#
 sub reload_postfix
 {
     if (is_postfix_running())
@@ -420,7 +436,7 @@ sub option_freefield
 sub option_yesno
 {
     my $name = $_[0];
-    my $v = &get_current_value($name);
+    my $v = &resolve_current_value($name);
     my $key = 'opts_'.$name;
 
     print &ui_table_row(defined($_[1]) ? &hlink($text{$key}, "opt_".$name)
@@ -815,6 +831,7 @@ sub get_maps
 		    &open_readfile(MAPS, $maps_file);
 		    my $i = 0;
 		    my $cmt;
+		    my $lastmap;
 		    while (<MAPS>)
 		    {
 			s/\r|\n//g;	# remove newlines
@@ -822,8 +839,8 @@ sub get_maps
 			    # A comment line
 			    $cmt = &is_table_comment($_);
 			    }
-			elsif (/^\s*(\/[^\/]*\/[a-z]*)\s+(.*)/ ||
-			       /^\s*([^\s]+)\s+(.*)/) {
+			elsif (/^(\/[^\/]*\/[a-z]*)\s+(.*)/ ||
+			       /^([^\s]+)\s+(.*)/) {
 			    # An actual map
 			    $number++;
 			    my %map;
@@ -838,6 +855,12 @@ sub get_maps
 			    $map{'cmt'} = $cmt;
 			    push(@{$maps_cache{$_[0]}}, \%map);
 			    $cmt = undef;
+			    $lastmap = \%map;
+			    }
+			elsif (/^\s+(\S.*$)/ && $lastmap) {
+			    # Continuation line
+			    $lastmap->{'value'} .= " ".$1;
+			    $lastmap->{'eline'} = $i;
 			    }
 			else {
 			    $cmt = undef;
@@ -1450,6 +1473,15 @@ foreach my $l (split(/\r?\n/, $out)) {
 				$q->{'time'} = $t;
 				}
 			}
+		foreach my $dir (&list_mailq_directories()) {
+			my $f = substr($q->{'id'}, 0, 1);
+			my $path = "$config{'mailq_dir'}/$dir/$f/$q->{'id'}";
+			if (-r $path) {
+				$q->{'dir'} = $dir;
+				$q->{'file'} = $file;
+				last;
+				}
+			}
 		push(@qfiles, $q);
 		}
 	elsif ($l =~ /\((.*)\)/ && @qfiles) {
@@ -1462,18 +1494,18 @@ foreach my $l (split(/\r?\n/, $out)) {
 return @qfiles;
 }
 
+sub list_mailq_directories
+{
+return ("active", "incoming", "deferred", "corrupt", "hold", "maildrop");
+}
+
 # parse_queue_file(id)
 # Parses a postfix mail queue file into a standard mail structure
 sub parse_queue_file
 {
-local @qfiles = ( &recurse_files("$config{'mailq_dir'}/active"),
-		  &recurse_files("$config{'mailq_dir'}/incoming"),
-		  &recurse_files("$config{'mailq_dir'}/deferred"),
-		  &recurse_files("$config{'mailq_dir'}/corrupt"),
-		  &recurse_files("$config{'mailq_dir'}/hold"),
-		  &recurse_files("$config{'mailq_dir'}/maildrop"),
-		);
-local $f = $_[0];
+local ($f) = @_;
+local @qfiles = map { &recurse_files("$config{'mailq_dir'}/$_") }
+		    &list_mailq_directories();
 local ($file) = grep { $_ =~ /\/$f$/ } @qfiles;
 return undef if (!$file);
 local $mode = 0;
@@ -1504,6 +1536,12 @@ close(QUEUE);
 $mail->{'headers'} = \@headers;
 foreach $h (@headers) {
 	$mail->{'header'}->{lc($h->[0])} = $h->[1];
+	}
+$mail->{'file'} = $file;
+my @st = stat($file);
+$mail->{'last_retry'} = $st[9];
+if ($file =~ /^\Q$config{'mailq_dir'}\E\/([^\/]+)\//) {
+	$mail->{'dir'} = $1;
 	}
 return $mail;
 }
@@ -1857,11 +1895,12 @@ foreach my $q (@$qfiles) {
 		      'value' => $q->{'id'} });
 	push(@cols, &ui_link("view_mailq.cgi?id=$q->{'id'}",$q->{'id'}));
 	local $size = &nice_size($q->{'size'});
-	push(@cols, "<font size=1>$q->{'date'}</font>");
-	push(@cols, "<font size=1>".&html_escape($q->{'from'})."</font>");
-	push(@cols, "<font size=1>".&html_escape($q->{'to'})."</font>");
-	push(@cols, "<font size=1>$size</font>");
-	push(@cols, "<font size=1>".&html_escape($q->{'status'})."</font>");
+	push(@cols, $q->{'date'});
+	push(@cols, &html_escape($q->{'from'}));
+	push(@cols, &html_escape($q->{'to'}));
+	push(@cols, $size);
+	push(@cols, $text{'mailq_'.$q->{'dir'}} || $q->{'dir'});
+	push(@cols, &html_escape($q->{'status'}));
 	push(@table, \@cols);
 	}
 
@@ -1878,7 +1917,8 @@ print &ui_form_columns_table("delete_queues.cgi",
 	undef,
 	undef,
 	[ "", $text{'mailq_id'}, $text{'mailq_date'}, $text{'mailq_from'},
-          $text{'mailq_to'}, $text{'mailq_size'}, $text{'mailq_status'} ],
+          $text{'mailq_to'}, $text{'mailq_size'}, $text{'mailq_dir'},
+	  $text{'mailq_status'} ],
 	100,
 	\@table);
 }
@@ -2279,7 +2319,6 @@ return 1;
 sub supports_map_type
 {
 local ($type) = @_;
-return 1 if ($type eq 'hash');	# Assume always supported
 if (!scalar(@supports_map_type_cache)) {
 	@supports_map_type = ( );
 	open(POSTCONF, "$config{'postfix_config_command'} -m |");
@@ -2328,8 +2367,9 @@ return ( "permit_mynetworks",
 		"reject_unknown_reverse_client_hostname",
 	 "permit_sasl_authenticated",
 	 "reject_unauth_destination",
-	 "check_relay_domains",
-	 "permit_mx_backup" );
+	 &compare_version_numbers($postfix_version, 3.9) < 0 ?
+		("check_relay_domains", "permit_mx_backup") : ( ),
+       );
 }
 
 # list_client_restrictions()
@@ -2422,6 +2462,12 @@ foreach $f (readdir(DIR)) {
 	push(@rv, "$cdir/$f");
 	}
 closedir(DIR);
+
+# Add TLS files
+foreach my $o ("smtpd_tls_cert_file", "smtpd_tls_key_file","smtpd_tls_CAfile") {
+	my $v = &get_current_value($o);
+	push(@rv, $v) if ($v);
+	}
 
 return &unique(@rv);
 }

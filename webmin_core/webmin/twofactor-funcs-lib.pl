@@ -5,8 +5,8 @@
 # containing an ID, name and URL for more info
 sub list_twofactor_providers
 {
-return ( [ 'totp', 'Google Authenticator',
-	   'http://en.wikipedia.org/wiki/Google_Authenticator' ],
+return ( [ 'totp', $text{'twofactor_totp'},
+	   'https://en.wikipedia.org/wiki/Time-based_one-time_password' ],
 	 [ 'authy', 'Authy',
 	   'http://www.authy.com/' ] );
 }
@@ -160,13 +160,6 @@ else {
 # Checks that the needed Perl module for TOTP is installed.
 sub validate_twofactor_apikey_totp
 {
-my ($miniserv, $in) = @_;
-eval "use Authen::OATH";
-if ($@) {
-	return &text('twofactor_etotpmodule', 'Authen::OATH',
-	    "../cpan/download.cgi?source=3&cpan=Authen::OATH&mode=2&".
-	    "return=/$module_name/&returndesc=".&urlize($text{'index_return'}))
-	}
 return undef;
 }
 
@@ -229,32 +222,58 @@ return undef;
 sub message_twofactor_totp
 {
 my ($user) = @_;
-my $name = &urlize(&get_display_hostname() . " (" . $user->{'name'} . ")");
-my $url = "https://chart.googleapis.com/chart".
-	  "?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/".
-	  $name."%3Fsecret%3D".$user->{'twofactor_id'};
+my $name = &get_display_hostname()." (".$user->{'name'}.")";
+my $str = "otpauth://totp/".$name."?secret=".$user->{'twofactor_id'};
+my $url;
+if (&can_generate_qr()) {
+	if (&get_product_name() eq 'usermin') {
+		$url = "qr.cgi?size=6&str=".&urlize($str);
+		}
+	else {
+		$url = "$gconfig{'webprefix'}/webmin/qr.cgi?".
+		       "size=6&str=".&urlize($str);
+		}
+	}
+else {
+	$url = "https://api.qrserver.com/v1/create-qr-code/?".
+	       "size=200x200&data=".&urlize($str);
+	}
 my $rv;
 $rv .= &text('twofactor_qrcode', "<tt>$user->{'twofactor_id'}</tt>")."<p>\n";
 $rv .= "<img src='$url' border=0><p>\n";
 return $rv;
 }
 
-# validate_twofactor_totp(id, token, apikey)
-# Checks the validity of some token with google authenticator
+# validate_twofactor_totp(id, token)
+# Checks the validity of some token with TOPT
 sub validate_twofactor_totp
 {
-my ($id, $token, $apikey) = @_;
+my ($id, $token) = @_;
 $id =~ /^[A-Z0-9=]+$/i || return $text{'twofactor_etotpid'};
+$id = &decode_base32($id);
 $token =~ /^\d+$/ || return $text{'twofactor_etotptoken'};
-eval "use Authen::OATH";
-if ($@) {
-	return &text('twofactor_etotpmodule2', 'Authen::OATH');
-	}
-my $secret = &decode_base32($id);
-my $oauth = Authen::OATH->new();
+eval "use lib (\"$root_directory/vendor_perl\")";
+eval "use Digest::HMAC_SHA1 qw/ hmac_sha1 /;";
 my $now = time();
+my $totp = sub {
+	my ($secret, $time) = @_;
+	
+	# Compute HMAC-SHA1
+	my $data = pack('H*', sprintf("%016x", int($time / 30)));
+	my $packed_key = pack('H*', unpack("H*", $secret));
+	my $hmac = hmac_sha1($data, $packed_key);
+
+	# Convert HMAC to hexadecimal
+	my $hmac_hex = unpack("H*", $hmac);
+
+	# Generate the TOTP
+	my $offset = hex(substr($hmac_hex, -1));
+	my $part1 = hex(substr($hmac_hex, $offset * 2, 8));
+	my $part2 = hex("7fffffff");
+	return substr(($part1 & $part2), -6);
+	};
 foreach my $t ($now - 30, $now, $now + 30) {
-	my $expected = $oauth->totp($secret, $t);
+	my $expected = $totp->($id, $t);
 	return undef if ($expected eq $token);
 	}
 return $text{'twofactor_etotpmatch'};
@@ -307,6 +326,51 @@ if (!$found && $prov) {
 	}
 &flush_file_lines($miniserv->{'twofactorfile'});
 &unlock_file($miniserv->{'twofactorfile'});
+}
+
+# can_generate_qr()
+# Returns 1 if QR codes can be generated on this system
+sub can_generate_qr
+{
+if (&has_command("qrencode")) {
+	return 1;
+	}
+eval "use Image::PNG::QRCode";
+if (!$@) {
+	return 1;
+	}
+return 0;
+}
+
+# generate_qr_code(string, [block-size])
+# Turn a string into a QR code image, and returns the data and MIME type
+sub generate_qr_code
+{
+my ($str, $size) = @_;
+if (&has_command("qrencode")) {
+	# Use the qrencode shell command
+	my $cmd = "qrencode -o - -t PNG ".quotemeta($str);
+	$cmd .= " -s ".quotemeta($size) if ($size);
+	my ($out, $err);
+	my $ex = &execute_command($cmd, undef, \$out, \$err);
+	if ($ex) {
+		return (undef, $err);
+		}
+	return ($out, "image/png");
+	}
+eval "use Image::PNG::QRCode";
+if (!$@) {
+	# Use a Perl module
+	my $out;
+	Image::PNG::QRCode::qrpng(
+		text => $str,
+		scale => $size || 6,
+		out => \$out,
+		);
+	return ($out, "image/png");
+	}
+return (undef, "QR code generation requires either the qrencode command or ".
+	       "Image::PNG::QRCode Perl module");
 }
 
 1;

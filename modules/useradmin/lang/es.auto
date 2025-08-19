@@ -19,6 +19,7 @@ index_loginsuser=Solo usuario
 index_loginsdesc=Muestra los inicios de sesión recientes de uno o todos los usuarios de Unix que se han conectado a través de SSH o Usermin.
 index_whodesc=Muestra a los usuarios que actualmente están conectados a través de SSH o Usermin.
 
+nologin=Deshabilitar la autenticación de contraseña
 sshkey=Clave pública SSH
 uedit_manual=Directorio
 uedit_allg=Todos los grupos
@@ -47,6 +48,9 @@ gedit_clone=Grupo clon
 
 gsave_egidused2=GID ya está en uso
 
+logins_head=Todos los inicios de sesión registrados para el usuario $1
+logins_head_limit=Los últimos $2 inicios de sesión registrados para el usuario $1
+
 udel_ugroupother=Eliminar el grupo de este usuario en otros módulos.
 
 acl_uedit_gid=Usuarios con GID en rango
@@ -60,13 +64,13 @@ log_ugbatch_l=Archivo de grupo cargado cargado ejecutado ($1 creado, $2 modifica
 log_delete_users=Usuarios eliminados de $1
 log_delete_groups=Grupos $1 eliminados
 
-batch_erename=No está permitido cambiar el nombre de los usuarios en la línea $1 : $2 
-batch_emin=Días mínimos no válidos en línea $1 : $2 
-batch_emax=Días máximos no válidos en línea $1 : $2 
-batch_ewarn=Días de advertencia no válidos en línea $1 : $2 
-batch_einactive=Días inactivos no válidos en línea $1 : $2 
-batch_eexpire=Día de vencimiento no válido en línea $1 : $2 
-batch_echange=Día de cambio de contraseña no válido en línea $1 : $2 
+batch_erename=No está permitido cambiar el nombre de los usuarios en la línea $1 : $2
+batch_emin=Días mínimos no válidos en línea $1 : $2
+batch_emax=Días máximos no válidos en línea $1 : $2
+batch_ewarn=Días de advertencia no válidos en línea $1 : $2
+batch_einactive=Días inactivos no válidos en línea $1 : $2
+batch_eexpire=Día de vencimiento no válido en línea $1 : $2
+batch_echange=Día de cambio de contraseña no válido en línea $1 : $2
 batch_instr=Instrucciones y formato de lote
 batch_header=Opciones de creación, actualización y eliminación de usuarios por lotes
 
@@ -100,14 +104,14 @@ gbatch_header=Opciones de creación, actualización y eliminación de grupos de 
 gbatch_others=¿Crear, modificar o eliminar grupos en otros módulos?
 gbatch_batch=¿Solo actualiza el archivo de grupos cuando se completa el lote?
 gbatch_chgid=¿Cambiar GID en archivos de grupos modificados?
-gbatch_ecaccess=No está permitido crear el grupo en la línea $1 : $2 
-gbatch_emaccess=No está permitido modificar el grupo en la línea $1 : $2 
-gbatch_edaccess=No está permitido eliminar el grupo en la línea $1 : $2 
+gbatch_ecaccess=No está permitido crear el grupo en la línea $1 : $2
+gbatch_emaccess=No está permitido modificar el grupo en la línea $1 : $2
+gbatch_edaccess=No está permitido eliminar el grupo en la línea $1 : $2
 gbatch_created=Grupo creado $1
 gbatch_deleted=Grupo eliminado $1
 gbatch_modified=Grupo modificado $1
-gbatch_enogroup=El grupo no existe en la línea $1 : $2 
+gbatch_enogroup=El grupo no existe en la línea $1 : $2
 gbatch_eprimary=El grupo en la línea $1 no se puede eliminar, ya que es el grupo principal del usuario $2.
-gbatch_egroup=Nombre de grupo duplicado en la línea $1 : $2 
+gbatch_egroup=Nombre de grupo duplicado en la línea $1 : $2
 gbatch_egroupname=Nombre de grupo no válido en la línea $1
-gbatch_erename=No está permitido cambiar el nombre de los grupos en la línea $1 : $2 
+gbatch_erename=No está permitido cambiar el nombre de los grupos en la línea $1 : $2

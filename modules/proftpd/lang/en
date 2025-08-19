@@ -7,8 +7,8 @@ index_apply=Apply Changes
 index_applymsg=Click this button to apply the current configuration by sending a SIGHUP signal to the running ProFTPD process.
 index_applymsg2=Click this button to apply the current configuration by stopping and re-starting ProFTPD.
 index_start=Start Server
-index_startmsg=Click this button to start the FTP server with the current configuration. You can also configure the server to be started automatically when needed using the <a href='$1'>Internet Services</a> module.
-index_startmsg2=Click this button to start the FTP server with the current configuration. You can also configure the server to be started automatically when needed using inetd or some equivalent program.
+index_startmsg=Click this button to start the FTP server with the current configuration.
+index_startmsg2=Click this button to start the FTP server with the current configuration.
 index_stop=Stop Server
 index_stopmsg=Click this button to stop the FTP server, which will prevent any new FTP clients from connecting.
 index_return=main menu
@@ -27,6 +27,8 @@ index_global=Global Configuration
 index_create=Create virtual server
 index_version=ProFTPd version $1
 index_proftpd=ProFTPd
+index_dlheader=Add Options
+index_dlmode=Add options for
 
 efailed=Failed to save $1
 
@@ -37,6 +39,7 @@ type_3=Access Control
 type_4=Miscellaneous
 type_5=User and Group
 type_6=Authentication
+type_7=SSL Options
 
 virt_title=Virtual Server Options
 virt_header1=For $1
@@ -380,6 +383,19 @@ mod_readme_display=Notify user of readme files matching
 mod_readme_none=None
 mod_readme_edisplay=Missing readme files pattern
 
+mod_tls_engine=Enable SSL encryption?
+mod_tls_required=SSL required?
+mod_tls_ctrl=For control channel
+mod_tls_auth=For authentication
+mod_tls_authdata=For authentication and data
+mod_tls_file=SSL certificate file
+mod_tls_efile=SSL certificate file does not exist!
+mod_tls_key=SSL key file
+mod_tls_ekey=SSL key file does not exist!
+mod_tls_ca=SSL CA certificate file
+mod_tls_eca=SSL CA certificate file does not exist!
+mod_tls_none=None set
+
 start_err=Failed to start FTP server
 start_einetd=You cannot start the server daemon when in inetd mode.
 
@@ -410,6 +426,7 @@ ftpindex_addlimit=Add per-command options for ..
 ftpindex_header2=$1 in $2
 ftpindex_return=per-directory options file
 ftpindex_header=For $1
+ftpindex_cmds=FTP commands
 
 find_err=Failed to find options files
 find_eanon=Anonymous FTP is not setup in any virtual server

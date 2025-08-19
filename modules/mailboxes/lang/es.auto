@@ -100,7 +100,17 @@ view_markas1=Leer
 view_markas2=Especial
 view_sub2=Correo electrónico adjunto de $1
 view_egone=Este mensaje ya no existe.
+view_efolder=¡Esta carpeta no existe!
 view_eugone=Este usuario no existe
+view_ical=Evento
+view_ical_when=Cuando
+view_ical_where=Dónde
+view_ical_who=OMS
+view_ical_orginizertime=Tiempo de organizador
+view_ical_orginizername=Nombre del organizador
+view_ical_orginizeremail=Correo electrónico del organizador
+view_ical_attendees=Detalles de los asistentes
+view_ical_desc=Descripción del evento
 
 view_gnupg=Verificación de firma de GnuPG
 view_gnupg_0=La firma por $1 es válida.
@@ -168,7 +178,7 @@ reply_save=Guardar y editar
 send_esubject=Asunto de correo electrónico faltante
 send_title2=Correo guardado
 send_sending=Enviando correo a $1 ..
-send_efile=Error al leer el archivo adjunto $1 : $2 
+send_efile=Error al leer el archivo adjunto $1 : $2
 send_done=.. hecho.
 
 send_epass=No puede firmar un mensaje porque su frase de contraseña aún no se ha configurado en el módulo GnuPG.
@@ -238,14 +248,15 @@ search_elatest=Número de mensajes faltantes o no válidos para buscar
 search_withstatus=, con estado $1
 
 folder_inbox=Bandeja de entrada
-folder_sent=Correo enviado
+folder_sent=Enviado
 folder_drafts=Borradores
 folder_trash=Basura
+folder_spam=Correo basura
 
 detach_err=Error al separar el archivo
 detach_edir=Ningún archivo o directorio para guardar en ingresado
-detach_eopen=Error al abrir $1 : $2 
-detach_ewrite=Error al escribir en $1 : $2 
+detach_eopen=Error al abrir $1 : $2
+detach_ewrite=Error al escribir en $1 : $2
 detach_title=Separar archivo
 detach_ok=Escribió un archivo adjunto en el archivo del lado del servidor $1 ($2).
 
@@ -323,7 +334,7 @@ white_already=La dirección de correo electrónico $1 ya está en la lista de di
 
 ldap_emod=Falta el módulo Perl $1 necesario para conectarse a LDAP
 ldap_econn=Error al conectarse al servidor LDAP $1 puerto $2
-ldap_elogin=Error al enlazar con el servidor LDAP $1 como $2 : $3 
+ldap_elogin=Error al enlazar con el servidor LDAP $1 como $2 : $3
 ldap_ehost=No hay un servidor LDAP configurado en la configuración del módulo
 ldap_eport=No hay un puerto de servidor LDAP válido establecido en la configuración del módulo
 ldap_euser=No hay inicio de sesión LDAP establecido en la configuración del módulo

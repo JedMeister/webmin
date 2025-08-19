@@ -1,33 +1,25 @@
-index_screate=Utwórz nowego bezpiecznego użytkownika.
+edit_email=Adres e-mail kontaktowy
+edit_forgot=Wyślij link do resetowania hasła
 
-edit_title3=Utwórz bezpiecznego użytkownika Webmin
-edit_locale=Widownia
-edit_safe=Poziom uprawnień
-edit_safe0=Nieograniczony
-edit_safe1=Tylko bezpieczne moduły
-edit_unsafe=Zresetuj do nieograniczonego
+save_eemail=Adres e-mail nie może zawierać znaku :
 
-save_eunixname=Nazwa użytkownika „$1” nie jest użytkownikiem systemu Unix, dlatego nie można jej używać w trybie awaryjnym
+log_forgot_send=Wysłano e-mail z resetem hasła dla użytkownika $1 do $2
+log_forgot_reset=Zresetuj hasło dla użytkownika $1 za pomocą adresu e-mail $2
+log_forgot_admin=Administrator wysłał e-mail z resetem hasła dla użytkownika $1 do $2
 
-acl_locale=Czy można zmienić język?
-
-sync_modify=Zmień nazwę pasującego użytkownika Webmin, gdy zmieniona zostanie nazwa użytkownika Uniksa.
-
-sessions_actions=Działania..
-sessions_all=Wszystkie sesje...
-sessions_logouts=Pokaż także wylogowane sesje.
-sessions_state=Stan
-sessions_action=działania
-sessions_this=Ten login
-sessions_in=Zalogowany
-sessions_out=Wylogowano
-sessions_kill=Rozłączyć się..
-
-logins_title=Ostatnie logowanie Webmina
-
-sql_nocache0=Buforuj połączenia z bazą danych
-sql_nocache1=Otwórz nowe połączenie dla każdego wyszukiwania
-sql_timeout_def=Użyj domyślnego limitu czasu połączenia (60 sekund)
-sql_timeout_for=Zamknij połączenia z pamięci podręcznej po
-sql_timeout_secs=sekundy
-sql_etimeout=Limit czasu połączenia w pamięci podręcznej musi być liczbą
+forgot_title=Wyślij link do resetowania hasła
+forgot_err=Nie udało się wysłać linku do resetowania hasła
+forgot_header=Szczegóły łącza do resetowania hasła
+forgot_user=Zresetuj hasło dla użytkownika
+forgot_email=Metoda dostarczania linków
+forgot_email_def=Wyświetl link w Webmin
+forgot_email_sel=Wyślij link e-mailem na adres
+forgot_send=Wyślij link
+forgot_desc=Ta strona umożliwia wygenerowanie lub wysłanie linku, który może zostać użyty do wybrania nowego hasła dla użytkownika Webmin na dowolny adres e-mail. Uważaj, na jaki adres wysyłasz ten link, ponieważ skutecznie przyzna on pełny dostęp do logowania Webmin!
+forgot_adminmsg=Otrzymujesz tę wiadomość e-mail od administratora systemu Webmin w $3, dla loginu $1.\n\nJeśli chcesz kontynuować resetowanie hasła, kliknij ten link:\n$2
+forgot_sending=Wysyłanie wiadomości e-mail z prośbą o zresetowanie hasła dla $2 do $1 ..
+forgot_sent=.. wysłano
+forgot_link=Poniższy link może zostać użyty do zresetowania hasła Webmin dla $1 na następne $2 minuty :
+forgot_enosudo=Sudo nie jest dostępne w tym systemie!
+forgot_ecansudo=Wprowadzony użytkownik nie ma uprawnień sudo
+forgot_eunix=Podany użytkownik obsługujący sudo nie istnieje!

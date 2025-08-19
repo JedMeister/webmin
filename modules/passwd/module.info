@@ -1,9 +1,9 @@
-version=2.102
-longdesc=Change the password of any user on the system.
+category=system
+depends=useradmin 2.402
+desc=Change Passwords
 name=Passwd
 passwd=Change the passwords of Unix users.
+longdesc=Change the password of any user on the system.
 readonly=1
 os_support=!windows
-desc=Change Passwords
-category=system
-depends=useradmin 2.102
+version=2.402

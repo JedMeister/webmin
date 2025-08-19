@@ -1,12 +1,15 @@
 index_zone=존
-index_mem2=<b>실제 메모리 :</b> 총 $1 / $2 사용 가능
-index_mem3=<b>실제 메모리 :</b> 총 $1 / $2 사용 가능 / $3 캐시
-index_swap2=<b>스왑 공간 :</b> 총 $1 / $2 무료
-index_burst=<b>가변 메모리 :</b> 총 $1 
+index_memreal=실제 메모리:
+index_memswap=스왑 공간:
+index_memburst=버스트 가능 메모리:
+index_memtf=전체 $1 / 무료 $2
+index_memtfc=전체 $1 / 여유 $2 / 캐시된 $3
 index_loadname=CPU로드 평균 :
 index_loadnums=$1 (1 분), $2 (5 분), $3 (15 분)
 index_cpuname=CPU 유형 :
 index_inzone=영역 $1 에서
+index_core=$1 코어
+index_cores=$1 코어
 
 stime=시작
 sclass=IO 스케줄링 클래스
@@ -74,7 +77,7 @@ open_desc=세부
 open_fd=파일 디스크립터
 open_listen1=$1 포트에서 수신 대기
 open_listen2=주소 $1 포트 $2 에서 수신 대기 중
-open_recv= $1:$2 에 받기
+open_recv=$1:$2 에 받기
 open_conn=$3 상태에서 $1 에서 $2 (으)로 연결
 open_cwd=현재 디렉토리
 open_rtd=루트 디렉토리
@@ -90,7 +93,7 @@ open_file=통로
 
 trace_title=추적 프로세스
 trace_start=$1 에 대한 시스템 호출 추적을 시작합니다.
-trace_doing=$1 에 대한 시스템 호출 추적  :
+trace_doing=$1 에 대한 시스템 호출 추적 :
 trace_done=.. 프로세스가 종료되었습니다.
 trace_failed=.. 추적이 실패했습니다!
 trace_sorry=이 페이지는 브라우저에서 Java를 지원해야합니다. 텍스트 전용 프로세스 추적을 사용하려면 모듈 구성을 조정하십시오.

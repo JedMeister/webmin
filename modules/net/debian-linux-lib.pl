@@ -254,7 +254,12 @@ if(($cfg->{'vlan'} == 1) && ($gconfig{'os_version'} < 5)) {
 		}
 	}
 if(($cfg->{'vlan'} == 1) && ($cfg->{'mtu'})) {
-	push(@options, ['pre-up', '/sbin/ifconfig '.$cfg->{'physical'}.' mtu '.$cfg->{'mtu'}]);
+	if (&has_command("ip")) {
+		push(@options, ['pre-up', 'ip link set mtu '.$cfg->{'mtu'}.' dev '.$cfg->{'physical'}]);
+		}
+	else {
+		push(@options, ['pre-up', '/sbin/ifconfig '.$cfg->{'physical'}.' mtu '.$cfg->{'mtu'}]);
+		}
 	}
 
 # Find the existing interface section
@@ -276,7 +281,7 @@ foreach $iface (@ifaces) {
 			if ($o->[0] eq 'gateway' ||
 			    $o->[0] eq 'pre-up' && $o->[1] =~ /brctl/ ||
 			    $o->[0] =~ /^(pre-)?up$/ && $o->[1] =~ /ip\s+route/ ||
-			    $o->[0] eq 'post-up' && $o->[1] =~ /iptables-restore/) {
+			    $o->[0] eq 'post-up') {
 				push(@options, $o);
 				}
 			}
@@ -328,9 +333,6 @@ else {
 my @options6;
 my @address6 = @{$cfg->{'address6'}};
 my @netmask6 = @{$cfg->{'netmask6'}};
-if (@address6 || $cfg->{'auto6'}) {
-	push(@options6, ['pre-up', '/sbin/modprobe -q ipv6 ; /bin/true']);
-	}
 if (@address6) {
 	push(@options6, [ "address", shift(@address6) ]);
 	push(@options6, [ "netmask", shift(@netmask6) ]);
@@ -338,7 +340,12 @@ if (@address6) {
 while(@address6) {
 	my $a = shift(@address6);
 	my $n = shift(@netmask6);
-	push(@options6, [ "up","ifconfig $cfg->{'fullname'} inet6 add $a/$n" ]);
+	if (&has_command("ip")) {
+		push(@options6, [ "up", "ip addr add $a/$n dev $cfg->{'fullname'}" ]);
+		}
+	else {
+		push(@options6, [ "up", "ifconfig $cfg->{'fullname'} inet6 add $a/$n" ]);
+		}
 	}
 if ($cfg->{'gateway6'}) {
 	push(@options6, [ "gateway", $cfg->{'gateway6'} ]);
@@ -583,7 +590,7 @@ if (&has_command("hostnamectl")) {
 		       " >/dev/null 2>&1");
 	}
 
-undef(@main::get_system_hostname);      # clear cache
+&get_system_hostname(undef, undef, 2);      # clear cache
 }
 
 # get_domainname()
@@ -843,6 +850,8 @@ while (defined $line) {
 			opendir(SRCDIR, $src);
 			@srcs = grep { /^[a-zA-Z0-9_-]+$/ } readdir(SRCDIR);
 			closedir(SRCDIR);
+			@srcs = map { "$src/$_" } @srcs
+				if (@srcs);
 			}
 		else {
 			@srcs = glob($src);
@@ -984,7 +993,7 @@ while (defined ($line=<OLDCFGFILE>)) {
 		}
 	# inside modify region or not ?
 	elsif ($inside_modify_region == 0) {
-               &print_tempfile(NEWCFGFILE, $line);
+		&print_tempfile(NEWCFGFILE, $line);
 		}
 	else {
 		# should the iface line be changed or the options ?
@@ -997,8 +1006,8 @@ while (defined ($line=<OLDCFGFILE>)) {
                if ($mode == 0 && $new_options_wrote == 0) {
                        $new_options_wrote = 1;
                        foreach $option (@$options) {
-                               my ($param, $value) = @$option;
-                               &print_tempfile(NEWCFGFILE, "\t$param $value\n");
+				my ($param, $value) = @$option;
+				&print_tempfile(NEWCFGFILE,"\t$param $value\n");
 				}
 			}
 		}

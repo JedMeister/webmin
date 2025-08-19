@@ -8,10 +8,6 @@ index_search=Αναζήτηση
 index_zone=Ζώνη
 index_run=Εκτέλεση..
 index_return=λίστα διεργασιών
-index_mem2=<b>Πραγματική μνήμη:</b> $1 σύνολο / $2 ελεύθερα
-index_mem3=<b>Πραγματική μνήμη:</b> $1 σύνολο / $2 ελεύθερα / $3 στην cache
-index_swap2=<b>Χώρος swap:</b> $1 σύνολο / $2 ελεύθερα
-index_burst=<b>Burstable μνήμη:</b> $1 σύνολο
 index_loadname=Μέσοι όροι φόρτου επεξεργαστή:
 index_loadnums=$1 (1 λεπτό) , $2 (5 λεπτά) , $3 (15 λεπτά)
 index_cpuname=Τύπος Επεξεργαστή:
@@ -119,7 +115,7 @@ freebsd_lim=¨οριο μνήμης
 hpux_pri=Προτεραιότητα
 hpux_tty=TTY
 hpux_status=Κατάσταση
-hpux_wchan=Αναμονή για 
+hpux_wchan=Αναμονή για
 hpux_stime=Ξεκίνησε
 
 hpuxstat_0=Μη υπαρκτές
@@ -160,10 +156,10 @@ acl_who1=Τον τρέχων χρήστη Webmin
 acl_who2=Την παρακάτω λίστα ..
 
 kill_kill=Σκότωμα Διεργασίας
-kill_term= Τερματισμός  
-kill_hup=  Επανεκκίνηση   
-kill_stop=    Σταμάτημα    
-kill_cont=  Συνέχεια  
+kill_term=Τερματισμός  
+kill_hup=Επανεκκίνηση   
+kill_stop=Σταμάτημα    
+kill_cont=Συνέχεια  
 
 open_title=Ανοικτά Αρχεία και Συνδέσεις
 open_proc=Για τη διεργασία $1 (PID $2)

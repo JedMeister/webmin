@@ -74,6 +74,8 @@ Redhat Linux Desktop			$1	redhat-linux	10.0	`cat /etc/redhat-release 2>/dev/null
 AlmaLinux				$1	redhat-linux	$1+8.0	`cat /etc/almalinux-release 2>/dev/null` =~ /AlmaLinux.*?([\d\.]+)/i || `cat /etc/redhat-release 2>/dev/null` =~ /AlmaLinux.*?([\d\.]+)/i
 CloudLinux				$1	redhat-linux	$1+8.0	`cat /etc/cloudlinux-release 2>/dev/null` =~ /CloudLinux.*?([\d\.]+)/i || `cat /etc/redhat-release 2>/dev/null` =~ /CloudLinux.*?([\d\.]+)/i
 Rocky Linux				$1	redhat-linux	$1+8.0	`cat /etc/rocky-release 2>/dev/null` =~ /Rocky.*?([\d\.]+)/i || `cat /etc/redhat-release 2>/dev/null` =~ /Rocky.*?([\d\.]+)/i
+openEuler LTS				$1	redhat-linux	sprintf("%d", $1+16.0)	`cat /etc/os-release 2>/dev/null` =~ /openEuler.*?([\d\.]+).*?LTS/i
+openEuler Innovation			$1	redhat-linux	sprintf("%d", $1+16.0)	`cat /etc/os-release 2>/dev/null` =~ /openEuler\s+(?:\d+(?:\.\d+)?)["']?$/i
 AlphaCore Linux			$1	redhat-linux	11.0	`cat /etc/alphacore-release 2>/dev/null` =~ /Alpha\s*Core\s+release\s+(\S+)\s/i
 X/OS Linux				$1	redhat-linux	sprintf("%.1f", 9.0+$1)		`cat /etc/redhat-release /etc/fedora-release 2>/dev/null` =~ /X\/OS.*release\s(\S+)\s/i
 Haansoft Linux			$1	redhat-linux	10.0	`cat /etc/Haansoft-release 2>/dev/null` =~ /Haansoft\s+Linux\s+OS\s+release\s+(\S+)/i
@@ -125,6 +127,7 @@ Ubuntu Linux			$1	debian-linux	9.0	$os_release =~ /Ubuntu\s+(18\.[0-9\.]+)/ || $
 Ubuntu Linux			$1	debian-linux	11.0	$os_release =~ /Ubuntu\s+(20\.[0-9\.]+)/ || $etc_issue =~ /Ubuntu.*\s(20\.[0-9\.]+)\s/i || $etc_issue =~ /Ubuntu\s+focal/i
 Ubuntu Linux			$1	debian-linux	12.0	$os_release =~ /Ubuntu\s+(21\.[0-9\.]+)/ || $etc_issue =~ /Ubuntu.*\s(21\.[0-9\.]+)\s/i || $etc_issue =~ /Ubuntu\s+(hirsute|impish)/i
 Ubuntu Linux			$1	debian-linux	13.0	$os_release =~ /Ubuntu\s+(22\.[0-9\.]+)/ || $etc_issue =~ /Ubuntu.*\s(22\.[0-9\.]+)\s/i || $etc_issue =~ /Ubuntu\s+jammy/i
+Ubuntu Linux			$1	debian-linux	14.0	$os_release =~ /Ubuntu\s+(24\.[0-9\.]+)/ || $etc_issue =~ /Ubuntu.*\s(24\.[0-9\.]+)\s/i || $etc_issue =~ /Ubuntu\s+noble/i
 Ubuntu Linux			$1	debian-linux	3.1	$etc_issue =~ /Ubuntu.*\s([0-9\.]+)\s/i
 Mepis Linux				$1	debian-linux	$1	$etc_issue =~ /MEPIS/ && `cat /etc/debian_version 2>/dev/null` =~ /([0-9\.]+)/
 Mepis Linux				$1	debian-linux	4.0	$etc_issue =~ /MEPIS/ && `cat /etc/debian_version 2>/dev/null` =~ /(stable)/
@@ -132,6 +135,9 @@ Devuan Linux			$1	debian-linux	8.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_ve
 Devuan Linux			$1	debian-linux	9.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(ascii)/i
 Devuan Linux			$1	debian-linux	10.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(beowulf)/i
 Devuan Linux			$1	debian-linux	10.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(ceres)/i
+Devuan Linux			$1	debian-linux	11.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(chimaera)/i
+Devuan Linux			$1	debian-linux	12.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(daedalus)/i
+Devuan Linux			$1	debian-linux	13.0	$etc_issue =~ /Devuan/ && `cat /etc/devuan_version 2>/dev/null` =~ /^(excalibur)/i
 Raspbian Linux			$1	debian-linux	$1	`cat /etc/os-release 2>/dev/null` =~ /Raspbian\s+GNU\/Linux\s+(\S+)/
 Kali GNU/Linux Rolling	$1	debian-linux	$1+5.0	$etc_issue =~ /Kali/ && `cat /etc/os-release 2>/dev/null` =~ /VERSION=\"([0-9\.]+)\"/
 Parrot OS				$1	debian-linux	$1+5.0	$etc_issue =~ /Parrot/ && `cat /etc/os-release 2>/dev/null` =~ /VERSION=\"([0-9\.]+).*\"/
@@ -179,6 +185,7 @@ Debian Linux			10.0	debian-linux	10.0	`cat /etc/debian_version 2>/dev/null` =~ /
 Debian Linux			10.0	debian-linux	10.0	`cat /etc/debian_version 2>/dev/null` =~ /^(buster)/i
 Debian Linux			11.0	debian-linux	11.0	`cat /etc/debian_version 2>/dev/null` =~ /^(bullseye)/i
 Debian Linux			12.0	debian-linux	12.0	`cat /etc/debian_version 2>/dev/null` =~ /^(bookworm)/i
+Debian Linux			13.0	debian-linux	13.0	`cat /etc/debian_version 2>/dev/null` =~ /^(trixie)/i
 
 # SuSE enterprise versions
 SuSE OpenExchange Linux		$1	suse-linux	8.2	`cat /etc/SLOX-release 2>/dev/null` =~ /VERSION\s+=\s+(\S+)/i
@@ -325,7 +332,7 @@ Corvus Latinux			8.0	redhat-linux	7.1	`cat /etc/latinux-release 2>/dev/null` =~ 
 Immunix Linux			$1	redhat-linux	$1	$etc_issue =~ /Immunix.*\s([0-9\.]+)/i || `cat /etc/immunix-release 2>/dev/null` =~ /([0-9\.]+)/
 
 # All versions of Gentoo (which don't appear to have version numbers)
-Gentoo Linux			Any version	gentoo-linux	*	-d "/usr/portage"
+Gentoo Linux			Any version	gentoo-linux	*	-d "/usr/portage" || `cat /etc/os-release 2>/dev/null` =~ /gentoo/
 
 # Secure Linux (now called Trustix?)
 Secure Linux			1.0	redhat-linux	7.2	`cat /etc/securelinux-release 2>/dev/null` =~ /SecureLinux.*1\.0/i
@@ -427,10 +434,6 @@ OpenDarwin			6.6.1	macos		6.0
 OpenDarwin			6.6.2	macos		6.0
 OpenDarwin			7.2.1	macos		7.0
 
-# Webmin running under Windows
-Cygwin				1.1	cygwin		1.1
-Cygwin				1.3	cygwin		1.3
-
 # Sun's desktop Linux and Solaris systems
 Sun Java Desktop System		1.0 (Linux)	suse-linux	9.1	`cat /etc/SuSE-release 2>/dev/null` =~ /Java Desktop System.*\nVERSION = 1\.0/i
 Sun Java Desktop System		2.0 (Linux)	suse-linux	9.2	`cat /etc/SuSE-release 2>/dev/null` =~ /Java Desktop System.*\nVERSION = 2\.0/i
@@ -443,13 +446,6 @@ Synology DSM		$1	syno-linux	$1	`cat /etc.defaults/VERSION 2>/dev/null` =~ /produ
 # All other Linux variants, identified by kernel version
 Generic Linux			$1	generic-linux	$1	`uname -r` =~ /^([0-9]+\.[0-9+])\./
 
-# Windows
-Windows				XP	windows		xp	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /XP/
-Windows				2000	windows		2000	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /2000/
-Windows				2003	windows		2003	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /2003|\s5\.2/
-Windows				Vista	windows		Vista	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s6\.0\.6001/
-Windows				2008	windows		2008	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s6\.0\.6002/
-Windows				7	windows		7	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s6\.0\.76[0-9][0-9]/
-Windows				8	windows		8	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s6\.2\.92[0-9][0-9]/
-Windows				8.1	windows		8.1	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s6\.3\.9[0-9]00/
-Windows				10	windows		10	(-d "c:/windows" || -d "c:/winnt") && `ver` =~ /\s10\.0\.[0-9][0-9][0-9][0-9]/
+# Webmin running under Windows using compatibility layer
+Cygwin				1.1	cygwin		1.1
+Cygwin				1.3	cygwin		1.3

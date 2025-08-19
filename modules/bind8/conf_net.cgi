@@ -22,26 +22,47 @@ print &ui_form_start("save_net.cgi", "post");
 print &ui_table_start($text{'net_header'}, "width=100%", 4);
 
 # Ports and addresses to listen on
-my @listen = &find("listen-on", $mems);
+my @listen = ( &find("listen-on", $mems),
+	       &find("listen-on-v6", $mems) );
 my $ltable = &ui_radio("listen_def", @listen ? 0 : 1,
 		    [ [ 1, $text{'default'} ],
 		      [ 0, $text{'net_below'} ] ])."<br>\n";
 
 my @table = ( );
 push(@listen, { });
+my @tls = map { $_->{'values'}->[0] } &find("tls", $conf);
 for(my $i=0; $i<@listen; $i++) {
-	my $port = $listen[$i]->{'value'} eq 'port' ?
-                        $listen[$i]->{'values'}->[1] : undef;
-	my @vals = map { $_->{'name'} } @{$listen[$i]->{'members'}};
+	my $l = $listen[$i];
+	my $v = $l->{'values'} || [];
+	my ($port, $tls);
+	for(my $j=0; $j<@$v; $j++) {
+		if ($v->[$j] eq "port") {
+			$port = $v->[++$j];
+			}
+		if ($v->[$j] eq "tls") {
+			$tls = $v->[++$j];
+			}
+		}
+	my @vals = map { $_->{'name'} } @{$l->{'members'}};
 	push(@table, [
+		&ui_select("proto_$i",
+			   $l->{'name'} eq 'listen-on-v6' ? 'v6' :
+			   $l->{'name'} eq 'listen-on' ? 'v4' : '',
+			   [ [ '', $text{'net_none'} ],
+			     [ 'v4', 'IPv4' ],
+			     [ 'v6', 'IPv6' ] ]),
 		&ui_radio("pdef_$i", $port ? 0 : 1,
 		  [ [ 1, $text{'default'} ],
 		    [ 0, &ui_textbox("port_$i", $port, 5) ] ]),
+		@tls ? ( &ui_select("tls_$i", $tls, [ '', @tls ]) ) : ( ),
 		&ui_textbox("addrs_$i", join(" ", @vals), 50),
 		]);
 	}
 $ltable .= &ui_columns_table(
-	[ $text{'net_port'}, $text{'net_addrs'} ],
+	[ $text{'net_proto'},
+	  $text{'net_port'},
+	  @tls ? ( $text{'net_tls'} ) : ( ),
+	  $text{'net_addrs'} ],
 	undef,
 	\@table,
 	undef,

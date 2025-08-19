@@ -8,6 +8,7 @@ index_pft5=SCO /etc/passwd & /etc/shadow
 index_pft6=MacOS NetINFO
 index_pft7=MacOS DSCL
 
+nologin=Wachtwoordverificatie uitschakelen
 sshkey=SSH openbare sleutel
 uedit_clone=Gebruiker klonen
 
@@ -18,3 +19,6 @@ usave_edigestcrypt=Uw systeem heeft $4 wachtwoorden ingeschakeld, maar de functi
 usave_epasswd_cmd=Wachtwoordvalidatieopdracht mislukt
 
 gedit_clone=Clone Group
+
+logins_head=Alle geregistreerde logins voor gebruiker $1
+logins_head_limit=De laatste $2 geregistreerde logins voor gebruiker $1

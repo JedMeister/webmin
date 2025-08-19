@@ -5,9 +5,8 @@ index_efiles2=No s'ha trobat cap fitxer de configuració de PHP. Ajusta la <a hr
 index_file=Fitxer de configuració
 index_desc=Propòsit
 index_actions=Accions
-index_edit=Gestiona
+index_medit=Gestiona
 index_manual=Edita Manualment
-index_anyfile=Edita un altre fitxer de configuració de PHP:
 index_return=als fitxers de configuració
 
 file_global=Configuració global de PHP
@@ -37,13 +36,11 @@ dirs_title=Configuració de Directoris
 dirs_header=Configuració dels directoris de scripts i extensions de PHP
 dirs_include=Cerca de directoris d'inclusió
 dirs_below=Els llistats a sota...
-dirs_ext=Directori d'extensions
 dirs_upload=Permet puges de fitxers
 dirs_utmp=Directori temporal dels fitxers pujats
 dirs_err=No s'ha pogut desar la configuració de directoris
 dirs_eincs=No has introduït cap directori de recerca d'inclusió
 dirs_eutmp=Hi falta el directori de fitxers temporals o bé és invàlid
-dirs_eext=Hi falta el directori d'extensions
 
 db_title=Configuració de Bases de Dades
 db_header1=Configuració de la connexió a la base de dades MySQL

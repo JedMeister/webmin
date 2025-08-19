@@ -2,16 +2,11 @@ index_title=Composants logiciels
 index_installed=Composants installés
 index_close=Tout fermer
 index_open=Tout ouvrir
-index_search=Chercher un composant
 index_install=Installer un nouveau composant
-index_installmsg=Choisissez d'où installer un nouveau composant $1
 index_local=Un fichier local
 index_uploaded=Un fichier téléchargé
-index_ftp=Une adresse FTP ou HTTP
 index_installok=Installer
 index_ident=Identifier un fichier
-index_identmsg=Entrer une commande ou le chemin d'accès d'un fichier à rechercher dans la base de donnée des composants $1
-index_identok=Rechercher:
 index_all=Tous les composants
 index_return=composants installés
 
@@ -133,7 +128,6 @@ debian_depends=Ignorer les problèmes de dépendances?
 debian_conflicts=Ignorer les conflits entre composants?
 debian_overwrite=Écraser les fichiers des autres composants?
 debian_downgrade=Remplacer un nouveau composant par un plus ancien?
-debian_manager=Debian DPKG
 
 log_install_package=Composant $1 installé
 log_install_apt_l=Composant(s) $1 installé(s) depuis APT
@@ -144,7 +138,6 @@ log_delete=Composant $1 désinstallé
 
 rhn_input=Composant de Redhat Network
 rhn_install=Installation le(s) composant(s) avec la commande $1 ...
-rhn_ok=... installation effectuée.
 rhn_failed=... installation échouée !
 rhn_title=Selectionner le composant RHN
 rhn_pack=Composant
@@ -168,7 +161,6 @@ rhn_skip=Sauter les composants qui correspondent
 
 apt_input=Composant d'APT
 apt_install=Installation le(s) composant(s) avec la commande $1 ...
-apt_ok=... installation effectuée.
 apt_failed=... installation échouée
 apt_form=Mettre à jour tous les composants
 apt_update=Resynchroniser la liste des composants (<tt>update</tt>)

@@ -907,7 +907,7 @@ elsif ($init_mode eq "rc") {
 	else {
 		# Need to create a my rc script, and enable
 		my @dirs = split(/\s+/, $config{'rc_dir'});
-		my $file = $dirs[$#dirs]."/".$action.".sh";
+		my $file = $dirs[$#dirs]."/".$action;
 		my $name = $action;
 		$name =~ s/-/_/g;
 		&open_lock_tempfile(SCRIPT, ">$file");
@@ -2147,7 +2147,7 @@ foreach my $l (split(/\r?\n/, $out)) {
 
 # Also find unit files for units that may be disabled at boot and not running,
 # and so don't show up in systemctl list-units
-my $root = &get_systemd_root();
+my $root = &get_systemd_root(undef, 1);
 opendir(UNITS, $root);
 push(@units, grep { !/\.wants$/ && !/^\./ && !-d "$root/$_" } readdir(UNITS));
 closedir(UNITS);
@@ -2212,6 +2212,7 @@ if ($ecount && keys(%info) < 2) {
 
 # Extract info we want
 my @rv;
+my %done;
 foreach my $name (keys %info) {
 	my $root = &get_systemd_root($name);
 	my $i = $info{$name};
@@ -2233,6 +2234,7 @@ foreach my $name (keys %info) {
 		    'pid' => $i->{'ExecMainPID'},
 		    'file' => $i->{'FragmentPath'} || $root."/".$name,
 		  });
+	$done{$name}++;
 	}
 
 # Also add legacy init scripts
@@ -2240,6 +2242,7 @@ if (!$noinit) {
 	my @rls = &get_inittab_runlevel();
 	foreach my $a (&list_actions()) {
 		$a =~ s/\s+\d+$//;
+		next if ($done{$a} || $done{$a.".service"});
 		my $f = &action_filename($a);
 		my $s = { 'name' => $a,
 			  'legacy' => 1 };
@@ -2371,6 +2374,8 @@ if (ref($opts)) {
 	&print_tempfile(CFILE, "ExecReload=$kill -HUP \$MAINPID\n") if ($opts->{'reload'} eq '0');
 	&print_tempfile(CFILE, "ExecStop=$opts->{'stop'}\n") if ($opts->{'stop'});
 	&print_tempfile(CFILE, "ExecReload=$opts->{'reload'}\n") if ($opts->{'reload'});
+	&print_tempfile(CFILE, "ExecStartPre=$opts->{'startpre'}\n") if ($opts->{'startpre'});
+	&print_tempfile(CFILE, "ExecStartPost=$opts->{'startpost'}\n") if ($opts->{'startpost'});
 	&print_tempfile(CFILE, "Type=$opts->{'type'}\n") if ($opts->{'type'});
 	&print_tempfile(CFILE, "Environment=\"$opts->{'env'}\"\n") if ($opts->{'env'});
 	&print_tempfile(CFILE, "User=$opts->{'user'}\n") if ($opts->{'user'});
@@ -2380,8 +2385,9 @@ if (ref($opts)) {
 	&print_tempfile(CFILE, "Restart=$opts->{'restart'}\n") if ($opts->{'restart'});
 	&print_tempfile(CFILE, "RestartSec=$opts->{'restartsec'}\n") if ($opts->{'restartsec'});
 	&print_tempfile(CFILE, "TimeoutSec=$opts->{'timeout'}\n") if ($opts->{'timeout'});
-	&print_tempfile(CFILE, "StandardOutput=file:$opts->{'logstd'}\n") if ($opts->{'logstd'});
-	&print_tempfile(CFILE, "StandardError=file:$opts->{'logerr'}\n") if ($opts->{'logerr'});
+	&print_tempfile(CFILE, "TimeoutStopSec=$opts->{'timeoutstopsec'}\n") if ($opts->{'timeoutstopsec'});
+	&print_tempfile(CFILE, "StandardOutput=".($opts->{'logstd'} =~ /^\// ? 'file:' : '')."$opts->{'logstd'}\n") if ($opts->{'logstd'});
+	&print_tempfile(CFILE, "StandardError=".($opts->{'logerr'} =~ /^\// ? 'file:' : '')."$opts->{'logerr'}\n") if ($opts->{'logerr'});
 	}
 
 &print_tempfile(CFILE, "\n");
@@ -2446,23 +2452,21 @@ foreach my $s (&list_systemd_services(1)) {
 return 0;
 }
 
-=head2 get_systemd_root([name])
+=head2 get_systemd_root([name], [packaged])
 
 Returns the base directory for systemd unit config files
 
 =cut
 sub get_systemd_root
 {
-my ($name) = @_;
+my ($name, $packaged) = @_;
 # Default systemd paths 
 my $systemd_local_conf = "/etc/systemd/system";
 my $systemd_unit_dir1 = "/usr/lib/systemd/system";
 my $systemd_unit_dir2 = "/lib/systemd/system";
 if ($name) {
-	foreach my $p (
-		$systemd_local_conf,
-		$systemd_unit_dir1,
-		$systemd_unit_dir2) {
+	foreach my $p ($systemd_local_conf, $systemd_unit_dir1,
+		       $systemd_unit_dir2) {
 		if (-r "$p/$name.service"   ||
 		    -r "$p/$name"           ||
 		    -r "$p/$name.target"    ||
@@ -2481,6 +2485,9 @@ if ($name) {
 			}
 		}
 	}
+# Always use /etc/systemd/system for locally created units
+return $systemd_local_conf if (!$packaged && -d $systemd_local_conf);
+
 # Debian prefers /lib/systemd/system
 if ($gconfig{'os_type'} eq 'debian-linux' &&
     -d $systemd_unit_dir2) {
@@ -2527,6 +2534,178 @@ else {
 		&kill_logged('HUP', @pids);
 		}
 	}
+}
+
+=head2 is_active_systemd(unit-name)
+
+Check if systemd service or socket is active
+
+=cut
+sub is_active_systemd
+{
+my $unit = shift;
+if ($init_mode eq "systemd") {
+	my $out = &backquote_logged(
+		"systemctl is-active ".quotemeta($unit)." 2>&1 </dev/null");
+	$out = &trim($out);
+	return wantarray ? ($?, $out) : $out eq "active" ? 1 : 0;
+	}
+return wantarray ? (-1, undef) : 0;
+}
+
+=head2 cat_systemd(unit, [regex-filter])
+
+List the contents of a given systemd unit file, alternatively, uses a regex
+filter for specific options
+
+=cut
+sub cat_systemd
+{
+my ($unit, $filter) = @_;
+my @config;
+my $current_section;
+my $current_file;
+
+# Execute and parse the system command
+&open_execute_command(*CAT, "systemctl cat ".quotemeta($unit), 1, 1);
+while (<CAT>) {
+	s/\r|\n//g;
+	next if /^$/;
+	if (/^#\s+(\/.*)$/) {
+		# File name line, e.g., # /usr/lib/systemd/system/ssh.socket
+		$current_file = $1;
+		push @config, { file => $current_file, sections => {} };
+		}
+	elsif (/^\[(.+?)\]$/) {
+		# Section header, e.g., [Unit]
+		$current_section = $1;
+		$config[-1]{'sections'}{$current_section} ||= {};
+		}
+	elsif (/^([^=]+)=(.*)$/ && $current_section) {
+		# Key-value pair, e.g., ListenStream=0.0.0.0:22
+		my ($key, $value) = ($1, $2);
+		push @{ $config[-1]{'sections'}{$current_section}{$key} }, $value;
+		}
+	}
+close(CAT);
+
+# Filter specific options
+if ($filter) {
+	my $regex = qr/$filter/;
+	$regex = eval "qr/$1/$2" if ($filter =~ m{^/(.+)/([igmsx]*)$});
+	foreach my $conf (@config) {
+		my $filtered_sections = {};
+		foreach my $section_name (keys %{$conf->{'sections'}}) {
+			my $section = $conf->{'sections'}{$section_name};
+			my %matching_params;
+			foreach my $param (keys %$section) {
+				$matching_params{$param} = $section->{$param}
+					if ($param =~ $regex);
+				}
+			$filtered_sections->{$section_name} =
+				\%matching_params if %matching_params;
+			}
+		$conf->{'sections'} = $filtered_sections;
+		}
+	}
+return \@config;
+}
+
+=head2 edit_systemd(unit-name, &new_config, [override_filename], [override_dir])
+
+Edit systemd unit file in override, preserving existing settings
+
+Example:
+
+	edit_systemd('ssh.socket', {
+		'Socket' => {
+			'ListenStream' => [
+				'',
+				'0.0.0.0:2213',
+				'[::]:2213'
+			],
+		},
+		'Install' => {},
+	});
+
+Note that option values must always be an array reference, even if there is only
+one value; if undef is passed, the key will be removed from the section; if a
+section set to empty hash, the section will be removed from the unit file.
+
+=cut
+sub edit_systemd
+{
+my ($unit, $new_config, $override_filename, $override_dir) = @_;
+$override_dir ||= "/etc/systemd/system/$unit.d";
+$override_filename ||= "override.conf";
+my $override_file = "$override_dir/$override_filename";
+
+# Create override directory if it doesn't exist
+if (!-d($override_dir)) {
+	mkdir($override_dir) ||
+		&error("Failed to create directory '$override_dir': $!");
+	}
+
+# Read the existing override.conf if it exists
+my $existing_config = {};
+if (-f($override_file)) {
+	my $content = &read_file_contents($override_file);
+	my $current_section;
+	foreach my $line (split(/\r?\n/, $content)) {
+		next if ($line =~ /^$/ || $line =~ /^#/);
+		if ($line =~ /^\[(.+?)\]$/) {
+			# Section header
+			$current_section = $1;
+			$existing_config->{$current_section} ||= {};
+			}
+		elsif ($line =~ /^([^=]+)=(.*)$/ && $current_section) {
+			# Key-value pair
+			my ($key, $value) = ($1, $2);
+			push(@{ $existing_config->{$current_section}{$key} },
+			     $value);
+			}
+		}
+	}
+
+# Merge new configuration into the existing configuration
+foreach my $section (keys(%{$new_config})) {
+	my $has_values = 0;  # Track if the section has content
+	foreach my $key (keys(%{ $new_config->{$section} })) {
+		my $values = $new_config->{$section}{$key};
+		if (defined($values) && @$values) {
+			# Preserve keys with values, including empty strings
+			$existing_config->{$section}{$key} = $values;
+			$has_values = 1;
+			}
+		else {
+			# Remove keys with undefined values
+			delete($existing_config->{$section}{$key});
+			}
+		}
+	# Remove the section if no content remains
+	delete($existing_config->{$section}) if (!$has_values);
+	}
+
+# Prepare the new override.conf content
+my $override_content = "";
+foreach my $section (sort(keys(%{$existing_config}))) {
+	$override_content .= "[$section]\n";
+	foreach my $key (sort(keys(%{ $existing_config->{$section} }))) {
+		foreach my $value (@{ $existing_config->{$section}{$key} }) {
+			$override_content .= "$key=$value\n";
+			}
+		}
+	$override_content .= "\n"; # Add a blank line between sections
+	}
+
+# Write the merged configuration back to override.conf
+&lock_file($override_file);
+&write_file_contents($override_file, $override_content);
+&unlock_file($override_file);
+
+# Reload systemd to apply the changes
+&system_logged("systemctl daemon-reload") == 0 || 
+	&error("Failed to reload systemd daemon: $!");
 }
 
 =head2 reboot_system

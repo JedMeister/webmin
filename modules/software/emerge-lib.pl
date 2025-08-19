@@ -98,6 +98,14 @@ return ( $packages{0,'name'}, $packages{0,'class'}, $packages{0,'desc'},
 	 $system_arch, $packages{0,'version'}, "Gentoo", &make_date($st[9]) );
 }
 
+# virtual_package_info(package)
+# Returns an array of package information for a virtual package, usually called
+# if "package_info" returns nothing.
+sub virtual_package_info
+{
+return ( );
+}
+
 # is_package(file)
 # Check if some file is a package file
 sub is_package
@@ -292,7 +300,7 @@ sub update_system_install
 local $update = $_[0] || $in{'update'};
 local $cmd = "emerge ".quotemeta($update);
 local @rv;
-print "<b>",&text('emerge_install', "<tt>$cmd</tt>"),"</b><p>\n";
+print &text('emerge_install', "<tt>$cmd</tt>"),"\n";
 print "<pre>\n";
 &additional_log('exec', undef, $cmd);
 &open_execute_command(CMD, "$cmd 2>&1 </dev/null", 1);
@@ -304,8 +312,8 @@ while(<CMD>) {
 	}
 close(CMD);
 print "</pre>\n";
-if ($?) { print "<b>$text{'emerge_failed'}</b><p>\n"; }
-else { print "<b>$text{'emerge_ok'}</b><p>\n"; }
+if ($?) { print "$text{'emerge_failed'}<p>\n"; }
+else { print "$text{'emerge_ok'}<p>\n"; }
 return @rv;
 }
 

@@ -922,25 +922,25 @@ if ($file) {
 elsif ($sm) {
 	# Connect to SMTP server
 	&open_socket($sm, $port, $h->{'fh'});
+
 	if ($ssl == 1) {
 		# Start using SSL mode right away
 		&switch_smtp_to_ssl($h);
 		}
 
 	&smtp_command($h, undef, 0);
+
+	# Send SMTP HELO
 	my $helo = $config{'helo_name'} || &get_system_hostname();
-	if ($esmtp) {
-		&smtp_command($h, "ehlo $helo\r\n", 0);
-		}
-	else {
-		&smtp_command($h, "helo $helo\r\n", 0);
-		}
+	my $helocmd = $esmtp ? "ehlo $helo\r\n" : "helo $helo\r\n";
+	&smtp_command($h, $helocmd, 0);
 
 	if ($ssl == 2) {
 		# Switch to SSL with STARTTLS, if possible
                 my $rv = &smtp_command($h, "starttls\r\n", 1);
                 if ($rv =~ /^2\d+/) {
                         &switch_smtp_to_ssl($h);
+			&smtp_command($h, $helocmd, 0);
                         }
                 else {
                         $ssl = 0;
@@ -965,7 +965,7 @@ elsif ($sm) {
 						'pass' => $pass } );
 		&error("Failed to create Authen::SASL object") if (!$sasl);
 		local $conn = $sasl->client_new("smtp", &get_system_hostname());
-		local $arv = &smtp_command($h, "auth $auth\r\n", 1);
+		local $arv = &smtp_command($h, "AUTH ".uc($auth)."\r\n", 1);
 		if ($arv =~ /^(334)(\-\S+)?\s+(.*)/) {
 			# Server says to go ahead
 			$extra = $3;
@@ -1471,7 +1471,8 @@ return $data;
 }
 
 # simplify_date(datestring, [format])
-# Given a date from an email header, convert to the user's preferred format
+# Given a date from an email header, convert to the user's preferred format and
+# return it as an HTML string
 sub simplify_date
 {
 local ($date, $fmt) = @_;
@@ -1494,12 +1495,12 @@ if ($u) {
 		}
 	}
 elsif ($date =~ /^(\S+),\s+0*(\d+)\s+(\S+)\s+(\d+)\s+(\d+):(\d+)/) {
-	return "$2/$3/$4 $5:$6";
+	return &html_escape("$2/$3/$4 $5:$6");
 	}
 elsif ($date =~ /^0*(\d+)\s+(\S+)\s+(\d+)\s+(\d+):(\d+)/) {
-	return "$1/$2/$3 $4:$5";
+	return &html_escape("$1/$2/$3 $4:$5");
 	}
-return $date;
+return &html_escape($date);
 }
 
 # simplify_from(from)
@@ -2583,14 +2584,14 @@ return @rv;
 # Read a single message from a file
 sub read_mail_file
 {
-local (@headers, $mail);
+my ($file, $headersonly) = @_;
 
 # Open and read the mail file
-&open_as_mail_user(MAIL, $_[0]) || return undef;
-$mail = &read_mail_fh(MAIL, 0, $_[1]);
-$mail->{'file'} = $_[0];
+&open_as_mail_user(MAIL, $file) || return undef;
+my $mail = &read_mail_fh(MAIL, 0, $headersonly);
+$mail->{'file'} = $file;
 close(MAIL);
-local @st = stat($_[0]);
+local @st = stat($file);
 $mail->{'size'} = $st[7];
 $mail->{'time'} = $st[9];
 
@@ -2613,14 +2614,15 @@ return $mail;
 #				     higher = number of bytes
 sub read_mail_fh
 {
-local ($fh, $endmode, $headeronly) = @_;
-local (@headers, $mail);
+my ($fh, $endmode, $headersonly) = @_;
+my @headers;
+my $mail = { };
 
 # Read the headers
-local $lnum = 0;
+my $lnum = 0;
 while(1) {
 	$lnum++;
-	local $line = <$fh>;
+	my $line = <$fh>;
 	$mail->{'size'} += length($line);
 	$line =~ s/\r|\n//g;
 	last if ($line eq '');
@@ -3004,6 +3006,44 @@ if ($switched) {
 	$> = 0;
 	}
 return $rv;
+}
+
+# is_gzipped_file(file)
+# Returns 1 if a file is gzip compressed
+sub is_gzipped_file
+{
+my ($file) = @_;
+my $fh;
+my $rv = open($fh, "<", $file);
+return 0 if (!$rv);
+my $two;
+read($fh, $two, 2);
+close($fh);
+return $two eq "\037\213" ? 1 : 0;
+}
+
+# gunzip_mail_file(file)
+# Uncompress a mail file in place
+sub gunzip_mail_file
+{
+my ($file) = @_;
+my $switched = &switch_to_mail_user();
+my $outfile = $file.".$$.uncompressed";
+my @st = stat($file);
+my $ex = system("gunzip -c ".quotemeta($file)."> ".quotemeta($outfile)." 2>/dev/null");
+if ($ex) {
+	unlink($outfile);
+	}
+else {
+	rename($outfile, $file);
+	&set_ownership_permissions($st[4], $st[5], $st[2], $file);
+	utime($st[8], $st[9], $file);
+	}
+if ($switched) {
+	$) = 0;
+	$> = 0; 
+	}
+return !$ex;
 }
 
 # create_as_mail_user(fh, file)

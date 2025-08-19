@@ -5,7 +5,8 @@ use warnings;
 no warnings 'redefine';
 no warnings 'uninitialized';
 require './time-lib.pl';
-our (%in, %text, %config, %access, $base_remote_user, $get_hardware_time_error);
+our (%in, %text, %config, %access, $base_remote_user,
+     $get_hardware_time_error, $cronyd_name);
 
 my ($rawdate, $rawhwdate, %system_date, $rawtime, %hw_date, $txt);
 $txt = "";
@@ -14,7 +15,8 @@ $txt = "";
 &error($text{'acl_error'}) if ($access{'sysdate'} && $access{'hwdate'});
 
 my $arr;
-if (!$access{'sysdate'} && !$access{'hwdate'} && &support_hwtime()) {
+my $support_hwtime = &support_hwtime();
+if (!$access{'sysdate'} && !$access{'hwdate'} && $support_hwtime) {
 	$arr = "0,1";
 	}
 else {
@@ -62,7 +64,7 @@ if( !$access{'sysdate'} )
   print &ui_hidden("mode", "sysdate");
   print &tabletime(&hlink($text{'sys_title'}, "system_time"), 0, %system_date);
   print &ui_submit($text{'action_apply'}, "action");
-  if (&support_hwtime()) {
+  if ($support_hwtime) {
 	print &ui_submit($text{'action_sync'}, "action");
   }
   print &ui_form_end();
@@ -74,7 +76,7 @@ else
 }
 
 # Get the hardware time
-if (&support_hwtime()) {
+if ($support_hwtime) {
 	my @tm = &get_hardware_time();
 	if (@tm) {
 		$hw_date{'second'} = $tm[0];
@@ -161,15 +163,56 @@ if ( ( !$access{ 'sysdate' } && &has_command( "date" ) || !$access{ 'hwdate' } &
 	print &ui_hidden("mode", "ntp");
 	print &ui_table_start(&hlink($text{'index_timeserver'}, "timeserver"),
 			      "width=100%", 2, [ "width=30%" ]);
-
-	print &ui_table_row($text{'index_addresses'},
-		&ui_textbox("timeserver", $config{'timeserver'}, 60));
-
-	# Show hardware time checkbox
-	if (&support_hwtime()) {
-		print &ui_table_row(" ",
-			&ui_checkbox("hardware", 1, $text{'index_hardware2'},
-				     $config{'timeserver_hardware'}));
+	my $ntp_support;
+	if (&has_command("ntpdate") || &has_command("sntp")) {
+		$ntp_support = 1;
+		print &ui_table_row($text{'index_addresses'},
+			&ui_textbox("timeserver", $config{'timeserver'}, 60));
+		# Show hardware time checkbox
+		if ($support_hwtime) {
+			print &ui_table_row(" ",
+				&ui_checkbox("hardware", 1, $text{'index_hardware2'},
+					$config{'timeserver_hardware'}));
+			}
+		}
+	if (&foreign_require('init') &&
+	    &init::action_status($cronyd_name) > 0 && &has_command("chronyc")) {
+		my $chronyd_running = &init::status_action($cronyd_name);
+		my $chronyd_run_atboot = &init::action_status($cronyd_name);
+		my $ui_hiddens = &ui_hidden("sync_service_name", $cronyd_name);
+		$ui_hiddens .= &ui_hidden("timeserver", $config{'timeserver'})
+			if (!$ntp_support);
+		print &ui_table_row(&text('index_tabsync2', $cronyd_name),
+			$ui_hiddens.
+			&ui_radio("sync_service_status",
+			(($chronyd_run_atboot == 2 && $chronyd_running) ? 2 :
+			($chronyd_run_atboot < 2 && $chronyd_running) ? 1 : 0),
+			[ [ 2, $text{'index_serviceonboot'} ], [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+		# Show hardware time checkbox
+		if ($support_hwtime) {
+			print &ui_table_row(" ",
+				"&nbsp;".&ui_checkbox("hardware", 1, $text{'index_hardware2'},
+					$config{'timeserver_hardware'}));
+			}
+		}
+	if (&foreign_require('init') && &init::action_status('systemd-timesyncd') > 0) {
+		my $systemd_timesyncd_running = &init::status_action('systemd-timesyncd');
+		my $systemd_timesyncd_run_atboot = &init::action_status('systemd-timesyncd');
+		my $ui_hiddens = &ui_hidden("sync_service_name", "systemd-timesyncd");
+		$ui_hiddens .= &ui_hidden("timeserver", $config{'timeserver'})
+			if (!$ntp_support);
+		print &ui_table_row(&text('index_tabsync2', 'systemd-timesyncd'),
+			$ui_hiddens.
+			&ui_radio("sync_service_status",
+			(($systemd_timesyncd_run_atboot == 2 && $systemd_timesyncd_running) ? 2 :
+			($systemd_timesyncd_run_atboot < 2 && $systemd_timesyncd_running) ? 1 : 0),
+			[ [ 2, $text{'index_serviceonboot'} ], [ 1, $text{'yes'} ], [ 0, $text{'no'} ] ]));
+		# Show hardware time checkbox
+		if ($support_hwtime) {
+			print &ui_table_row(" ",
+				"&nbsp;".&ui_checkbox("hardware", 1, $text{'index_hardware2'},
+					$config{'timeserver_hardware'}));
+			}
 		}
 
 	# Show boot-time checkbox
@@ -189,6 +232,9 @@ if ( ( !$access{ 'sysdate' } && &has_command( "date" ) || !$access{ 'hwdate' } &
 		   'weekdays' => '*' };
 	print &ui_table_row(undef,
 		&webmincron::show_times_input($job), 2);
+
+	# Show ctrl help
+	print &ui_table_row(undef, $text{'index_ctrl'}, 2);
 
 	print &ui_table_end();
 	print &ui_form_end([ [ "action", $text{'index_sync'} ] ]);

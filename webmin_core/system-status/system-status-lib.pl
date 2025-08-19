@@ -56,7 +56,7 @@ if (&foreign_check("proc")) {
 	}
 
 # Disk space on local filesystems
-if (&foreign_check("mount")) {
+if (&foreign_check("mount", 1)) {
 	&foreign_require("mount");
 	($info->{'disk_total'}, $info->{'disk_free'},
 	 $info->{'disk_fs'}, $info->{'disk_used'}) =
@@ -66,15 +66,17 @@ if (&foreign_check("mount")) {
 # Available package updates
 if (&foreign_installed("package-updates") && $config{'collect_pkgs'}) {
 	&foreign_require("package-updates");
-	my $poss_collect_blocked = (&indexof('package-updates', @{$modskip}) > -1);
+	my $poss_collect_blocked = &indexof('package-updates', @$modskip) >= 0;
 	my $poss_current = !$poss_collect_blocked ? 2 : undef;
-	my @poss = &package_updates::list_possible_updates(undef, $poss_collect_blocked);
+	my @poss = &package_updates::list_possible_updates(
+			undef, $poss_collect_blocked);
 	$info->{'poss'} = \@poss;
-	$info->{'reboot'} = &package_updates::check_reboot_required($poss_collect_blocked);
+	$info->{'reboot'} = $poss_collect_blocked ? 0 :
+				&package_updates::check_reboot_required();
 	}
 
 # CPU and drive temps
-if (!$config{'collect_notemp'} && defined(&proc::get_current_cpu_data)) {
+if (!$config{'collect_notemp2'} && defined(&proc::get_current_cpu_data)) {
 	my ($cpu, $fans) = &proc::get_current_cpu_data();
 	$info->{'cputemps'} = $cpu if (ref($cpu) && @{$cpu} >= 1);
 	$info->{'cpufans'} = $fans if (ref($fans) && @{$fans} >= 1);

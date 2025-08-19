@@ -55,7 +55,6 @@ extra=Ekstra seçenekler
 pass=Şifre
 none1=İlk girişte sor
 none2=Parola gerekli değil
-nologin=Giriş izni yok
 encrypted=Şifrelenmiş parola
 nochange=Değiştirmeden bırak
 clear=Düz metin parolası gir
@@ -192,7 +191,6 @@ usave_efromroot=/'den ev dizininizi taşıyamazsınız
 usave_etoroot=/'e ev dizininizi taşıyamazsınız
 
 logins_title=Kayıtlı Girişler
-logins_head=$1 girişleri kaydedildi
 logins_from=Giriş Yeri
 logins_tty=TTY
 logins_in=Giriş
@@ -445,6 +443,6 @@ dmass_doing=$1 kullanıcısını pasifleştiriyor ..
 dmass_already=.. zaten pasifleştirilmiş!
 
 emass_title=Kullanıcıları Aktifleştir
-emass_pass=Şifre açılıyor .. 
+emass_pass=Şifre açılıyor ..
 emass_doing=$1 kullanıcısı aktifleşiyor ..
 emass_already=.. henüz aktifleştirildi!

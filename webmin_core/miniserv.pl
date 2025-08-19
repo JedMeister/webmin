@@ -175,10 +175,10 @@ elsif (!$config{'no_pam'}) {
 	}
 if ($config{'pam_only'} && !$use_pam) {
 	foreach $msg (@startup_msg) {
-		print STDERR $msg,"\n";
+		&log_error($msg);
 		}
-	print STDERR "PAM use is mandatory, but could not be enabled!\n";
-	print STDERR "no_pam and pam_only both are set!\n" if ($config{no_pam});
+	&log_error("PAM use is mandatory, but could not be enabled!");
+	&log_error("no_pam and pam_only both are set!") if ($config{no_pam});
 	exit(1);
 	}
 elsif ($pam_msg && !$use_pam) {
@@ -263,13 +263,13 @@ if ($@) {
 if (!-r $config{'keyfile'}) {
 	# Key file doesn't exist!
 	if ($config{'keyfile'}) {
-		print STDERR "SSL key file $config{'keyfile'} does not exist\n";
+		&log_error("SSL key file $config{'keyfile'} does not exist");
 		}
 	$use_ssl = 0;
 	}
 elsif ($config{'certfile'} && !-r $config{'certfile'}) {
 	# Cert file doesn't exist!
-	print STDERR "SSL cert file $config{'certfile'} does not exist\n";
+	&log_error("SSL cert file $config{'certfile'} does not exist");
 	$use_ssl = 0;
 	}
 if ($use_ssl) {
@@ -359,7 +359,7 @@ foreach $pl (split(/\s+/, $config{'preload'})) {
 	$pkg =~ s/[^A-Za-z0-9]/_/g;
 	eval "package $pkg; do '$config{'root'}/$lib'";
 	if ($@) {
-		print STDERR "Failed to pre-load $lib in $pkg : $@\n";
+		&log_error("Failed to pre-load $lib in $pkg : $@");
 		}
 	}
 foreach $pl (split(/\s+/, $config{'premodules'})) {
@@ -372,13 +372,13 @@ foreach $pl (split(/\s+/, $config{'premodules'})) {
 	push(@INC, "$config{'root'}/$dir");
 	eval "package $mod; use $mod ()";
 	if ($@) {
-		print STDERR "Failed to pre-load $mod : $@\n";
+		&log_error("Failed to pre-load $mod : $@");
 		}
 	}
 foreach $mod (split(/\s+/, $config{'preuse'})) {
 	eval "use $mod;";
 	if ($@) {
-		print STDERR "Failed to pre-load $mod : $@\n";
+		&log_error("Failed to pre-load $mod : $@");
 		}
 	}
 
@@ -527,25 +527,25 @@ for($i=0; $i<@sockets; $i++) {
 		}
 	}
 foreach $se (@sockerrs) {
-	print STDERR $se,"\n";
+	&log_error($se);
 	}
 
 # If all binds failed, try binding to any address
 if (!@socketfhs && !$tried_inaddr_any) {
-	print STDERR "Falling back to listening on any address\n";
+	&log_error("Falling back to listening on any address");
 	$fh = "MAIN";
 	socket($fh, PF_INET(), SOCK_STREAM, $proto) ||
 		die "Failed to open socket : $!";
 	setsockopt($fh, SOL_SOCKET, SO_REUSEADDR, pack("l", 1));
 	if (!bind($fh, pack_sockaddr_in($sockets[0]->[1], INADDR_ANY))) {
-		print STDERR "Failed to bind to port $sockets[0]->[1] : $!\n";
+		&log_error("Failed to bind to port $sockets[0]->[1] : $!");
 		exit(1);
 		}
 	listen($fh, &get_somaxconn());
 	push(@socketfhs, $fh);
 	}
 elsif (!@socketfhs && $tried_inaddr_any) {
-	print STDERR "Could not listen on any ports";
+	&log_error("Could not listen on any ports");
 	exit(1);
 	}
 
@@ -696,7 +696,7 @@ while(1) {
 			if ($childstarts{$c} &&
 			    $age > $config{'maxlifetime'}) {
 				kill(9, $c);
-				print STDERR "Killing long-running process $c after $age sconds\n";
+				&log_error("Killing long-running process $c after $age seconds");
 				delete($childstarts{$c});
 				}
 			}
@@ -824,7 +824,7 @@ while(1) {
 			$ipconns = $ipconnmap{$peera};
 			if ($config{'maxconns_per_ip'} >= 0 &&
 			    @$ipconns > $config{'maxconns_per_ip'}) {
-				print STDERR "Too many connections (",scalar(@$ipconns),") from IP $peera\n";
+				&log_error("Too many connections (",scalar(@$ipconns),") from IP $peera");
 				close(SOCK);
 				next;
 				}
@@ -835,7 +835,7 @@ while(1) {
 			$netconns = $netconnmap{$peernet};
 			if ($config{'maxconns_per_net'} >= 0 &&
 			    @$netconns > $config{'maxconns_per_net'}) {
-				print STDERR "Too many connections (",scalar(@$netconns),") from network $peernet\n";
+				&log_error("Too many connections (",scalar(@$netconns),") from network $peernet");
 				close(SOCK);
 				next;
 				}
@@ -887,8 +887,8 @@ while(1) {
 			# Work out the hostname for this web server
 			$host = &get_socket_name(SOCK, $ipv6fhs{$s});
 			if (!$host) {
-				print STDERR
-				    "Failed to get local socket name : $!\n";
+				&log_error(
+				    "Failed to get local socket name : $!");
 				close(SOCK);
 				next;
 				}
@@ -963,7 +963,19 @@ while(1) {
 		local $fromip = inet_ntoa((unpack_sockaddr_in($from))[1]);
 		local $toip = inet_ntoa((unpack_sockaddr_in(
 					 getsockname(LISTEN)))[1]);
-		if ((!@deny || !&ip_match($fromip, $toip, @deny)) &&
+
+		# Check for any rate limits
+		my $ratelimit = 0;
+		if ($last_udp{$fromip} &&
+		    time() - $last_udp{$fromip} < $config{'listen_delay'}) {
+			$ratelimit = 1;
+			}
+		else {
+			$last_udp{$fromip} = time();
+			}
+
+		if (!$ratelimit &&
+		    (!@deny || !&ip_match($fromip, $toip, @deny)) &&
 		    (!@allow || &ip_match($fromip, $toip, @allow))) {
 			local $listenhost = &get_socket_name(LISTEN, 0);
 			send(LISTEN, "$listenhost:$config{'port'}:".
@@ -1013,8 +1025,8 @@ while(1) {
 					}
 				else {
 					# Login failed..
-					$hostfail{$2}++ if(!$nolog);
-					$userfail{$1}++ if(!$nolog);
+					$hostfail{$2}++ if (!$nolog);
+					$userfail{$1}++ if (!$nolog && $1 ne "-");
 					$blocked = 0;
 
 					# Add the host to the block list,
@@ -1034,7 +1046,8 @@ while(1) {
 
 					# Add the user to the user block list,
 					# if configured
- 					if ($config{'blockuser_failures'} &&
+ 					if ($1 ne "-" &&
+					    $config{'blockuser_failures'} &&
 					    $userfail{$1} >=
 					      $config{'blockuser_failures'}) {
 						push(@denyusers, $1);
@@ -1048,7 +1061,8 @@ while(1) {
 						}
 
 					# Lock out the user's password, if enabled
-					if ($config{'blocklock'} &&
+					if ($1 ne "-" &&
+					    $config{'blocklock'} &&
 					    $userfail{$1} >=
 					      $config{'blockuser_failures'}) {
 						my $lk = &lock_user_password($1);
@@ -1087,15 +1101,21 @@ while(1) {
 					print $outfd "0 0\n";
 					}
 				else {
-					local ($user, $ltime, $ip) =
+					local ($user, $ltime, $ip, $lifetime) =
 					  split(/\s+/, $sessiondb{$skey});
 					local $lot = &get_logout_time($user, $session_id);
 					if ($lot &&
 					    $time_now - $ltime > $lot*60 &&
 					    !$notimeout) {
-						# Session has timed out
-						print $outfd "1 ",$time_now - $ltime,"\n";
+						# Session has timed out due to
+						# idle time being hit
+						print $outfd "1 ",($time_now - $ltime),"\n";
 						#delete($sessiondb{$skey});
+						}
+					elsif ($lifetime && $time_now - $ltime > $lifetime) {
+						# Session has timed out due to
+						# lifetime exceeded
+						print $outfd "1 ",($time_now - $ltime),"\n";
 						}
 					elsif ($ip && $vip && $ip ne $vip &&
 					       $config{'session_ip'}) {
@@ -1241,7 +1261,7 @@ while(1) {
 			elsif ($inline =~ /\S/) {
 				# Unknown line from pipe?
 				print DEBUG "main: Unknown line from pipe $inline\n";
-				print STDERR "Unknown line from pipe $inline\n";
+				&log_error("Unknown line from pipe $inline");
 				}
 			else {
 				# close pipe
@@ -1303,11 +1323,10 @@ if ($header_timeout > 10*60) {
 	$header_timeout = 10*60;
 	}
 
-# Wait at most 60 secs for start of headers for initial requests, or
-# 10 minutes for kept-alive connections
 local $rmask;
 vec($rmask, fileno(SOCK), 1) = 1;
 local $to = $checked_timeout ? 10*60 : $header_timeout;
+print DEBUG "handle_request: waiting for $to seconds\n";
 local $sel = select($rmask, undef, undef, $to);
 if (!$sel) {
 	if ($checked_timeout) {
@@ -1486,7 +1505,8 @@ if ($config{'trust_real_ip'}) {
 		}
 	$loghost = $acpthost;
 	}
-else {
+elsif ($config{'logtrust'}) {
+	# If a client IP address was provided, such as via a proxy, log it
 	$loghost = $headerhost || $loghost;
 	}
 
@@ -1690,8 +1710,9 @@ if ($header{'user-agent'} =~ /webmin/i ||
 	}
 
 # Check for SSL authentication
+my $trust_ssl = $config{'trust_real_ip'} && !$config{'no_trust_ssl'};
 if ($use_ssl && $verified_client ||
-    $config{'trust_real_ip'} && $header{'x-ssl-client-dn'}) {
+    $trust_ssl && $header{'x-ssl-client-dn'}) {
 	if ($use_ssl && $verified_client) {
 		$peername = Net::SSLeay::X509_NAME_oneline(
 				Net::SSLeay::X509_get_subject_name(
@@ -1699,7 +1720,7 @@ if ($use_ssl && $verified_client ||
 						$ssl_con)));
 		$u = &find_user_by_cert($peername);
 		}
-	if ($config{'trust_real_ip'} && !$u && $header{'x-ssl-client-dn'}) {
+	if ($trust_ssl && !$u && $header{'x-ssl-client-dn'}) {
 		# Use proxied client cert
 		$u = &find_user_by_cert($header{'x-ssl-client-dn'});
 		}
@@ -1791,19 +1812,28 @@ if ($config{'session'} && !$deny_authentication &&
 			}
 		}
 	elsif ($in{'session'}) {
-		# Session ID given .. put it in the cookie if valid
+		# Session ID given, perhaps from a single-use login link.
 		local $sid = $in{'session'};
 		if ($sid =~ /\r|\n|\s/) {
 			&http_error(500, "Invalid session",
 			    "Session ID contains invalid characters");
 			}
 		print $PASSINw "verify $sid 0 $acptip\n";
-		<$PASSOUTr> =~ /(\d+)\s+(\S+)/;
+		<$PASSOUTr> =~ /^(\d+)\s+(\S+)/;
 		if ($1 != 2) {
 			&http_error(500, "Invalid session",
 			    "Session ID is not valid");
 			}
+
+		# If this was a one-time session ID link, the username will
+		# have a - prefix to prevent it from being used as a regular
+		# session.
 		local $vu = $2;
+		$vu =~ s/^-//;
+
+		# Clear this one-time session, and issue a new one
+		print $PASSINw "delete $sid\n";
+		local $louser = <$PASSOUTr>;
 		local $hrv = &handle_login(
 				$vu, $vu ? 1 : 0,
 				0, 0, undef, 1, 0);
@@ -1827,13 +1857,16 @@ if ($config{'session'} && !$deny_authentication &&
 			&http_error(500, "Invalid password",
 			    "Password contains invalid characters");
 			}
-
+		
+		local $twofactor_probe = 0;
 		local ($vu, $expired, $nonexist, $wvu) =
 			&validate_user_caseless($in{'user'}, $in{'pass'}, $host,
 					        $acptip, $port);
 		if ($vu && $wvu) {
 			my $uinfo = &get_user_details($wvu, $vu);
-			if ($uinfo && $uinfo->{'twofactor_provider'}) {
+			my $can2fa = $uinfo && $uinfo->{'twofactor_provider'};
+			$twofactor_probe = 1 if ($in{'twofprobe'} && $can2fa);
+			if ($can2fa && !$twofactor_probe) {
 				# Check two-factor token ID
 				$err = &validate_twofactor(
 					$wvu, $in{'twofactor'}, $vu);
@@ -1842,7 +1875,8 @@ if ($config{'session'} && !$deny_authentication &&
 						$vu, 'twofactor',
 						$loghost, $localip);
 					$twofactor_msg = $err;
-					$twofactor_nolog = 'nolog' if (!$in{'twofactor'});
+					$twofactor_nolog = 'nolog'
+						if (!$in{'twofactor'});
 					$vu = undef;
 					}
 				}
@@ -1850,7 +1884,8 @@ if ($config{'session'} && !$deny_authentication &&
 		local $hrv = &handle_login(
 				$vu || $in{'user'}, $vu ? 1 : 0,
 				$expired, $nonexist, $in{'pass'},
-				$in{'notestingcookie'}, $twofactor_nolog);
+				$in{'notestingcookie'}, $twofactor_nolog,
+				$twofactor_probe);
 		return $hrv if (defined($hrv));
 		}
 	}
@@ -1930,6 +1965,15 @@ if ($config{'session'} && !$deny_authentication &&
 	# Just let this slide ..
 	$validated = 1;
 	$miniserv_internal = 3;
+
+	# check with main process for delay
+	if ($config{'passdelay'}) {
+		print DEBUG "handle_request: requesting delay acptip=$acptip\n";
+		print $PASSINw "delay - $acptip 0\n";
+		<$PASSOUTr> =~ /(\d+) (\d+)/;
+		sleep($1);
+		print DEBUG "handle_request: delay=$1 blocked=$2\n";
+		}
 	}
 
 # Check for an existing session
@@ -1963,9 +2007,9 @@ if ($config{'session'} && !$validated) {
 				}
 			elsif ($1 == 3) {
 				# Session is OK, but from the wrong IP
-				print STDERR "Session $session_id was ",
+				&log_error("Session $session_id was ",
 				  "used from $acptip instead of ",
-				  "original IP $2\n";
+				  "original IP $2");
 				}
 			else {
 				# Invalid session ID .. don't set
@@ -1979,8 +2023,8 @@ if ($config{'session'} && !$validated) {
 		$baseauthuser = $can[3] || $authuser;
 		my $auser = &get_user_details($baseauthuser, $authuser);
 		if (!$auser) {
-			print STDERR "Session $session_id is for user ",
-				     "$authuser who does not exist\n";
+			&log_error("Session $session_id is for user ",
+				     "$authuser who does not exist");
 			$validated = 0;
 			$already_authuser = $authuser = undef;
 			}
@@ -2028,13 +2072,16 @@ if (!$validated) {
 
 if (!$validated) {
 	# Check if this path allows unauthenticated access
-	local ($u, $unauth);
-	foreach $u (@unauth) {
-		$unauth++ if ($simple =~ /$u/);
+	my $unauth;
+	foreach my $u (@unauth) {
+		$unauth = 4 if ($simple =~ /$u/);
+		}
+	foreach my $u (@unauthcgi) {
+		$unauth = 3 if ($simple =~ /$u/);
 		}
 	if (!$bogus && $unauth) {
 		# Unauthenticated directory or file request - approve it
-		$validated = 4;
+		$validated = $unauth;
 		$baseauthuser = $authuser = undef;
 		}
 	}
@@ -2074,12 +2121,8 @@ if (!$validated) {
 			$method = "GET";
 			$querystring .= "&failed=".&urlize($failed_user)
 				if ($failed_user);
-			if ($twofactor_msg) {
-				$querystring .= "&failed_save=".&urlize($failed_save);
-				$querystring .= "&failed_pass=".&urlize($failed_pass);
-				$querystring .= "&failed_twofactor_attempt=".&urlize($failed_twofactor_attempt);
-				$querystring .= "&twofactor_msg=".&urlize($twofactor_msg);
-				}
+			$querystring .= "&twofactor_msg=".&urlize($twofactor_msg)
+				if ($twofactor_msg);
 			$querystring .= "&timed_out=$timed_out"
 				if ($timed_out);
 			$queryargs = "";
@@ -2784,9 +2827,16 @@ local $eh = $error_handler_recurse ? undef :
 	    $config{'error_handler'} ? $config{'error_handler'} : undef;
 print DEBUG "http_error code=$code message=$msg body=$body\n";
 if ($eh) {
+	my $found;
+	foreach my $root (@preroots, @roots) {
+		$found++ if (-e $root."/".$eh);
+		}
+	$eh = undef if (!$found);
+	}
+if ($eh) {
 	# Call a CGI program for the error
 	$page = "/$eh";
-	$querystring = "code=$_[0]&message=".&urlize($msg).
+	$querystring = "code=".&urlize($code)."&message=".&urlize($msg).
 		       "&body=".&urlize($body);
 	$error_handler_recurse++;
 	$ok_code = $code;
@@ -3263,9 +3313,9 @@ else {
 		}
 	if ($@) {
 		# Somehow a string come through that contains invalid chars
-		print STDERR $@,"\n";
+		&log_error($@);
 		for(my $i=0; my @stack = caller($i); $i++) {
-			print STDERR join(" ", @stack),"\n";
+			&log_error(join(" ", @stack));
 			}
 		}
 	}
@@ -3381,6 +3431,7 @@ sub term_handler
 kill('TERM', @childpids) if (@childpids);
 kill('KILL', $logclearer) if ($logclearer);
 kill('KILL', $extauth) if ($extauth);
+unlink($config{'pidfile'});
 exit(1);
 }
 
@@ -3730,7 +3781,7 @@ if ($use_pam) {
 				$rcode = 2;
 				}
 			else {
-				print STDERR "Unknown pam_acct_mgmt return value : $acct_ret\n";
+				&log_error("Unknown pam_acct_mgmt return value : $acct_ret");
 				$rcode = 0;
 				}
 			}
@@ -4208,11 +4259,12 @@ if (!$sid && !$force_urandom) {
 return $sid;
 }
 
-# handle_login(username, ok, expired, not-exists, password, [no-test-cookie], [no-log])
+# handle_login(username, ok, expired, not-exists, password,
+#              [no-test-cookie], [no-log], [twofactor-probe])
 # Called from handle_session to either mark a user as logged in, or not
 sub handle_login
 {
-local ($vu, $ok, $expired, $nonexist, $pass, $notest, $nolog) = @_;
+local ($vu, $ok, $expired, $nonexist, $pass, $notest, $nolog, $twof_probe) = @_;
 $authuser = $vu if ($ok);
 
 # check if the test cookie is set
@@ -4236,6 +4288,19 @@ if ($config{'passdelay'} && $vu) {
 
 if ($ok && (!$expired ||
 	    $config{'passwd_mode'} == 1)) {
+	# Log in creds were OK but two-factor auth is still pending
+	if ($twof_probe) {
+		# Two-factor auth is required
+		$validated = $already_session_id = undef;
+		$authuser = $baseauthuser = undef;
+		$querystring = $method = $page = $request_uri = undef;
+		$logged_code = undef;
+		$queryargs = "";
+		# Write response
+		&http_error(401, "Two-factor authentication is required");
+		return undef;
+		}
+
 	# Logged in OK! Tell the main process about
 	# the new SID
 	local $sid = &generate_random_id();
@@ -4317,10 +4382,7 @@ else {
 				$expired ? 'expiredpass' : 'wrongpass',
 			   $loghost, $localip);
 	$failed_user = $vu;
-	$failed_pass = $pass;
 	$failed_save = $in{'save'};
-	$failed_twofactor_attempt = $in{'failed_twofactor_attempt'} || 0;
-	$failed_twofactor_attempt++;
 	$request_uri = $in{'page'};
 	$already_session_id = undef;
 	$method = "GET";
@@ -4625,23 +4687,23 @@ local $ssl_ctx;
 eval { $ssl_ctx = Net::SSLeay::new_x_ctx() };
 $ssl_ctx ||= Net::SSLeay::CTX_new();
 if (!$ssl_ctx) {
-	print STDERR "Failed to create SSL context : $!\n";
+	&log_error("Failed to create SSL context : $!");
 	return undef;
 	}
 my @extracas = $extracas && $extracas ne "none" ? split(/\s+/, $extracas) : ();
 
 # Validate cert files
 if (!-r $keyfile) {
-	print STDERR "SSL key file $keyfile does not exist\n";
+	&log_error("SSL key file $keyfile does not exist");
 	return undef;
 	}
 if ($certfile && !-r $certfile) {
-	print STDERR "SSL cert file $certfile does not exist\n";
+	&log_error("SSL cert file $certfile does not exist");
 	return undef;
 	}
 foreach my $p (@extracas) {
 	if (!-r $p) {
-		print STDERR "SSL CA file $p does not exist\n";
+		&log_error("SSL CA file $p does not exist");
 		return undef;
 		}
 	}
@@ -4660,7 +4722,7 @@ if (-r $config{'dhparams_file'}) {
 		};
 	}
 if ($@) {
-	print STDERR "Failed to load $config{'dhparams_file'} : $@\n";
+	&log_error("Failed to load $config{'dhparams_file'} : $@");
 	}
 
 if ($client_certs) {
@@ -4681,12 +4743,12 @@ foreach my $p (@extracas) {
 
 if (!Net::SSLeay::CTX_use_PrivateKey_file($ssl_ctx, $keyfile,
 					  &Net::SSLeay::FILETYPE_PEM)) {
-	print STDERR "Failed to open SSL key $keyfile\n";
+	&log_error("Failed to open SSL key $keyfile");
 	return undef;
 	}
 if (!Net::SSLeay::CTX_use_certificate_file($ssl_ctx, $certfile || $keyfile,
 					   &Net::SSLeay::FILETYPE_PEM)) {
-	print STDERR "Failed to open SSL cert ".($certfile || $keyfile)."\n";
+	&log_error("Failed to open SSL cert ".($certfile || $keyfile));
 	return undef;
 	}
 
@@ -4734,7 +4796,7 @@ sub ssl_connection_for_ip
 local ($sock, $ipv6) = @_;
 local $sn = getsockname($sock);
 if (!$sn) {
-	print STDERR "Failed to get address for socket $sock\n";
+	&log_error("Failed to get address for socket $sock");
 	return undef;
 	}
 local (undef, $myip, undef) = &get_address_ip($sn, $ipv6);
@@ -4745,14 +4807,19 @@ if ($config{'ssl_cipher_list'}) {
 	eval "Net::SSLeay::set_cipher_list(
 			\$ssl_con, \$config{'ssl_cipher_list'})";
 	if ($@) {
-		print STDERR "SSL cipher $config{'ssl_cipher_list'} failed : ",
-			     "$@\n";
+		&log_error("SSL cipher $config{'ssl_cipher_list'} failed : ",
+			     $@);
 		}
 	}
+
+# Accept the SSL connection
 Net::SSLeay::set_fd($ssl_con, fileno($sock));
-if (!Net::SSLeay::accept($ssl_con)) {
-	return undef;
-	}
+alarm(10);
+$SIG{'ALRM'} = sub { die "timeout" };
+my $ok = Net::SSLeay::accept($ssl_con);
+alarm(0);
+return undef if (!$ok);
+
 # Check for a per-hostname SSL context and use that instead
 if (defined(&Net::SSLeay::get_servername)) {
 	my $h = Net::SSLeay::get_servername($ssl_con);
@@ -4874,9 +4941,11 @@ my %vital = ("port", 80,
 	  "maxconns", 50,
 	  "maxconns_per_ip", 25,
 	  "maxconns_per_net", 35,
+	  "listen_delay", 5,
 	  "pam", "webmin",
 	  "sidname", "sid",
-	  "unauth", "^/unauthenticated/ ^/robots.txt\$ ^[A-Za-z0-9\\-/_]+\\.jar\$ ^[A-Za-z0-9\\-/_]+\\.class\$ ^[A-Za-z0-9\\-/_]+\\.gif\$ ^[A-Za-z0-9\\-/_]+\\.png\$ ^[A-Za-z0-9\\-/_]+\\.conf\$ ^[A-Za-z0-9\\-/_]+\\.ico\$ ^/robots.txt\$",
+	  "unauth", "^/unauthenticated/ ^/robots.txt\$ ^[A-Za-z0-9\\-/_]+\\.jar\$ ^[A-Za-z0-9\\-/_]+\\.class\$ ^[A-Za-z0-9\\-/_]+\\.gif\$ ^[A-Za-z0-9\\-/_]+\\.png\$ ^[A-Za-z0-9\\-/_]+\\.conf\$ ^[A-Za-z0-9\\-/_]+\\.ico\$ ^/robots.txt\$ ^/service-worker.js\$",
+	  "unauthcgi", "^/forgot_form.cgi\$ ^/forgot_send.cgi\$ ^/forgot.cgi\$",
 	  "max_post", 10000,
 	  "expires", 7*24*60*60,
 	  "pam_test_user", "root",
@@ -4995,7 +5064,7 @@ if ($config{'twofactorfile'}) {
 if ($config{'userdb'}) {
 	my $dbh = &connect_userdb($config{'userdb'});
 	if (!ref($dbh)) {
-		print STDERR "Failed to open users database : $dbh\n"
+		&log_error("Failed to open users database : $dbh");
 		}
 	else {
 		&disconnect_userdb($config{'userdb'}, $dbh);
@@ -5039,7 +5108,7 @@ if ($config{'userdb'}) {
 	my %attrs;
 	if (!ref($dbh)) {
 		print DEBUG "get_user_details: Failed : $dbh\n";
-		print STDERR "Failed to connect to user database : $dbh\n";
+		&log_error("Failed to connect to user database : $dbh");
 		}
 	elsif ($proto eq "mysql" || $proto eq "postgresql") {
 		# Fetch user ID and password with SQL
@@ -5047,8 +5116,8 @@ if ($config{'userdb'}) {
 		my $cmd = $dbh->prepare(
 			"select id,pass from webmin_user where name = ?");
 		if (!$cmd || !$cmd->execute($username)) {
-			print STDERR "Failed to lookup user : ",
-				     $dbh->errstr,"\n";
+			&log_error("Failed to lookup user : ",
+				     $dbh->errstr);
 			return undef;
 			}
 		my ($id, $pass) = $cmd->fetchrow();
@@ -5066,8 +5135,8 @@ if ($config{'userdb'}) {
 		my $cmd = $dbh->prepare(
 			"select attr,value from webmin_user_attr where id = ?");
 		if (!$cmd || !$cmd->execute($id)) {
-			print STDERR "Failed to lookup user attrs : ",
-				     $dbh->errstr,"\n";
+			&log_error("Failed to lookup user attrs : ",
+				     $dbh->errstr);
 			return undef;
 			}
 		$user = { 'name' => $username,
@@ -5088,8 +5157,8 @@ if ($config{'userdb'}) {
                                   $args->{'userclass'}.'))',
 			scope => 'sub');
 		if (!$rv || $rv->code) {
-			print STDERR "Failed to lookup user : ",
-				     ($rv ? $rv->error : "Unknown error"),"\n";
+			&log_error("Failed to lookup user : ",
+				     ($rv ? $rv->error : "Unknown error"));
 			return undef;
 			}
 		my ($u) = $rv->all_entries();
@@ -5362,6 +5431,7 @@ foreach my $a (split(/\s+/, $config{'ipaccess'})) {
 
 # build unauthenticated URLs list
 @unauth = split(/\s+/, $config{'unauth'});
+@unauthcgi = split(/\s+/, $config{'unauthcgi'});
 
 # build redirect mapping
 undef(%redirect);
@@ -5628,10 +5698,10 @@ if ($path ne "/") {
 my $request = HTTP::Request->new($method, $request_uri, $ho,
 				 $posted_data);
 if ($config{'dav_debug'}) {
-	print STDERR "DAV request :\n";
-	print STDERR "---------------------------------------------\n";
-	print STDERR $request->as_string();
-	print STDERR "---------------------------------------------\n";
+	&log_error("DAV request :");
+	&log_error("---------------------------------------------");
+	&log_error($request->as_string());
+	&log_error("---------------------------------------------");
 	}
 my $response = $webdav->run($request);
 
@@ -5652,17 +5722,16 @@ local $rv = &write_keep_alive(0);
 &write_data($content);
 
 if ($config{'dav_debug'}) {
-	print STDERR "DAV reply :\n";
-	print STDERR "---------------------------------------------\n";
-	print STDERR "HTTP/1.1 ",$response->code()," ",$response->message(),"\r\n";
+	&log_error("DAV reply :");
+	&log_error("---------------------------------------------");
+	&log_error("HTTP/1.1 ",$response->code()," ",$response->message());
 	foreach my $h ($response->header_field_names) {
 		next if (lc($h) eq "connection" || lc($h) eq "content-length");
-		print STDERR "$h: ",$response->header($h),"\r\n";
+		&log_error("$h: ",$response->header($h));
 		}
-	print STDERR "Content-length: ",length($content),"\r\n";
-	print STDERR "\r\n";
-	print STDERR $content;
-	print STDERR "---------------------------------------------\n";
+	&log_error("Content-length: ",length($content));
+	&log_error($content);
+	&log_error("---------------------------------------------");
 	}
 
 # Log it
@@ -5957,12 +6026,12 @@ if ($PASSINw) {
 local $ptyfh = new IO::Pty;
 print DEBUG "check_sudo_permissions: ptyfh=$ptyfh\n";
 if (!$ptyfh) {
-	print STDERR "Failed to create new PTY with IO::Pty\n";
+	&log_error("Failed to create new PTY with IO::Pty");
 	return 0;
 	}
 local @uinfo = getpwnam($user);
 if (!@uinfo) {
-	print STDERR "Unix user $user does not exist for sudo\n";
+	&log_error("Unix user $user does not exist for sudo");
 	return 0;
 	}
 
@@ -5977,7 +6046,7 @@ print DEBUG "check_sudo_permissions: about to fork..\n";
 local $pid = fork();
 print DEBUG "check_sudo_permissions: fork=$pid pid=$$\n";
 if ($pid < 0) {
-	print STDERR "fork for sudo failed : $!\n";
+	&log_error("fork for sudo failed : $!");
 	return 0;
 	}
 if (!$pid) {
@@ -6181,8 +6250,8 @@ if ($config{'userdb'}) {
 		if (!$cmd || !$cmd->execute("!".$uinfo->{'pass'},
 					    $uinfo->{'id'})) {
 			# Update failed
-			print STDERR "Failed to lock password : ",
-				     $dbh->errstr,"\n";
+			&log_error("Failed to lock password : ",
+				     $dbh->errstr);
 			return -1;
 			}
 		$cmd->finish() if ($cmd);
@@ -6192,8 +6261,8 @@ if ($config{'userdb'}) {
 		my $rv = $dbh->modify($uinfo->{'id'},
 		      replace => { 'webminPass' => '!'.$uinfo->{'pass'} });
 		if (!$rv || $rv->code) {
-			print STDERR "Failed to lock password : ",
-				     ($rv ? $rv->error : "Unknown error"),"\n";
+			&log_error("Failed to lock password : ",
+				     ($rv ? $rv->error : "Unknown error"));
 			return -1;
 			}
 		}
@@ -6460,13 +6529,13 @@ foreach my $f (readdir(CRONS)) {
 		my $broken = 0;
 		foreach my $n ('module', 'func') {
 			if (!$cron{$n}) {
-				print STDERR "Cron $1 missing $n\n";
+				&log_error("Cron $1 missing $n");
 				$broken = 1;
 				}
 			}
 		if (!$cron{'interval'} && $cron{'mins'} eq '' &&
 		    $cron{'special'} eq '' && !$cron{'boot'}) {
-			print STDERR "Cron $1 missing any time spec\n";
+			&log_error("Cron $1 missing any time spec");
 			$broken = 1;
 			}
 		if ($cron{'special'} eq 'hourly') {
@@ -6511,7 +6580,7 @@ foreach my $f (readdir(CRONS)) {
 			$cron{'weekdays'} = '*';
 			}
 		elsif ($cron{'special'}) {
-			print STDERR "Cron $1 invalid special time $cron{'special'}\n";
+			&log_error("Cron $1 invalid special time $cron{'special'}");
 			$broken = 1;
 			}
 		if ($cron{'special'}) {
@@ -6756,7 +6825,7 @@ if (!$pid) {
 		die \$@ if (\$@);
 		";
 	if ($@) {
-		print STDERR "Perl failure : $@\n";
+		&log_error("Perl failure : $@");
 		}
 	exit(0);
 	}

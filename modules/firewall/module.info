@@ -1,7 +1,7 @@
-os_support=*-linux
-version=2.102
-longdesc=Configure a Linux firewall using iptables. Allows the editing of all tables, chains, rules and options.
-desc=Linux Firewall
 name=Firewall
+desc=Linux Firewall
+os_support=*-linux
 category=net
-depends=2.102
+longdesc=Configure a Linux firewall using iptables. Allows the editing of all tables, chains, rules and options.
+version=2.402
+depends=2.402

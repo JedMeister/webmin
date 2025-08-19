@@ -1,4 +1,4 @@
-index_mode=Önyükleme sistemi : $1 
+index_mode=Önyükleme sistemi : $1
 index_downscript=Benzer şekilde, aşağıda listelenen $1 komut dosyası kapatma zamanında çalıştırılacaktır. Sistem kapatıldığında cinlerin veya sunucuların temiz bir şekilde durdurulması için kendi komutlarınızı ekleyebilirsiniz.
 index_levels=Çalışma seviyelerinden başlayın
 index_status=Şimdi başladınız mı?
@@ -70,16 +70,16 @@ ss_doingstatus=İşlem durumu isteniyor $1 ..
 
 acl_runonly=Sadece koş
 
-log_restart=İşlem yeniden başlatıldı $1 
-log_condrestart=Şartlı olarak yeniden başlatılan işlem $1 
-log_reload=Yeniden yüklenen eylem $1 
-log_status=İşlemin getirildiği durum $1 
+log_restart=İşlem yeniden başlatıldı $1
+log_condrestart=Şartlı olarak yeniden başlatılan işlem $1
+log_reload=Yeniden yüklenen eylem $1
+log_status=İşlemin getirildiği durum $1
 log_bootup=$1 için önyükleme eylemi değiştirildi
-log_massstart=Başlatılan eylemler $1 
-log_massstop=Durdurulmuş eylemler $1 
-log_massrestart=Yeniden başlatılan işlemler $1 
-log_massenable=Etkin eylemler $1 
-log_massdisable=Devre dışı bırakılmış eylemler $1 
+log_massstart=Başlatılan eylemler $1
+log_massstop=Durdurulmuş eylemler $1
+log_massrestart=Yeniden başlatılan işlemler $1
+log_massenable=Etkin eylemler $1
+log_massdisable=Devre dışı bırakılmış eylemler $1
 log_telinit=$1 çalışma seviyesine geçti
 
 edit_hostconfig_startup=Bu eylem etkinse $1 betiği sistem önyükleme zamanında çalıştırılır. Aşağıdan düzenleyebilirsiniz
@@ -96,6 +96,7 @@ edit_hostconfig_title=Hostconfig'i Düzenle
 
 mass_enone=Hiçbir eylem seçilmedi
 mass_enone2=Hiçbir hizmet seçilmedi
+mass_enoallow=<tt>$1</tt> durdurulamıyor
 mass_start=İşlemleri Başlatma
 mass_restart=Eylemleri Yeniden Başlatma
 mass_stop=Eylemleri Durdurma
@@ -105,6 +106,7 @@ mass_disable=$1 eylemini önyükleme zamanında devre dışı bırakma.
 mass_starting=İşlem başlatılıyor $1 ..
 mass_stopping=İşlem durduruluyor $1 ..
 mass_failed=.. arızalı
+mass_skipped=.. atlandı
 mass_ok=.. tamamlamak
 mass_ustart=Başlangıç Hizmetleri
 mass_urestart=Hizmetleri Yeniden Başlatma

@@ -1,5 +1,5 @@
 max_records=200
-show_size=1
+show_size=0
 show_size_below=0
 mail_system=3
 auto=1
@@ -16,7 +16,7 @@ fwd_mode=0
 delete_warn=y
 top_buttons=2
 view_html=2
-view_images=3
+view_images=1
 mail_usermin=mail
 sync_create=0
 sync_modify=1

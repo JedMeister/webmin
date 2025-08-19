@@ -40,6 +40,7 @@ if (@keyrecs) {
 		my $kt = $key->{'ksk'} ? 'ksk' : 'zone';
 		my ($keyrec) = grep { $_->{'values'}->[0] ==
 				 ($key->{'ksk'} ? 257 : 256) } @keyrecs;
+		next if (!$keyrec);
 		my $keyline = format_dnssec_public_key(
                        join(" ", $keyrec->{'name'}, $keyrec->{'class'},
                                  $keyrec->{'type'}, @{$keyrec->{'values'}}));
@@ -67,8 +68,28 @@ if (@keyrecs) {
 	my $ds = &get_ds_record($zone);
 	if ($ds) {
 		print $text{'zonekey_ds'},"<br>\n";
-		print &ui_textarea("ds", join("\n".$desc, split(/$desc/, $ds)), 2, 80, "off", 0,
+		# Split DS records in string into a list
+		my @ds = split(/\s(?=\S+\.\s+\d+\s+IN\s+DS\s+\d+\s+
+				\d+\s+\d+\s+[0-9A-Fa-f]{16,})/x, $ds);
+		print &ui_textarea("ds", join("\n", @ds), 2, 80, "off", 0,
 				   "readonly style='width:90%'"),"<br>\n";
+		print &ui_columns_start([
+			$text{'zonekey_ds_keytag'},
+			$text{'zonekey_ds_alg'},
+			$text{'zonekey_ds_type'},
+			$text{'zonekey_ds_digest'},
+			]);
+		foreach my $r (@ds) {
+			if ($r =~ /
+				\bDS\s+(?<key_tag>\d+)\s+(?<algorithm>\d+)\s+
+				(?<digest_type>\d+)\s+
+				(?<digest>[0-9A-Fa-f]+)\b/x) {
+				print &ui_columns_row([
+					$+{key_tag}, $+{algorithm},
+					$+{digest_type}, $+{digest}]);
+				}
+			}
+		print &ui_columns_end();
 		}
 
 	# Offer to disable

@@ -92,8 +92,15 @@ else { &error($ldap); }
 sub get_user_base
 {
 local $conf = &ldap_client::get_config();
+local $passwd_base;
+foreach my $b (&ldap_client::find_value("base", $conf)) {
+	if ($b =~ /^passwd\s+(\S+)/) {
+		$passwd_base = $1;
+		}
+	}
 local $base = $config{'user_base'} ||
 	      &ldap_client::find_svalue("nss_base_passwd", $conf) ||
+	      $passwd_base ||
 	      &ldap_client::find_svalue("base", $conf);
 $base =~ s/\?.*$//;
 return $base;
@@ -103,8 +110,15 @@ return $base;
 sub get_group_base
 {
 local $conf = &ldap_client::get_config();
+local $group_base;
+foreach my $b (&ldap_client::find_value("base", $conf)) {
+	if ($b =~ /^group\s+(\S+)/) {
+		$group_base = $1;
+		}
+	}
 local $base = $config{'group_base'} ||
 	      &ldap_client::find_svalue("nss_base_group", $conf) ||
+	      $group_base ||
 	      &ldap_client::find_svalue("base", $conf);
 $base =~ s/\?.*$//;
 return $base;
@@ -230,31 +244,35 @@ return @list_users_cache;
 # it to the LDAP database
 sub create_user
 {
-local $ldap = &ldap_connect();
-local $base = &get_user_base();
-$_[0]->{'dn'} = "uid=$_[0]->{'user'},$base";
-local @classes = ( &def_user_obj_class(), "shadowAccount",
+my ($user) = @_;
+my $ldap = &ldap_connect();
+my $base = &get_user_base();
+$user->{'dn'} = "uid=$user->{'user'},$base";
+my @classes = ( &def_user_obj_class(), "shadowAccount",
 		   split(/\s+/, $config{'other_class'}),
-		   @{$_[0]->{'ldap_class'}} );
-local $schema = $ldap->schema();
+		   @{$user->{'ldap_class'}} );
+my $schema = $ldap->schema();
 if ($schema->objectclass("person") && $config{'person'}) {
 	push(@classes, "person");
 	}
+if ($config{'given'}) {
+	push(@classes, $config{'given_class'});
+	}
 @classes = &uniquelc(@classes);
 @classes = grep { /\S/ } @classes;	# Remove empty
-local @attrs = &user_to_dn($_[0]);
-push(@attrs, &split_props($config{'props'}, $_[0]));
-push(@attrs, @{$_[0]->{'ldap_attrs'}});
+my @attrs = &user_to_dn($user);
+push(@attrs, &split_props($config{'props'}, $user));
+push(@attrs, @{$user->{'ldap_attrs'}});
 push(@attrs, "objectClass" => \@classes);
 if (&indexoflc("person", @classes) >= 0 && !&in_props(\@attrs, "sn")) {
 	# Person needs 'sn'
 	push(@attrs, "sn", &in_props(\@attrs, "cn"));
 	}
-local $rv = $ldap->add($_[0]->{'dn'}, attr => \@attrs);
+my $rv = $ldap->add($user->{'dn'}, attr => \@attrs);
 if ($rv->code) {
 	&error(&text('usave_eadd', $rv->error));
 	}
-push(@list_users_cache, $_[0]) if (scalar(@list_users_cache));
+push(@list_users_cache, $user) if (scalar(@list_users_cache));
 $ldap->unbind();
 &useradmin::refresh_nscd() if (!$batch_mode);
 }
@@ -264,8 +282,9 @@ $ldap->unbind();
 # it from the LDAP database
 sub delete_user
 {
-local $ldap = &ldap_connect();
-local $rv = $ldap->delete($_[0]->{'dn'});
+my ($user) = @_;
+my $ldap = &ldap_connect();
+my $rv = $ldap->delete($user->{'dn'});
 if ($rv->code) {
 	my $err = $rv->error;
 	if ($err !~ /No such object/i) {
@@ -273,7 +292,7 @@ if ($rv->code) {
 		}
 	}
 $ldap->unbind();
-@list_users_cache = grep { $_ ne $_[0] } @list_users_cache
+@list_users_cache = grep { $_ ne $user } @list_users_cache
         if (scalar(@list_users_cache));
 &useradmin::refresh_nscd() if (!$batch_mode);
 }
@@ -281,52 +300,53 @@ $ldap->unbind();
 # modify_user(&olduser, &newuser)
 sub modify_user
 {
-local $ldap = &ldap_connect();
-local $base = &get_user_base();
-local @attrs = &user_to_dn($_[1]);
-push(@attrs, &split_props($config{'mod_props'}, $_[1]));
-push(@attrs, @{$_[1]->{'ldap_attrs'}});
-if ($_[1]->{'ldap_class'} &&
-    (!ref($_[1]->{'ldap_class'}) || @{$_[1]->{'ldap_class'}})) {
-	push(@attrs, "objectClass" => $_[1]->{'ldap_class'});
+my ($olduser, $user) = @_;
+my $ldap = &ldap_connect();
+my $base = &get_user_base();
+my @attrs = &user_to_dn($user);
+push(@attrs, &split_props($config{'mod_props'}, $user));
+push(@attrs, @{$user->{'ldap_attrs'}});
+if ($user->{'ldap_class'} &&
+    (!ref($user->{'ldap_class'}) || @{$user->{'ldap_class'}})) {
+	push(@attrs, "objectClass" => $user->{'ldap_class'});
 	}
-if (&indexoflc("person", @{$_[1]->{'ldap_class'}}) >= 0 &&
+if (&indexoflc("person", @{$user->{'ldap_class'}}) >= 0 &&
     !&in_props(\@attrs, "sn")) {
 	# Person needs 'sn'
 	push(@attrs, "sn", &in_props(\@attrs, "cn"));
 	}
-local %replace;
+my %replace;
 for(my $i=0; $i<@attrs; $i+=2) {
 	$replace{$attrs[$i]} ||= [ ];
-	local $v = $attrs[$i+1];
+	my $v = $attrs[$i+1];
 	push(@{$replace{$attrs[$i]}}, ref($v) ? @$v : $v);
 	}
-if ($_[0]->{'pass'} eq $_[1]->{'pass'}) {
+if ($olduser->{'pass'} eq $user->{'pass'}) {
 	# Don't change password attribute if not change
 	delete($replace{'userPassword'});
 	}
 # Do rename to new DN first
-if ($_[0]->{'user'} ne $_[1]->{'user'}) {
-	local $newdn = $_[0]->{'dn'};
-	if ($newdn !~ s/^uid=$_[0]->{'user'},/uid=$_[1]->{'user'},/) {
-		$newdn = "uid=$_[1]->{'user'},$base";
+if ($olduser->{'user'} ne $user->{'user'}) {
+	my $newdn = $olduser->{'dn'};
+	if ($newdn !~ s/^uid=$olduser->{'user'},/uid=$user->{'user'},/) {
+		$newdn = "uid=$user->{'user'},$base";
 		}
-	if (!&same_dn($newdn, $_[0]->{'dn'})) {
-		$rv = $ldap->moddn($_[0]->{'dn'},
-				   newrdn => "uid=$_[1]->{'user'}");
+	if (!&same_dn($newdn, $olduser->{'dn'})) {
+		$rv = $ldap->moddn($olduser->{'dn'},
+				   newrdn => "uid=$user->{'user'}");
 		if ($rv->code) {
 			&error(&text('usave_emoddn', $rv->error));
 			}
-		$_[1]->{'dn'} = $newdn;
+		$user->{'dn'} = $newdn;
 		}
 	}
-local $rv = $ldap->modify($_[1]->{'dn'}, replace => \%replace);
+my $rv = $ldap->modify($user->{'dn'}, replace => \%replace);
 if ($rv->code) {
 	&error(&text('usave_emod', $rv->error));
 	}
-if ($_[0] ne $_[1] && &indexof($_[0], @list_users_cache) != -1) {
+if ($olduser ne $user && &indexof($olduser, @list_users_cache) != -1) {
 	# Update old object in cache
-	%{$_[0]} = %{$_[1]};
+	%{$olduser} = %{$user};
 	}
 $ldap->unbind();
 &useradmin::refresh_nscd() if (!$batch_mode);
@@ -431,37 +451,42 @@ $ldap->unbind();
 # in the same format uses by the useradmin module
 sub dn_to_hash
 {
-if ($_[0]->get_value("uid")) {
-	local %user = ( 'dn' => $_[0]->dn(),
-			'user' => $_[0]->get_value("uid"),
-			'uid' => $_[0]->get_value("uidNumber"),
-			'gid' => $_[0]->get_value("gidNumber"),
-			'real' => $_[0]->get_value("cn"),
-			'home' => $_[0]->get_value("homeDirectory"),
-			'shell' => $_[0]->get_value("loginShell"),
-			'pass' => $_[0]->get_value("userPassword"),
-			'change' => $_[0]->get_value("shadowLastChange") || "",
-			'expire' => $_[0]->get_value("shadowExpire") || "",
-			'min' => $_[0]->get_value("shadowMin") || "",
-			'max' => $_[0]->get_value("shadowMax") || "",
-			'warn' => $_[0]->get_value("shadowWarning") || "",
-			'inactive' => $_[0]->get_value("shadowInactive") || "",
-		      );
+my ($obj) = @_;
+if ($obj->get_value("uid")) {
+	my %user = ( 'dn' => $obj->dn(),
+		     'user' => $obj->get_value("uid"),
+		     'uid' => $obj->get_value("uidNumber"),
+		     'gid' => $obj->get_value("gidNumber"),
+		     'real' => $obj->get_value("cn"),
+		     'home' => $obj->get_value("homeDirectory"),
+		     'shell' => $obj->get_value("loginShell"),
+		     'pass' => $obj->get_value("userPassword"),
+		     'change' => $obj->get_value("shadowLastChange") || "",
+		     'expire' => $obj->get_value("shadowExpire") || "",
+		     'min' => $obj->get_value("shadowMin") || "",
+		     'max' => $obj->get_value("shadowMax") || "",
+		     'warn' => $obj->get_value("shadowWarning") || "",
+		     'inactive' => $obj->get_value("shadowInactive") || "",
+		   );
+	if ($config{'given'}) {
+		$user{'firstname'} = $obj->get_value("givenName");
+		$user{'surname'} = $obj->get_value("sn");
+		}
 	$user{'pass'} =~ s/^(\!?)\{[a-z0-9]+\}/$1/i;
-	$user{'all_ldap_attrs'} = { map { lc($_), scalar($_[0]->get_value($_)) }
-					$_[0]->attributes() };
-	$user{'ldap_class'} = [ $_[0]->get_value('objectClass') ];
+	$user{'all_ldap_attrs'} = { map { lc($_), scalar($obj->get_value($_)) }
+					$obj->attributes() };
+	$user{'ldap_class'} = [ $obj->get_value('objectClass') ];
 	return %user;
 	}
 else {
-	local @members = $_[0]->get_value('memberUid');
-	local %group = ( 'dn' => $_[0]->dn(),
-			 'group' => $_[0]->get_value("cn"),
-			 'gid' => $_[0]->get_value("gidNumber"),
-			 'pass' => $_[0]->get_value("userPassword") || "",
-			 'members' => join(",", @members) || "",
-			 'desc' => $_[0]->get_value("description"),
-			);
+	my @members = $obj->get_value('memberUid');
+	my %group = ( 'dn' => $obj->dn(),
+		      'group' => $obj->get_value("cn"),
+		      'gid' => $obj->get_value("gidNumber"),
+		      'pass' => $obj->get_value("userPassword") || "",
+		      'members' => join(",", @members) || "",
+		      'desc' => $obj->get_value("description"),
+		    );
 	return %group;
 	}
 }
@@ -470,48 +495,56 @@ else {
 # Given a useradmin-style user hash, returns a list of properties
 sub user_to_dn
 {
-local $pfx = $_[0]->{'pass'} =~ /^\{[a-z0-9]+\}/i ? undef :
-	     $_[0]->{'pass'} =~ /^\$1\$/ ? "{md5}" :
-	     $_[0]->{'pass'} =~ /^[a-zA-Z0-9\.\/]{13}$/ ? "{crypt}" :
-	     $config{'md5'} == 1 || $config{'md5'} == 3 ? "{md5}" :
-	     $config{'md5'} == 4 ? "{ssha}" : 
-	     $config{'md5'} == 0 ? "{crypt}" : "";
-local $pass = $_[0]->{'pass'};
-local $disabled;
+my ($user) = @_;
+my $pfx = $user->{'pass'} =~ /^\{[a-z0-9]+\}/i ? undef :
+	  $user->{'pass'} =~ /^\$1\$/ ? "{md5}" :
+	  $user->{'pass'} =~ /^[a-zA-Z0-9\.\/]{13}$/ ? "{crypt}" :
+	  $config{'md5'} == 1 || $config{'md5'} == 3 ? "{md5}" :
+	  $config{'md5'} == 4 ? "{ssha}" : 
+	  $config{'md5'} == 0 ? "{crypt}" : "";
+my $pass = $user->{'pass'};
+my $disabled;
 if ($pass =~ s/^\!//) {
 	$disabled = "!";
 	}
-$cn = $_[0]->{'real'} eq '' ? $_[0]->{'user'} : $_[0]->{'real'};
+my $cn = $user->{'real'} eq '' ? $user->{'user'} : $user->{'real'};
 return ( "cn" => $cn,
-	 "uid" => $_[0]->{'user'},
-	 "uidNumber" => $_[0]->{'uid'},
-	 "loginShell" => $_[0]->{'shell'},
-	 "homeDirectory" => $_[0]->{'home'},
-	 "gidNumber" => $_[0]->{'gid'},
+	 "uid" => $user->{'user'},
+	 "uidNumber" => $user->{'uid'},
+	 "loginShell" => $user->{'shell'},
+	 "homeDirectory" => $user->{'home'},
+	 "gidNumber" => $user->{'gid'},
 	 "userPassword" => $disabled.$pfx.$pass,
-	 $_[0]->{'change'} eq '' ? ( ) :
-		( "shadowLastChange" => $_[0]->{'change'} ),
-	 $_[0]->{'expire'} eq '' ? ( ) :
-		( "shadowExpire" => $_[0]->{'expire'} ),
-	 $_[0]->{'min'} eq '' ? ( ) :
-		( "shadowMin" => $_[0]->{'min'} ),
-	 $_[0]->{'max'} eq '' ? ( ) :
-		( "shadowMax" => $_[0]->{'max'} ),
-	 $_[0]->{'warn'} eq '' ? ( ) :
-		( "shadowWarning" => $_[0]->{'warn'} ),
-	 $_[0]->{'inactive'} eq '' ? ( ) :
-		( "shadowInactive" => $_[0]->{'inactive'} )
+	 $user->{'change'} eq '' ? ( ) :
+		( "shadowLastChange" => $user->{'change'} ),
+	 $user->{'expire'} eq '' ? ( ) :
+		( "shadowExpire" => $user->{'expire'} ),
+	 $user->{'min'} eq '' ? ( ) :
+		( "shadowMin" => $user->{'min'} ),
+	 $user->{'max'} eq '' ? ( ) :
+		( "shadowMax" => $user->{'max'} ),
+	 $user->{'warn'} eq '' ? ( ) :
+		( "shadowWarning" => $user->{'warn'} ),
+	 $user->{'inactive'} eq '' ? ( ) :
+		( "shadowInactive" => $user->{'inactive'} ),
+	 $user->{'firstname'} eq '' ? ( ) :
+		( "givenName" => $user->{'firstname'} ),
+	 $user->{'surname'} eq '' ? ( ) :
+		( "sn" => $user->{'surname'} ),
 	);
 }
 
+# group_to_dn(&group)
+# Given a useradmin-style group hash, returns a list of properties
 sub group_to_dn
 {
-local @members = split(/,/, $_[0]->{'members'});
-return ( "cn" => $_[0]->{'group'},
-	 "gidNumber" => $_[0]->{'gid'},
-	 "userPassword" => $_[0]->{'pass'},
+my ($group) = @_;
+my @members = split(/,/, $group->{'members'});
+return ( "cn" => $group->{'group'},
+	 "gidNumber" => $group->{'gid'},
+	 "userPassword" => $group->{'pass'},
 	 @members ? ( "memberUid" => \@members ) : ( ),
-	 defined($_[0]->{'desc'}) ? ( "description" => $_[0]->{'desc'} ) : ( ),
+	 defined($group->{'desc'}) ? ( "description" => $group->{'desc'} ) : ( ),
        );
 }
 

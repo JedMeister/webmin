@@ -78,6 +78,14 @@ return ($packages{0,'name'}, $packages{0,'class'}, $packages{0,'desc'},
 	$packages{0,'arch'}, $packages{0,'version'}, undef, undef);
 }
 
+# virtual_package_info(package)
+# Returns an array of package information for a virtual package, usually called
+# if "package_info" returns nothing.
+sub virtual_package_info
+{
+return ( );
+}
+
 # is_package(file)
 # Always returns 0, because pkgsrc doesn't support installing from files
 sub is_package
@@ -214,7 +222,7 @@ my @rv;
 # Build and show command to run
 $update = join(" ", map { quotemeta($_) } split(/\s+/, $update));
 my $cmd = "pkgin -y install ".$update;
-print "<b>",&text('pkgsrc_install', "<tt>$cmd</tt>"),"</b><p>\n";
+print &text('pkgsrc_install', "<tt>$cmd</tt>"),"\n";
 print "<pre>";
 &additional_log('exec', undef, $cmd);
 
@@ -230,8 +238,8 @@ while(<CMD>) {
 close(CMD);
 
 print "</pre>\n";
-if ($?) { print "<b>$text{'pkg_failed'}</b><p>\n"; }
-else { print "<b>$text{'pkg_ok'}</b><p>\n"; }
+if ($?) { print "$text{'pkg_failed'}<p>\n"; }
+else { print "$text{'pkg_ok'}<p>\n"; }
 return @rv;
 }
 

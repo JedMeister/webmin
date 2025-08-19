@@ -1,7 +1,7 @@
-os_support=*-linux freebsd
-version=2.102
-longdesc=Configure the Heartbeat package for automatic server failover in a cluster.
-desc=Heartbeat Monitor
 name=Heartbeat
+desc=Heartbeat Monitor
 category=cluster
-depends=init 2.102
+depends=init 2.402
+os_support=*-linux freebsd
+longdesc=Configure the Heartbeat package for automatic server failover in a cluster.
+version=2.402

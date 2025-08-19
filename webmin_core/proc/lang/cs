@@ -8,8 +8,6 @@ index_search=Hledání
 index_zone=Zóna
 index_run=Spustit..
 index_return=seznam procesů
-index_mem2=<b>Skutečná paměť:</b> $1 celkem / $2 volná
-index_swap2=<b>Swap místo:</b> $1 celkem / $2 volná
 index_loadname=CPU nahrál průměry:
 index_loadnums=$1 (1 min) , $2 (5 min) , $3 (15 min)
 index_cpuname=Typ CPU:
@@ -152,10 +150,10 @@ acl_who1=Aktuální Webmin uživatel
 acl_who2=Uživatelé ze seznamu ..
 
 kill_kill=Zabít proces
-kill_term= Přerušit  
-kill_hup=  Restartovat   
-kill_stop=    Ukončit    
-kill_cont=  Pokračovat  
+kill_term=Přerušit  
+kill_hup=Restartovat   
+kill_stop=Ukončit    
+kill_cont=Pokračovat  
 
 open_title=Otevřené soubory a připojení
 open_proc=Pro proces $1 (PID $2)

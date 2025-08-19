@@ -120,9 +120,6 @@ redhat_eoutput=$1 komutuyla IP tablo statüsüne erişimde bir hata meydana geld
 
 gentoo_escript=Gentoo IPtabloları başlatma betiği $1 sisteminizde bulunamadı.
 
-eiptables=Bilinmeyen IP tabloları $1 satırında saklanır
-eip6tables=Bilinmeyen IP tabloları $1 satırında saklanır
-
 edit_title1=Kural Ekle
 edit_title2=Kuralı Düzenle
 edit_title3=Klonlama Kuralı
@@ -215,7 +212,7 @@ save_egidowner=Unix grubu gönderimi eksik ya da geçersizdir
 save_epidowner=Gönderici süreç ID'si geçersiz veya eksik
 save_esidowner=Gönderim sureci grup ID'si eksik ya da geçersizdir
 save_ertoports=Yeniden yönlendirme hedef portu eksik ya da geçersizdir
-save_emtoports=Maske kaynak portu eksik ya da geçersizdir 
+save_emtoports=Maske kaynak portu eksik ya da geçersizdir
 save_edipfrom=DNAT için başlangıç IP adresi eksik ya da geçersizdir
 save_edipto=DNAT için bitiş IP adresi eksik ya da geçersizdir
 save_edpfrom=DNAT için başlama portu geçersizdir

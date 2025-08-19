@@ -17,11 +17,13 @@ sub groupfiles_type
 return 0;
 }
 
-# open_last_command(handle, user)
+# open_last_command(handle, user, [max])
 sub open_last_command
 {
-local ($fh, $user) = @_;
-open($fh, "last $user |");
+my ($fh, $user, $max) = @_;
+my $quser = quotemeta($user);
+$max = " -n $max" if ($max);
+open($fh, "(last -w$max $quser || last$max $quser) |");
 }
 
 # read_last_line(handle)
@@ -34,7 +36,9 @@ while(1) {
 	chop($line = <$fh>);
 	if (!$line) { return (); }
 	if ($line =~ /^(reboot|shutdown)/) { next; }
-	if ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+)\s+\-\s+(\S+)\s+\((\d+:\d+)\)/) {
+	if ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+)\s+\-\s+(\S+)\s+\((.*?\d+:\d+.*?)\)/) {
+		# root       pts/0    10.211.55.2            Tue Nov 22 21:06 - 23:16  (02:10:00)
+		# root       pts/1    10.211.55.2            Wed Jun 29 13:13 - shutdown (7+00:01:20)
 		return ($1, $2, $3, $4, $5 eq "shutdown" ? "Shutdown" :
 					$5 eq "crash" ? "Crash" : $5, $6);
 		}

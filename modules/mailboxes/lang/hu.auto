@@ -57,7 +57,17 @@ view_enew=Szerkesztés újként
 view_ecannot=Nem szabad elolvasni a felhasználó e-mailjét
 view_sub2=Csatolt e-mail a $1 -től
 view_egone=Ez az üzenet már nem létezik
+view_efolder=Ez a mappa nem létezik!
 view_eugone=Ez a felhasználó nem létezik
+view_ical=Esemény
+view_ical_when=Amikor
+view_ical_where=Ahol
+view_ical_who=WHO
+view_ical_orginizertime=Szervező idő
+view_ical_orginizername=Szervező neve
+view_ical_orginizeremail=Szervező email
+view_ical_attendees=A résztvevők adatai
+view_ical_desc=Esemény leírása
 
 view_gnupg=GnuPG aláírás-ellenőrzés
 view_gnupg_0=$1 aláírása érvényes.
@@ -111,7 +121,7 @@ send_eattach=A mellékletek összesen nem haladhatják meg a $1 kB-ot.
 send_eperms=$2
 send_eperms2=Nem küldhet $1 fájlt
 send_epath=A Sendmail végrehajtható $1 nem létezik.
-send_efile=A melléklet olvasása nem sikerült $1 : $2 
+send_efile=A melléklet olvasása nem sikerült $1 : $2
 send_done=.. Kész.
 
 send_epass=Nem írhat alá üzenetet, mert a jelmondat még nincs beállítva a GnuPG modulban.
@@ -180,6 +190,9 @@ search_nolatest=Mindent a mappában
 search_latestnum=Csak a legújabb
 search_elatest=Hiányzik vagy érvénytelen a keresett üzenetek száma
 search_withstatus=, állapotával $1
+
+folder_sent=Küldött
+folder_spam=Spam
 
 detach_err=A fájl leválasztása nem sikerült
 detach_edir=Nincs fájl vagy könyvtár, amelyet menteni kellene a megadott fájlba
@@ -270,7 +283,7 @@ white_already=Az $1 e-mail cím már szerepel a SpamAssassin megengedett címlis
 
 ldap_emod=Hiányzó Perl-modul $1 szükséges az LDAP-hoz való csatlakozáshoz
 ldap_econn=Nem sikerült csatlakozni az LDAP szerverhez $1 port $2
-ldap_elogin=Nem sikerült kapcsolódni az LDAP szerverhez $1 mint $2 : $3 
+ldap_elogin=Nem sikerült kapcsolódni az LDAP szerverhez $1 mint $2 : $3
 ldap_ehost=Nincs beállítva LDAP szerver a modul konfigurációjában
 ldap_eport=Nincs beállítva érvényes LDAP szerver port a modul konfigurációjában
 ldap_euser=Nincs beállítva LDAP bejelentkezés a modul konfigurációjában

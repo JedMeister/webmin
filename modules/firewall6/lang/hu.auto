@@ -1,7 +1,7 @@
 index_title_v=IPv4 tűzfal
 index_title_v6=IPv6 tűzfal
-index_evalid=FIGYELEM! A jelenlegi IPtable-konfiguráció érvénytelen : $1 
-index_no_comment=
+index_position=Szabályok megjelenítése: $3/$1–$2
+index_evalid=FIGYELEM! A jelenlegi IPtable-konfiguráció érvénytelen : $1
 index_unapply2=Konfiguráció mentése
 index_unapply2desc=Kattintson erre a gombra a fenti konfiguráció mentéséhez az állandó tűzfal konfigurációs fájlba.
 index_firewalld=Úgy tűnik, hogy a FirewallD-t használják a rendszer tűzfalának előállítására. Lehet, hogy inkább a <a href='$1'>FirewallD modult</a> használja.
@@ -19,10 +19,10 @@ index_ipvxmode=IP-protokoll verziójának módosítása:
 index_ipvx4=IPv4
 index_ipvx6=IPv6
 
-desc_icmpv6-type=Az ICMP típusa $1 
-desc_icmpv6-type!=Az ICMP típusa nem $1 
-desc_ctstate=a kapcsolat állapota $1 
-desc_ctstate!=a kapcsolat állapota nem $1 
+desc_icmpv6-type=Az ICMP típusa $1
+desc_icmpv6-type!=Az ICMP típusa nem $1
+desc_ctstate=a kapcsolat állapota $1
+desc_ctstate!=a kapcsolat állapota nem $1
 desc_match-set=$2 megfelel a $1 IP-készletnek
 desc_match-set!=$2 nem egyezik a $1 IP-készlettel
 desc_match-set_src=bejövő forgalom
@@ -31,7 +31,10 @@ desc_args--match-set=A $2 a $1 IP-készletben található
 desc_src=forrás
 desc_dest=cél
 
-redhat_einstalled=Nem található <tt>iptables (6)</tt> indítási művelet, amely azt jelzi, hogy az IPtable csomag nincs telepítve a rendszerére
+redhat_einstalled2=Nem található <tt>$1</tt> rendszerindítási művelet, ami azt jelzi, hogy az IPtables csomag nincs telepítve a rendszerére
+
+eiptables2=Ismeretlen IP-táblák mentési fájlbejegyzése a következő sorban: $2 : $1 
+eip6tables2=Ismeretlen IP6-táblák mentési fájlbejegyzése a következő sorban: $2 : $1 
 
 edit_state_snat=Forrás NATd
 edit_state_dnat=NATd rendeltetési hely

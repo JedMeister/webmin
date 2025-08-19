@@ -19,6 +19,7 @@ if ($in{'source'} == 3 && &foreign_installed("package-updates")) {
 	  "/package-updates/update.cgi?".
 	  "redir=".&urlize($in{'return'} || "/$module_name/").
 	  "&redirdesc=".&urlize($in{'returndesc'} || $module_info{'desc'}).
+	  "&flags=".&urlize($in{'flags'}).
 	  "&mode=new".
 	  "&".join("&", map { "u=".&urlize($_) }
 			    split(/\s+/, $in{'update'})));
@@ -110,7 +111,7 @@ elsif ($in{'source'} == 3) {
 		&ui_print_footer($in{'return'}, $in{'returndesc'});
 		}
 	else {
-		&ui_print_footer("", $text{'index_return'});
+		&ui_print_footer("?tab=install", $text{'index_return'});
 		}
 	exit;
 	}
@@ -167,12 +168,12 @@ print &ui_table_row($text{'install_packs'}, $plist, 3);
 print &ui_table_end();
 print &ui_form_end([ [ undef, $text{'install_ok'} ] ]);
 
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("?tab=install", $text{'index_return'});
 
 sub install_error
 {
 print "$main::whatfailed : @{[&html_escape($_[0])]} <p>\n";
-&ui_print_footer("", $text{'index_return'});
+&ui_print_footer("?tab=install", $text{'index_return'});
 exit;
 }
 

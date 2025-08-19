@@ -36,6 +36,7 @@ edit_rights=Webmin user access rights
 edit_user=Username
 edit_cloneof=Cloning Webmin user
 edit_real=Real name
+edit_email=Contact email
 edit_group=Member of group
 edit_pass=Password
 edit_same=Same as Unix
@@ -90,6 +91,7 @@ edit_selall=Select all
 edit_invert=Invert selection
 edit_hide=Hide Unused
 edit_switch=Switch to User
+edit_forgot=Send Password Reset Link
 edit_return=Webmin user
 edit_return2=Webmin group
 edit_rbacdeny=RBAC access mode
@@ -148,6 +150,7 @@ save_edays=No days to allow selected
 save_ehours=Missing or invalid times to allow
 save_ehours2=Start time to allow must be before end
 save_etemp=The option to force a password change at next login cannot be used unless <a href='$1'>prompting users to enter new passwords</a> is enabled
+save_eemail=Email address cannot contain the : character
 
 delete_err=Failed to delete user
 delete_eself=You cannot delete yourself
@@ -186,7 +189,7 @@ acl_rbacyes=Yes (overrides settings below)
 
 acl_uall=All users
 acl_uthis=This user
-acl_usel=Selected  users ..
+acl_usel=Selected users ..
 acl_gr=Members of $1
 acl_users=Users who can be edited
 acl_mods=Can grant access to
@@ -247,6 +250,9 @@ log_sync=Changed unix user synchronization
 log_sql=Changed user and group database
 log_twofactor=Enrolled user $1 with two-factor provider $2
 log_onefactor=Dis-enrolled user $1 for two-factor authentication
+log_forgot_send=Sent password reset email for user $1 to $2
+log_forgot_reset=Reset password for user $1 with email $2
+log_forgot_admin=Admin sent password reset email for user $1 to $2
 
 gedit_ecannot=You are not allowed to edit groups
 gedit_title=Edit Webmin Group
@@ -509,5 +515,22 @@ twofactor_failed=.. enrollment failed : $1
 twofactor_done=.. complete. Your ID with this provider is <tt>$1</tt>.
 twofactor_setup=Two-factor authentication has not been enabled on this system yet, but can be turned on using the <a href='$1'>Webmin Configuration</a> module.
 twofactor_ebutton=No button clicked!
+
+forgot_title=Send Password Reset Link
+forgot_err=Failed to send password reset link
+forgot_header=Password reset link details
+forgot_user=Reset password for user
+forgot_email=Link delivery method
+forgot_email_def=Display link in Webmin
+forgot_email_sel=Send link via email to
+forgot_send=Send Link
+forgot_desc=This page allows you to generate or send a link that can be used to select a new password for a Webmin user to any email address. Be careful which address you send this link to, as it will effectively grant full access to the Webmin login!
+forgot_adminmsg=You are receiving this email from the administrator of the Webmin system at $3, for the login $1.\n\nIf you would like to proceed with resetting the password, follow this link :\n$2
+forgot_sending=Sending password reset email for $2 to $1 ..
+forgot_sent=.. sent
+forgot_link=The link below can be used to reset the Webmin password for $1 for the next $2 minutes :
+forgot_enosudo=Sudo is not available on this system!
+forgot_ecansudo=The user entered does not have sudo permissions
+forgot_eunix=The sudo-capable user entered does not exist!
 
 __norefs=1

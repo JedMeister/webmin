@@ -1,9 +1,9 @@
-version=2.102
-longdesc=Create and edit partitions on local SCSI, IDE and SATA disks on Linux.
 name=Partition Manager
+category=hardware
 os_support=*-linux
 desc=Partitions on Local Disks
-category=hardware
-noopenvz=1
-depends=mount proc raid 2.102
+depends=mount proc raid 2.402
+longdesc=Create and edit partitions on local SCSI, IDE and SATA disks on Linux.
 novserver=1
+noopenvz=1
+version=2.402

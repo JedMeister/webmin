@@ -73,7 +73,6 @@ extra=Opcje dodatkowe
 pass=Hasło
 none1=Zapytaj przy pierwszym logowaniu
 none2=Hasło nie wymagane
-nologin=Nie może się logować
 encrypted=Hasło uprzednio zaszyfrowane
 nochange=Pozostaw niezmienione
 clear=Hasło otwartym tekstem
@@ -224,7 +223,6 @@ usave_efromroot=Nie masz uprawnień do zmiany katalogu domowego z / na inny
 usave_etoroot=Nie masz uprawnień do zmiany katalogu domowego na /
 
 logins_title=Zapamiętane logowania
-logins_head=Zapamiętane logowania użytkownika $1
 logins_from=Logowanie z
 logins_tty=TTY
 logins_in=Zalogowany

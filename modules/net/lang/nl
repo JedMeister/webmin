@@ -1,7 +1,6 @@
 index_title=Netwerk Configuratie
 index_return=netwerk configuratie
 index_apply=Configuratie Toevoegen
-index_applydesc=Klik op deze knop om de huidige boot-time interface en routing instellingen te activeren, zoals zij normaal zouden doen bij een systeem reboot. <b>Waarschuwing</b> - tijdens deze actie heeft u geen toegang tot uw systeem via het netwerk, en ook geen toegang meer tot Webmin.
 index_delete1=De-activeer Geselecteerde Interfaces
 index_delete2=Verwijder Geselecteerde Interfaces
 index_delete3=Verwijderen en Toevoegen Geselecteerde Interfaces
@@ -135,7 +134,7 @@ routes_gateway=Gateway
 routes_gateway6=IPv6 gateway
 routes_forward=Als een router gedragen?
 routes_routed=Start ontdekken van daemon route?
-routes_edefault='$1' is geen geldige  standaard router
+routes_edefault='$1' is geen geldige standaard router
 routes_edefault6='$1' is geen geldige IPv6 standaard router
 routes_edevice='$1' is geen geldig apparaat
 routes_device2=Standaard apparaat route

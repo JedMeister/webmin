@@ -1,8 +1,8 @@
-version=2.102
-longdesc=Configure the service location protocol server.
-name=OpenSLP
-library=slp-lib.pl
-os_support=!windows
-desc=OpenSLP Server
 category=servers
-depends=2.102
+desc=OpenSLP Server
+name=OpenSLP
+longdesc=Configure the service location protocol server.
+os_support=!windows
+library=slp-lib.pl
+version=2.402
+depends=2.402

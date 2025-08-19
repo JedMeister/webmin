@@ -1,3 +1,4 @@
+nologin=Wyłącz uwierzytelnianie hasłem
 sshkey=Klucz publiczny SSH
 uedit_clone=Klonuj użytkownika
 
@@ -10,6 +11,9 @@ usave_edigestcrypt=Twój system ma włączone $4 haseł, ale funkcja <tt>crypt</
 gedit_clone=Grupa klonów
 
 gsave_eallgid=Wszystkie dozwolone identyfikatory GID zostały przydzielone
+
+logins_head=Wszystkie zarejestrowane logowania dla użytkownika $1
+logins_head_limit=Ostatnie $2 zarejestrowane logowania użytkownika $1
 
 udel_eroot=Nie możesz usuwać użytkowników systemu (tych z UID mniejszym lub równym 10).
 udel_ugroupother=Usuwanie grupy tego użytkownika w innych modułach ..

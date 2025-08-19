@@ -1,7 +1,6 @@
 index_title=Network Configuration
 index_return=network configuration
 index_apply=Apply Configuration
-index_applydesc=Click this button to activate the current boot-time interface and routing settings, as they normally would be after a reboot. <b>Warning</b> - this may make your system inaccessible via the network, and cut off access to Webmin.
 index_delete1=De-Activate Selected Interfaces
 index_delete2=Delete Selected Interfaces
 index_delete3=Delete and Apply Selected Interfaces
@@ -43,7 +42,7 @@ ifcs_ecannot_this=You are not allowed to edit this network interface
 ifcs_range=Range $1
 ifcs_static2=Static configuration
 ifcs_static3=IPv6 enabled
-ifcs_noaddress=No address configured 
+ifcs_noaddress=No address configured
 ifcs_nonetmask=None
 ifcs_mode=IPv4 address
 ifcs_mode6=IPv6 addresses

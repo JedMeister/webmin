@@ -195,28 +195,28 @@ if (&supports_temporary_disable()) {
 	}
 
 # Show password field
-$passmode = $pass eq "" && $random_password eq "" ? 0 :
-	    $pass eq $config{'lock_string'} && $random_password eq "" ? 1 :
-	    $random_password ne "" ? 3 :
-	    $pass && $pass ne $config{'lock_string'} &&
-		$random_password eq "" ? 2 : -1;
+$passmode = $random_password ne "" ? 3 :
+	    $pass eq "" ? 0 :
+	    $pass eq $config{'lock_string'} ? 1 :
+	    $pass && $pass ne $config{'lock_string'} ? 2 : -1;
 $pffunc = $config{'passwd_stars'} ? \&ui_password : \&ui_textbox;
-my $modes = [];
+my @modes;
 if ($passmode eq '0' || $config{'empty_mode'}) {
-	push(@{$modes}, [ 0, $config{'empty_mode'} ? $text{'none1'} : $text{'none2'} ]);
+	push(@modes, [ 0, $config{'empty_mode'} ? $text{'none1'} : $text{'none2'} ]);
 	}
-push(@{$modes}, 
-	    [ 1, $text{'nologin'} ],
+push(@modes,[ 1, $text{'nologin'} ],
 	    [ 3, $text{'clear'},
 	      &$pffunc("pass", $config{'random_password'} && $n eq "" ?
-				$random_password : "", 15) ],
+				$random_password : "", 15, undef, undef,
+					'autocomplete="off" autocorrect="off" '.
+						'autocapitalize="none"') ],
 	    $access{'nocrypt'} ?
 		( [ 2, $text{'nochange'},
 		    &ui_hidden("encpass", $pass) ] ) :
 		( [ 2, $text{'encrypted'},
 		    &ui_textbox("encpass", $passmode == 2 ? $pass : "", 60) ] ));
 print &ui_table_row(&hlink($text{'pass'}, "pass"),
-	&ui_radio_table("passmode", $passmode, $modes).
+	&ui_radio_table("passmode", $passmode, \@modes).
 	  ($can_disable ? "&nbsp;&nbsp;".&ui_checkbox("disable", 1,
 				$text{'uedit_disabled'}, $disabled) : "")
 	  );

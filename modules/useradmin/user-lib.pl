@@ -2377,8 +2377,9 @@ print &ui_columns_start([
 	$lshow ? ( $text{'lastlogin'} ) : ( )
 	], 100, 0, \@tds);
 local $llogin;
+my $os_most_recent_logins = defined(&os_most_recent_logins);
 if ($lshow) {
-	$llogin = &get_recent_logins();
+	$llogin = &get_recent_logins() if ($os_most_recent_logins);
 	if (&foreign_check("mailboxes")) {
 		&foreign_require("mailboxes");
 		}
@@ -2398,6 +2399,8 @@ if (@$users) {
 		push(@cols, &html_escape($u->{'shell'}));
 		if ($lshow) {
 			# Show last login, in local format after Unix time conversion
+			$llogin = &get_recent_logins($u->{'user'}, 1)
+				if (!$os_most_recent_logins);
 			my $ll = $llogin->{$u->{'user'}};
 			if (defined(&mailboxes::parse_mail_date)) {
 				my $tm = &mailboxes::parse_mail_date($ll);
@@ -2552,11 +2555,13 @@ Returns a list of array references, each containing the details of a login.
 =cut
 sub list_last_logins
 {
-local @rv;
-&open_last_command(LAST, $_[0]);
+my ($user, $max) = @_;
+my @rv;
+undef($max) if (defined($max) && $max <= 0); # sanity check
+&open_last_command(LAST, $user, $max);
 while(@last = &read_last_line(LAST)) {
 	push(@rv, [ @last ]);
-	if ($_[1] && scalar(@rv) >= $_[1]) {
+	if ($max && scalar(@rv) >= $max) {
 		last;	# reached max
 		}
 	}
@@ -2564,19 +2569,20 @@ close(LAST);
 return @rv;
 }
 
-=head2 get_recent_logins()
+=head2 get_recent_logins([user], [max])
 
 Returns a hash ref from username to most recent login time/date
 
 =cut
 sub get_recent_logins
 {
+my ($user, $max) = @_;
 if (defined(&os_most_recent_logins)) {
 	return &os_most_recent_logins();
 	}
 else {
 	my %rv;
-	foreach my $l (&list_last_logins()) {
+	foreach my $l (&list_last_logins($user, $max)) {
 		$rv{$l->[0]} ||= $l->[3];
 		}
 	return \%rv;
@@ -2772,6 +2778,20 @@ foreach (1 .. 15) {
 	$rv .= $random_password_chars[rand(scalar(@random_password_chars))];
 	}
 return $rv;
+}
+
+# can_user_sudo_root(user)
+# Returns 1 if some user can run all commands via sudo, 0 if not, or -1 if
+# sudo is not installed
+sub can_user_sudo_root
+{
+my ($user) = @_;
+my $sudo = &has_command("sudo");
+return -1 if (!$sudo);
+my $out = &backquote_command(
+	"$sudo -l -S -U ".quotemeta($user)." 2>&1 </dev/null");
+return -1 if ($?);
+return $out =~ /\(ALL\)\s+ALL|\(ALL\)\s+NOPASSWD:\s+ALL|\(ALL\s*:\s*ALL\)\s+ALL|\(ALL\s*:\s*ALL\)\s+NOPASSWD:\s+ALL/ ? 1 : 0;
 }
 
 1;

@@ -1,7 +1,7 @@
-readonly=1
-version=2.102
-longdesc=Displays an index of other Webmin servers for easy linking.
-desc=Webmin Servers Index
 name=Servers
 category=webmin
-depends=mailboxes cron 2.102
+desc=Webmin Servers Index
+longdesc=Displays an index of other Webmin servers for easy linking.
+readonly=1
+depends=mailboxes cron 2.402
+version=2.402

@@ -1,7 +1,7 @@
-os_support=!windows
-version=2.102
-longdesc=Configure the popular fetchmail program for automatically retrieving mail from other servers.
+category=servers
 desc=Fetchmail Mail Retrieval
 name=Fetchmail
-category=servers
-depends=2.102
+longdesc=Configure the popular fetchmail program for automatically retrieving mail from other servers.
+os_support=!windows
+version=2.402
+depends=2.402

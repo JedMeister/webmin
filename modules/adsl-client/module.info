@@ -1,7 +1,7 @@
-os_support=*-linux
-version=2.102
-longdesc=Set up a PPP client with the RP-PPPoE package.
-desc=ADSL Client
 name=ADSL
+desc=ADSL Client
+os_support=*-linux
 category=net
-depends=net 2.102
+longdesc=Set up a PPP client with the RP-PPPoE package.
+depends=net 2.402
+version=2.402

@@ -14,7 +14,7 @@ print ui_form_start("change_session.cgi", "post");
 print ui_table_start($text{'session_header'}, undef, 2);
 
 # Bad password delay
-print &ui_table_row($text{'session_ptimeout'},
+print &ui_table_row(&hlink($text{'session_ptimeout'}, 'ptimeout'),
 	&ui_radio("passdelay", $miniserv{'passdelay'} ? 1 : 0,
 		  [ [ 0, $text{'session_pdisable'}."<br>\n" ],
 		    [ 1, $text{'session_penable'} ] ]));
@@ -23,22 +23,52 @@ print &ui_table_row($text{'session_ptimeout'},
 print &ui_table_row($text{'session_pblock'},
     &ui_checkbox("blockhost_on", 1, 
 	text('session_blockhost',
-	  ui_textbox("blockhost_failures", $miniserv{'blockhost_failures'}, 4),
-	  ui_textbox("blockhost_time", $miniserv{'blockhost_time'}, 4)),
+	  ui_textbox("blockhost_failures", $miniserv{'blockhost_failures'}, 2),
+	  ui_textbox("blockhost_time", $miniserv{'blockhost_time'}, 2)),
 	$miniserv{'blockhost_failures'} ? 1 : 0));
 
 # Block bad users
 print &ui_table_row("",
     &ui_checkbox("blockuser_on", 1, 
 	text('session_blockuser',
-	  ui_textbox("blockuser_failures", $miniserv{'blockuser_failures'}, 4),
-	  ui_textbox("blockuser_time", $miniserv{'blockuser_time'}, 4)),
+	  ui_textbox("blockuser_failures", $miniserv{'blockuser_failures'}, 2),
+	  ui_textbox("blockuser_time", $miniserv{'blockuser_time'}, 2)),
 	$miniserv{'blockuser_failures'} ? 1 : 0));
 
 # Lock Webmin users who failed login too many times
 print &ui_table_row("",
     ui_checkbox("blocklock", 1, $text{'session_blocklock'},
 		$miniserv{'blocklock'}));
+
+# Enable forgotten password recovery
+print &ui_table_row($text{'session_forgot'},
+	&ui_yesno_radio("forgot", $gconfig{'forgot_pass'}));
+
+# Block bad password requests
+$gconfig{'passreset_failures'} //= 3;
+$gconfig{'passreset_time'} //= 60;
+print &ui_table_row($text{'session_passresetdesc'},
+    &ui_checkbox("blockpass_on", 1, 
+	text('session_passreset',
+	  &ui_textbox("passreset_failures", $gconfig{'passreset_failures'}, 2),
+	  &ui_textbox("passreset_time", $gconfig{'passreset_time'}, 2)),
+	$gconfig{'passreset_failures'} ? 1 : 0));
+
+# Password reset link expiry
+$gconfig{'passreset_timeout'} ||= 15;
+print &ui_table_row($text{'session_passtimeoutdesc'},
+	&text('session_passtimeout',
+		&ui_textbox("passreset_timeout",
+			$gconfig{'passreset_timeout'}, 2)));
+
+# Enable password change API?
+$url = &get_webmin_browser_url("passwd", "change_passwd.cgi");
+(undef, $found) = &acl::get_anonymous_access($password_change_path, \%miniserv);
+print &ui_table_row($text{'session_passapi'},
+	&ui_radio("passapi", $found >= 0 ? 1 : 0,
+		  [ [ 0, $text{'session_passapi0'}."<br>" ],
+		    [ 1, $text{'session_passapi1'} . "&nbsp;" .
+		         &ui_help(&text('session_passurl', "<tt>$url</tt>")) ] ]));
 
 # Log to syslog
 eval "use Sys::Syslog qw(:DEFAULT setlogsock)";
@@ -62,7 +92,7 @@ if (!$miniserv{'session'}) {
 print &ui_table_row($text{'session_sopts'},
 	&ui_checkbox("logouttime_on", 1, 
 		&text('session_logouttime',
-			&ui_textbox("logouttime", $miniserv{'logouttime'}, 10)),
+			&ui_textbox("logouttime", $miniserv{'logouttime'}, 3)),
 		 $miniserv{'logouttime'} ? 1 : 0).
 	"<br>\n".
 	&ui_checkbox("remember", 1, $text{'session_remember'},
@@ -106,7 +136,7 @@ print &ui_table_row($text{'session_popts'},
 		     $miniserv{'pam_end'}).
 	"<br>\n".
 	&text('session_pfile',
-	      &ui_textbox("passwd_file", $miniserv{'passwd_file'}, 20),
+	      &ui_textbox("passwd_file", $miniserv{'passwd_file'}, 12),
 	      &ui_textbox("passwd_uindex", $miniserv{'passwd_uindex'}, 2),
 	      &ui_textbox("passwd_pindex", $miniserv{'passwd_pindex'}, 2)));
 
@@ -140,15 +170,6 @@ print &ui_table_row($text{'session_md5'},
 		    [ 1, $text{'session_md5on'}."<br>" ],
 		    [ 2, $text{'session_sha512'}."<br>" ],
 		    [ 3, $text{'session_yescrypt'} ] ]));
-
-# Enable password change API?
-$url = &get_webmin_browser_url("passwd", "change_passwd.cgi");
-(undef, $found) = &acl::get_anonymous_access($password_change_path, \%miniserv);
-print &ui_table_row($text{'session_passapi'},
-	&ui_radio("passapi", $found >= 0 ? 1 : 0,
-		  [ [ 0, $text{'session_passapi0'}."<br>" ],
-		    [ 1, $text{'session_passapi1'} . "&nbsp;" .
-		         &ui_help(&text('session_passurl', "<tt>$url</tt>")) ] ]));
 
 print ui_table_end();
 print ui_form_end([ [ "save", $text{'save'} ] ]);

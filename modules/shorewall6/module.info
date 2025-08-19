@@ -1,6 +1,6 @@
-os_support=*-linux
-version=2.102
-longdesc=Lets you edit the most useful tables of the Shorewall6 Firewall
 desc=Shorewall6 Firewall
 category=net
-depends=syslog 2.102
+os_support=*-linux
+depends=syslog 2.402
+longdesc=Lets you edit the most useful tables of the Shorewall6 Firewall
+version=2.402

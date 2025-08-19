@@ -1,7 +1,7 @@
-readonly=1
-version=2.102
-longdesc=Create Webmin users and configure which modules and features they are allowed to access.
-desc=Webmin Users
 name=AdminUsers
 category=webmin
-depends=2.102
+desc=Webmin Users
+longdesc=Create Webmin users and configure which modules and features they are allowed to access.
+readonly=1
+version=2.402
+depends=2.402

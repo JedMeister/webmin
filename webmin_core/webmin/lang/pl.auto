@@ -1,5 +1,14 @@
+access_desc=Webmin można skonfigurować tak, aby odmawiał lub zezwalał na dostęp tylko z określonych adresów IP, używając tego formularza. Można również wprowadzić nazwy hostów (takie jak foo.bar.com) i sieci IP (takie jak 10.254.3.0 lub 10.254.1.0/255.255.255.128 lub 10.254.1.0/25 lub 10.254.1.5-10.254.97.127 lub 2001:DB8::A0BC:0001 lub 2001:DB8::/32). Należy ograniczyć dostęp do Webmin do zaufanych adresów, zwłaszcza jeśli jest on dostępny z Internetu. W przeciwnym razie każdy, kto odgadnie Twoje hasło, będzie miał pełną kontrolę nad Twoim systemem.
 access_ecidr8=Rozmiar sieci IPv6 „$1” musi być podzielny przez 8
+access_trust_lvl=Poziom zaufania dla nagłówków proxy
+access_trust_lvl0=Nie, nie ufaj żadnym nagłówkom z serwera proxy
+access_trust_lvl1=Tak, zaufaj zdalnemu adresowi IP dostarczanemu przez serwery proxy
+access_trust_lvl2=Tak, ufaj zdalnemu adresowi IP i certyfikatowi SSL dostarczanemu przez serwery proxy
 
+bind_websocport=Numer portu bazowego dla połączeń WebSockets
+bind_websocport_none=Domyślne (555)
+bind_websoc_host=Nazwa hosta dla połączeń WebSocket
+bind_websoc_host_auto=Automatyczny
 bind_maxconns=Maksymalna łączna liczba jednoczesnych połączeń
 bind_maxconns_per_ip=Maksymalna liczba jednoczesnych połączeń na adres IP
 bind_maxconns_per_net=Maksymalna liczba jednoczesnych połączeń na sieć
@@ -11,6 +20,7 @@ bind_maxlifetime_def=Nieograniczony
 bind_maxlifetime_secs=sekundy
 bind_emaxlifetime=Maksymalny czas życia procesu musi być liczbą większą niż 60 sekund
 
+log_trust=Rejestrować adres IP klienta, gdy jest za serwerem proxy?
 log_global=&lt;Działania globalne&gt;
 log_sched=Zalogować zaplanowane funkcje?
 log_email=Wyślij zarejestrowane działania pocztą e-mail na adres
@@ -21,8 +31,9 @@ ui_nice_size_type=Użyj binarnych jednostek miary (KiB, MiB, GiB zamiast KB, MB,
 
 mods_checksig=Sprawdź plik podpisu dla pobranych modułów?
 
-os_incorrect=System operacyjny $1 został zaktualizowany do wersji $2 
+os_incorrect=System operacyjny $1 został zaktualizowany do wersji $2
 os_release_notes=Informacje o wydaniu
+os_fix=Potwierdź wykryte zmiany
 
 lang_title=Język i lokalizacja
 lang_title2=Język i ustawienia regionalne Webmina
@@ -47,11 +58,13 @@ ssl_letserr2=Alternatywnie sprawdź stronę <a href='$1'>konfiguracji modułu</a
 ssl_letsdesc2=Na tej stronie można zażądać nowego certyfikatu, który zastąpi inne skonfigurowane obecnie w Webmin. Jednak usługa Let's Encrypt wymaga potwierdzenia własności domeny certyfikatu przez sprawdzenie, czy ten system obsługuje witrynę internetową dla domeny. Odbywa się to poprzez umieszczenie małego pliku tymczasowego w katalogu dokumentów witryny.
 ssl_letsheader=Opcje nowego certyfikatu SSL
 ssl_letsdoms=Nazwy hostów dla certyfikatu
-ssl_webroot=Katalog główny witryny dla pliku sprawdzania poprawności
-ssl_webroot0=Host wirtualny Apache zgodny z nazwą hosta
-ssl_webroot1=Inny wirtualny host Apache
-ssl_webroot2=Inny katalog
-ssl_webroot3=Użyj domen DNS do weryfikacji
+ssl_subset=Pominąć niemożliwe do zweryfikowania nazwy hostów?
+ssl_letsmode=Metoda sprawdzania poprawności Let's Encrypt
+ssl_letsmode0=Host wirtualny Apache pasujący do nazwy hosta
+ssl_letsmode1=Wybrany wirtualny host Apache
+ssl_letsmode2=Inny katalog dokumentów serwera WWW
+ssl_letsmode3=Walidacja DNS przy użyciu BIND
+ssl_letsmode4=Wbudowany serwer WWW Certbot
 ssl_letsok=Poproś o certyfikat
 ssl_letsonly=Po prostu zaktualizuj odnowienie
 ssl_usewebmin=Skopiować nowy klucz i certyfikat do Webmina?
@@ -63,6 +76,7 @@ ssl_staging1=Inscenizacja (tylko test)
 
 newkey_ecns=Nie wprowadzono nazw serwerów
 
+upgrade_repo=Najnowsza wersja z repozytorium $1
 upgrade_setup=Uruchamianie skryptu <tt>setup.sh</tt> w celu aktualizacji Webmin ..
 upgrade_setuprpm=Uruchamiam <tt>RPM</tt>, aby uaktualnić Webmina ..
 upgrade_setupdeb=Uruchamianie <tt>DPKG</tt> w celu aktualizacji Webmina ..
@@ -70,6 +84,7 @@ upgrade_setuppackage=Uruchamianie <tt>pkgadd</tt> w celu aktualizacji Webmina ..
 
 ca_alt=Dodatkowe domeny
 
+session_blockhost=Blokuj adresy IP klientów z więcej niż $1 nieudanymi logowaniami przez $2 sekundy.
 session_utmp=Zapisywać loginy i wylogowania w <tt>utmp</tt>?
 session_md5off=Określ automatycznie
 session_md5on=Użyj formatu mieszającego <tt>MD5</tt>
@@ -81,28 +96,72 @@ session_eyescrypt=Nie można użyć formatu haszującego yescrypt, ponieważ mod
 session_passapi=Włączyć interfejs API zdalnej zmiany hasła?
 session_passapi0=API wyłączone
 session_passapi1=API włączone dla użytkowników Uniksa
-session_passurl=Po włączeniu hasła użytkowników można zmienić za pomocą żądania POST do $1 
+session_passurl=Po włączeniu hasła użytkowników można zmienić za pomocą żądania POST do $1
+session_forgot=Czy zezwolić na odzyskiwanie zapomnianego hasła?
+session_eforgot=Odzyskiwanie zapomnianego hasła nie może zostać włączone, chyba że najpierw zostanie usunięty moduł wtyczki <b>Virtualmin Password Recovery</b>. Można to zrobić na stronie <a href='$1'>Webmin Modules</a>.
+session_passresetdesc=Ograniczanie odzyskiwania hasła
+session_passreset=Zablokuj klientów z liczbą żądań większą niż $1 przez $2 minuty
+session_epassreset_failures=Brakujące lub nieprawidłowe żądania blokowania
+session_passtimeoutdesc=Wygaśnięcie łącza resetowania hasła
+session_passtimeout=Link do resetowania hasła wygasa za $1 minut
+session_epassreset_timeout=Brak lub nieprawidłowy limit czasu resetowania hasła
 
 log_fixrepo=Naprawiono repozytorium Webmina
 log_letsencrypt=Zażądałem nowego certyfikatu SSL od Let's Encrypt
 log_letsencryptdns=Utworzono Let's Encrypt DNS record dla $1
 log_letsencryptcleanup=Usunięto Let's Encrypt DNS record dla $1
 
+themes_ok=Motyw został pomyślnie zmieniony, przekierowanie zostało zakończone pomyślnie ..
+themes_ok2=Nakładka motywu została pomyślnie zmieniona, przekierowanie zostało zakończone pomyślnie ..
+
+lock_mode=Pliki do zablokowania przez Webmin
+lock_s=sekundy
+lock_m=minuty
+lock_h=godziny
+lock_pid=PID
+lock_cmd=Scenariusz
+lock_file=Zablokowany plik
+lock_files=Zablokowane pliki
+lock_nfiles=Brak zablokowanych plików
+lock_age=Trzymany dla
+lock_noneopen=Żadne pliki nie są obecnie zablokowane przez Webmin.
+lock_msg=Pliki wymienione poniżej są obecnie zablokowane przez proces Webmin.
+lock_kill=Zabij wybrane zamki
+lock_term=Zakończ wybrane blokady
+lock_return=lista zamków
+
+kill_title=Usuwanie zamków
+kill_err=Nie udało się usunąć blokad
+kill_enone=Nie wybrano żadnego!
+kill_pid=Proces zabijania $1 ..
+term_pid=Zakończenie procesu $1 ..
+kill_gone=.. proces już nie istnieje!
+kill_gone2=.. zamek już nie istnieje!
+kill_dead=.. zabił $1 i zwolnił blokadę $2
+kill_alive=..wysłano sygnał zabicia do $1, ale nie został on zakończony!
+kill_failed=..zabicie nie powiodło się z powodu $1, ale i tak zwolniono blokadę $2
+kill_already=.. zwolniono blokadę na $1
+
 ipkey_ips2=Adresy IP i nazwy hostów
 ipkey_eip2=„$1” nie jest prawidłowym adresem IP ani nazwą hosta
 
 advanced_etempallowed=Katalog plików tymczasowych $1 jest katalogiem systemowym
+advanced_pass_desc=Udostępnić hasło programom Usermin?
+advanced_pass_help=Nie działa, gdy włączone jest uwierzytelnianie sesji
 advanced_listdir=Wyświetlać katalogi bez pliku indeksu?
 advanced_headers=Dodatkowe nagłówki HTTP
 advanced_eheader=Nagłówki muszą być sformatowane jak <tt>Header: Value</tt>
 advanced_sortconfigs=Zapisać pliki konfiguracyjne posortowane według kluczy?
 advanced_bufsize=Rozmiar bufora sieciowego w bajtach
+advanced_bufsize_binary=Rozmiar bufora sieciowego do pobrania w bajtach
 advanced_ebufsize=Rozmiar bufora sieciowego musi być liczbą większą niż zero
+advanced_ebufsize_binary=Rozmiar bufora sieciowego do pobrania musi być liczbą większą od zera
 
 notify_yumrepo=Twój system używa starego repozytorium Webmin YUM. Kliknij poniższy przycisk, aby przełączyć się na adres URL nowego repozytorium <tt>$1</tt>, aby użyć naszego najnowszego klucza podpisu i zapewnić dostęp do zaktualizowanych wersji Webmina.
 notify_aptrepo=Twój system używa starego repozytorium Webmin APT. Kliknij poniższy przycisk, aby przełączyć się na nowy <tt>stable</tt> adres URL repozytorium <tt>$1</tt>, aby użyć naszego najnowszego klucza podpisu i zapewnić dostęp do zaktualizowanych wersji Webmina.
 notif_fixreponow=Zaktualizuj repozytorium Webmina
 
+status_temp2=Zbieraj dane dotyczące temperatury procesora i prędkości wentylatorów?
 status_err=Nie udało się zapisać kolekcji stanu w tle
 status_einterval=Interwał zbierania musi być liczbą całkowitą
 
@@ -110,6 +169,9 @@ sendmail_port=Port SMTP
 sendmail_ssl0=Nigdy nie szyfruj
 sendmail_ssl1=Zawsze używaj TLS
 sendmail_ssl2=Przełącz za pomocą STARTTLS
+sendmail_toaddr=Domyślny adres docelowy powiadomień
+sendmail_to_def=Nie ustawiono
+sendmail_etoaddr=Brakujący lub nieprawidłowo sformatowany adres docelowy
 sendmail_url=Adres URL Webmin do użytku w wiadomościach e-mail
 sendmail_url_def=Domyślnie ($1)
 sendmail_url_custom=Niestandardowy adres URL
@@ -126,7 +188,10 @@ web_eredirpref=Prefiks musi zaczynać się od ukośnika
 web_eredirpref2=Prefiks nie może zawierać spacji
 web_redirssl=Przekieruj SSL
 
+twofactor_totp=Uwierzytelniacz TOTP
 twofactor_eusers=Nie można wyłączyć uwierzytelniania dwuskładnikowego, ponieważ obecnie zarejestrowani są następujący użytkownicy : $1
+twofactor_qrcode=Wprowadź tajny kod $1 w aplikacji TOTP lub zeskanuj poniższy kod QR.
+twofactor_etotptoken=Token TOTP musi być liczbą
 
 letsencrypt_title=Zaszyfrujmy żądanie certyfikatu
 letsencrypt_err=Nie można poprosić o certyfikat
@@ -145,6 +210,7 @@ letsencrypt_ecert=Oczekiwany plik certyfikatu $1 nie został znaleziony
 letsencrypt_ekey=Oczekiwany plik klucza prywatnego $1 nie został znaleziony
 letsencrypt_doing=Żądanie nowego certyfikatu dla $1, przy użyciu katalogu witryny $2 ..
 letsencrypt_doingdns=Żądanie nowego certyfikatu dla $1, przy użyciu weryfikacji DNS.
+letsencrypt_doingcertbot=Żądanie nowego certyfikatu dla $1 przy użyciu serwera WWW Certbot ..
 letsencrypt_failed=.. żądanie nie powiodło się : $1
 letsencrypt_done=.. żądanie powiodło się!
 letsencrypt_show=Nowy certyfikat i klucz prywatny zostały zapisane w następujących plikach :
@@ -161,6 +227,34 @@ letsencrypt_ecsr=Nie udało się wygenerować CSR : $1
 letsencrypt_ekeygen=Nie udało się wygenerować klucza prywatnego : $1
 letsencrypt_enative=Natywny klient Let's Encrypt (certbot) był wcześniej używany w tym systemie i musi być używany do wszystkich przyszłych żądań certyfikatów
 letsencrypt_eacmedns=Tylko oficjalny klient Let's Encrypt obsługuje sprawdzanie poprawności na podstawie DNS
+letsencrypt_eacmecertbot=Tylko oficjalny klient Let's Encrypt obsługuje weryfikację Certbot
 
 announce_hide=Ukryj to ogłoszenie
 alert_hide=Ukryj alert
+
+os_eol=Powiadomienie o odliczaniu EOL systemu operacyjnego
+os_eol_countdown=miesiące wcześniej
+os_eol_ecountdown=Miesiąc przed odliczaniem musi być liczbą całkowitą
+os_eol_until=Dopóki
+os_eol_type1=Konserwacja systemu operacyjnego i wsparcie w zakresie bezpieczeństwa
+os_eol_type2=Rozszerzona konserwacja zabezpieczeń systemu operacyjnego
+os_eol_years=lata
+os_eol_year=rok
+os_eol_months=miesiące
+os_eol_month=miesiąc
+os_eol_weeks=tygodnie
+os_eol_week=tydzień
+os_eol_days=dni
+os_eol_day=dzień
+os_eol_hours=godziny
+os_eol_hour=godzina
+os_eol_minutes=minuty
+os_eol_minute=minuta
+os_eol_seconds=sekundy
+os_eol_second=drugi
+os_eol_reached=Osiągnięto EOL
+os_eol_reaching=EOL w
+os_eol_reaching2=EOL wkrótce
+
+qr_err=Nie udało się wygenerować kodu QR
+qr_estr=Brakuje ciągu kodu QR!

@@ -1,8 +1,8 @@
-version=2.102
-cpan=1
-longdesc=Configure Webmin itself, such as allowed hosts, SSL, installed modules and themes.
 name=Webmin
-desc=Webmin Configuration
-syslog=1
 category=webmin
-depends=cron 2.102
+desc=Webmin Configuration
+depends=cron 2.402
+longdesc=Configure Webmin itself, such as allowed hosts, SSL, installed modules and themes.
+cpan=1
+syslog=1
+version=2.402

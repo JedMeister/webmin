@@ -510,6 +510,7 @@ foreach my $r (@$recs) {
 			   "\t\t\t$v->[4]\n\t\t\t$v->[5]\n\t\t\t$v->[6] )";
 		&modify_record($r->{'file'}, $r, $r->{'realname'}, $r->{'ttl'},
 				$r->{'class'}, $r->{'type'}, $vals);
+		$v->[2] = $serial;
 		}
 	}
 }
@@ -723,10 +724,11 @@ our $uscore = $config{'allow_underscore'} ? "_" : "";
 our $star = $config{'allow_wild'} ? "\\*" : "";
 
 # valdnsname(name, wild, origin)
+# Returns 1 if a DNS record has a valid name
 sub valdnsname
 {
-my($fqdn);
-$fqdn = $_[0] !~ /\.$/ ? "$_[0].$_[2]." : $_[0];
+my ($name, $wild, $origin) = @_;
+my $fqdn = $name !~ /\.$/ ? "$name.$origin." : $name;
 if (length($fqdn) > 255) {
 	&error(&text('edit_efqdn', $fqdn));
 	}
@@ -734,19 +736,19 @@ if ($_[0] =~ /[^\.]{64}/) {
 	# no label longer than 63 chars
 	&error(&text('edit_elabel', $_[0]));
 	}
-return ((($_[1] && $config{'allow_wild'})
-	 ? (($_[0] =~ /^[\*A-Za-z0-9\-\.$uscore]+$/)
-	   && ($_[0] !~ /.\*/ || $bind_version >= 9) # "*" can be only the first
+return ((($wild && $config{'allow_wild'})
+	 ? (($name =~ /^[\*A-Za-z0-9\-\.$uscore]+$/)
+	   && ($name !~ /.\*/ || $bind_version >= 9) # "*" can be only the first
 						    # char, for bind 8
-	   && ($_[0] !~ /\*[^\.]/))	# a "." must always follow "*"
-	 : ($_[0] =~ /^[\A-Za-z0-9\-\.$uscore]+$/))
-	&& ($_[0] !~ /\.\./)		# no ".." inside
-	&& ($_[0] !~ /^\../)		# no "." at the beginning
-	&& ($_[0] !~ /^\-/)		# no "-" at the beginning
-	&& ($_[0] !~ /\-$/)		# no "-" at the end
-	&& ($_[0] !~ /\.\-/)		# no ".-" inside
-	&& ($_[0] !~ /\-\./)		# no "-." inside
-	&& ($_[0] !~ /\.[0-9]+\.$/));	# last label in FQDN may not be
+	   && ($name !~ /\*[^\.]/))	# a "." must always follow "*"
+	 : ($name =~ /^[\A-Za-z0-9\-\.$uscore]+$/))
+	&& ($name !~ /\.\./)		# no ".." inside
+	&& ($name !~ /^\../)		# no "." at the beginning
+	&& ($name !~ /^\-/)		# no "-" at the beginning
+	&& ($name !~ /\-$/)		# no "-" at the end
+	&& ($name !~ /\.\-/)		# no ".-" inside
+	&& ($name !~ /\-\./)		# no "-." inside
+	&& ($name !~ /\.[0-9]+\.$/));	# last label in FQDN may not be
 					# purely numeric
 }
 
@@ -775,7 +777,7 @@ return &base_directory()."/".$path;
 # If some text looks like an SPF TXT record, return a parsed hash ref
 sub parse_spf
 {
-my $txt = join(" ", @_);
+my $txt = join("", @_);
 if ($txt =~ /^v=spf1/) {
 	my @w = split(/\s+/, $txt);
 	my $spf = { };
@@ -930,7 +932,8 @@ else {
 	# All one one line
 	my @rv;
 	foreach my $v (@{$r->{'values'}}) {
-		push(@rv, $v =~ /\s|;/ ? "\"$v\"" : $v);
+		push(@rv, $v =~ /\s|;/ || $r->{'type'} eq 'TXT' ?
+				"\"$v\"" : $v);
 		}
 	return join(" ", @rv);
 	}
@@ -941,7 +944,7 @@ else {
 sub compute_serial
 {
 my ($old) = @_;
-if ($config{'soa_style'} == 1 && $old =~ /^(\d{8})(\d\d)$/) {
+if ($config{'soa_style'} == 1 && $old =~ /^(\d{8})(\d+)$/) {
 	if ($1 >= &date_serial()) {
 		if ($2 >= 99) {
 			# Have to roll over to next day

@@ -4,7 +4,10 @@ BEGIN { push(@INC, ".."); };
 use WebminCore;
 &init_config();
 
-@supported_auths = ( "anonymous", "plain", "digest-md5", "cram-md5", "apop" );
+@supported_auths = ( "anonymous", "plain", "digest-md5", "cram-md5", "apop",
+		     "scram-sha-1", "scram-sha-256", "ntlm", "gss-spnego",
+		     "gssapi", "rpa", "otp", "skey", "external",
+		     "oauthbearer", "xoauth2" );
 @mail_envs = ( undef, "maildir:~/Maildir", "mbox:~/mail/:INBOX=/var/mail/%u",
 	       "maildir:~/Maildir:mbox:~/mail/" );
 
@@ -92,7 +95,7 @@ foreach (@lines) {
 			}
 		}
 	elsif (/^(\s*)(#?)([a-z0-9\_]+)\s+=\s*(.*)/) {
-		# A directive inside a section
+		# A directive which may or may not be inside a section
 		local $dir = { 'name' => $3,
 			       'value' => $4,
 			       'enabled' => !$2,
@@ -216,6 +219,11 @@ return wantarray ? @rv : $rv[0];
 sub save_directive
 {
 local ($conf, $name, $value, $sname, $svalue) = @_;
+$newconf = [ grep { $_->{'file'} !~ /^\/usr\/share\/dovecot/ &&
+                    $_->{'file'} !~ /^\/opt/ } @$conf ];
+if (@$newconf) {
+	$conf = $newconf;
+	}
 local $dir;
 if (ref($name)) {
 	# Old directive given
@@ -368,9 +376,9 @@ else {
 		}
 	}
 splice(@$lref, $section->{'line'}, 0, @newlines);
+$section->{'eline'} = $section->{'line'} + scalar(@newlines) - 1;
 &renumber($conf, $section->{'eline'}, $section->{'file'},
 	  scalar(@newlines)-$oldlen);
-$section->{'eline'} = $section->{'line'} + scalar(@newlines) - 1;
 $section->{'file'} = $file;
 my $i = 1;
 foreach my $m (@{$section->{'members'}}) {
@@ -381,6 +389,17 @@ foreach my $m (@{$section->{'members'}}) {
 	$m->{'sectionname'} = $section->{'name'};
 	$m->{'sectionvalue'} = $section->{'value'};
 	}
+}
+
+# delete_section(&conf, &section)
+# Remove a section and all it's members from the config file
+sub delete_section
+{
+my ($conf, $section) = @_;
+my $lref = &read_file_lines($section->{'file'});
+my $len = $section->{'eline'} - $section->{'line'} + 1;
+splice(@$lref, $section->{'line'}, $len);
+&renumber($conf, $section->{'line'}, $section->{'file'}, -$len);
 }
 
 # renumber(&conf, line, file, offset)
@@ -577,5 +596,4 @@ else {
 }
 
 1;
-r
 

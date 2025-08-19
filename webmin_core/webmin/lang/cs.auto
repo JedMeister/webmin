@@ -1,13 +1,21 @@
 index_refresh=Aktualizujte moduly
 index_refreshmsg=Znovu zkontrolujte všechny nainstalované servery všech modulů Webmin a aktualizujte ty, které se zobrazují v kategorii „Nepoužité moduly“.
 
+access_desc=Webmin lze nakonfigurovat tak, aby zakázal nebo povolil přístup pouze z určitých IP adres pomocí tohoto formuláře. Názvy hostitelů (např. foo.bar.com) a IP sítě (např. 10.254.3.0 nebo 10.254.1.0/255.255.255.128 nebo 10.254.1.0/25 nebo 10.254.1.5-10.254.254.97.127A:0BC:08A:0BC:07 nebo 2001:DB8::/32) lze také zadat. Měli byste omezit přístup k Webminu na důvěryhodné adresy, zejména pokud je přístupný z internetu. Jinak každý, kdo uhodne vaše heslo, bude mít úplnou kontrolu nad vaším systémem.
 access_local=Zahrnout místní síť do seznamu
 access_eip6='$1' není kompletní IPv6 nebo síťová adresa
 access_ecidr6='$1' není platná velikost sítě IPv6
 access_ecidr8=Velikost sítě IPv6 '$1' musí být dělitelná 8
-access_trust=Důvěřujete vzdálené IP adrese poskytované proxy servery?
+access_trust_lvl=Úroveň důvěryhodnosti pro proxy hlavičky
+access_trust_lvl0=Ne, nedůvěřujte žádným hlavičkám z proxy
+access_trust_lvl1=Ano, důvěřovat vzdálené IP adrese poskytované servery proxy
+access_trust_lvl2=Ano, důvěřujte vzdálenému certifikátu IP a certifikátu SSL poskytovanému servery proxy
 
 bind_firewall=Otevřít nové porty na firewallu?
+bind_websocport=Číslo základního portu pro připojení WebSockets
+bind_websocport_none=Výchozí (555)
+bind_websoc_host=Název hostitele pro připojení WebSocket
+bind_websoc_host_auto=Automatický
 bind_ipv6=Přijímáte připojení IPv6?
 bind_eipv6=IPv6 nelze povolit, pokud není nainstalován modul $1 Perl
 bind_redirecting=Přesměrování na novou adresu URL.
@@ -24,6 +32,7 @@ bind_maxlifetime_def=Neomezený
 bind_maxlifetime_secs=sekundy
 bind_emaxlifetime=Maximální životnost procesu musí být číslo větší než 60 sekund
 
+log_trust=Zaznamenat IP adresu klienta, když je za proxy?
 log_global=&lt;Globální akce&gt;
 log_sched=Protokolovat naplánované funkce?
 log_login=Zahrnout přihlašovací údaje Webmin a odhlášení do protokolu akcí?
@@ -40,6 +49,7 @@ mods_checksig=Zkontrolovat podpisový soubor pro stažené moduly?
 os_perllib=Další cesty knihovny Perl
 os_incorrect=Operační systém $1 byl upgradován na verzi $2
 os_release_notes=Poznámky k vydání
+os_fix=Potvrďte zjištěné změny
 os_usermin=Aktualizujte také Usermin OS
 
 lang_title=Jazyk a národní prostředí
@@ -87,11 +97,13 @@ ssl_letserr2=Alternativně zkontrolujte stránku <a href='$1'>konfigurace modulu
 ssl_letsdesc2=Tuto stránku lze použít k vyžádání nového certifikátu, který přepíše všechny ostatní aktuálně nakonfigurované v systému Webmin. Služba Let's Encrypt však vyžaduje, aby bylo vaše vlastnictví domény certifikátů ověřeno kontrolou, zda tento systém hostuje web pro danou doménu. To se provádí umístěním malého dočasného souboru do adresáře dokumentů na webu.
 ssl_letsheader=Možnosti nového certifikátu SSL
 ssl_letsdoms=Názvy hostitelů pro certifikát
-ssl_webroot=Kořenový adresář webových stránek pro ověřovací soubor
-ssl_webroot0=Virtuální hostitel Apache odpovídající hostname
-ssl_webroot1=Jiný virtuální hostitel Apache
-ssl_webroot2=Další adresář
-ssl_webroot3=Pro ověření použijte domény DNS
+ssl_subset=Přeskočit neověřitelné názvy hostitelů?
+ssl_letsmode=Ověřovací metoda Let's Encrypt
+ssl_letsmode0=Virtuální hostitel Apache odpovídá názvu hostitele
+ssl_letsmode1=Vybraný virtuální hostitel Apache
+ssl_letsmode2=Jiný adresář dokumentů webového serveru
+ssl_letsmode3=Ověření DNS pomocí BIND
+ssl_letsmode4=Vestavěný webový server Certbot
 ssl_letsok=Vyžádejte si certifikát
 ssl_letsonly=Jen aktualizujte obnovení
 ssl_usewebmin=Kopírovat nový klíč a certifikát do Webmin?
@@ -112,6 +124,7 @@ newcsr_ok2=Tento CSR musí být zaslán podpisující autoritě, která vrátí 
 startpage_webminup=Zobrazit aktualizace Webmin na stránce Systémové informace?
 startpage_moduleup=Zobrazit aktualizace modulu na stránce Systémové informace?
 
+upgrade_repo=Nejnovější verze z úložiště $1
 upgrade_setup=Spuštění skriptu <tt>setup.sh</tt> pro upgrade Webminu ..
 upgrade_setuprpm=Spuštěním <tt>RPM</tt> upgradujete Webmin ..
 upgrade_setupdeb=Spuštěním <tt>DPKG</tt> upgradujete Webmin ..
@@ -132,6 +145,7 @@ ca_alt=Další domény
 
 session_ptimeout=Vypršení časového limitu hesla
 session_pblock=Selhalo přihlašovací bloky
+session_blockhost=Blokovat adresy IP klientů s více než $1 neúspěšných přihlášení na $2 sekund.
 session_syslog3=Selhání protokolu do <tt>syslog</tt>?
 session_stype=Typ ověření
 session_sopts=Možnosti ověřování
@@ -160,6 +174,14 @@ session_passapi=Povolit vzdálenou změnu hesla API?
 session_passapi0=API deaktivováno
 session_passapi1=API povoleno pro uživatele Unixu
 session_passurl=Je -li tato možnost povolena, lze hesla uživatele změnit pomocí požadavku POST na $1
+session_forgot=Povolit obnovení zapomenutého hesla?
+session_eforgot=Obnovení zapomenutého hesla nelze povolit, dokud není nejprve odstraněn plugin <b>Virtualmin Password Recovery</b>. To lze provést na stránce <a href='$1'>Moduly Webmin</a>.
+session_passresetdesc=Omezení obnovení hesla
+session_passreset=Blokovat klienty s více než $1 požadavky po dobu $2 minut
+session_epassreset_failures=Chybějící nebo neplatné požadavky na blokování
+session_passtimeoutdesc=Platnost odkazu pro obnovení hesla
+session_passtimeout=Odkaz na obnovení hesla vyprší za $1 minut
+session_epassreset_timeout=Chybějící nebo neplatný časový limit pro resetování hesla
 
 categories_custom=Zvyk
 
@@ -186,13 +208,42 @@ themes_tabinstall=Nainstalovat motiv
 themes_tabdelete=Mazat témata
 themes_tabexport=Exportovat témata
 
-themes_ok2=Překryvný motiv se úspěšně změnil.. přesměrování na indexovou stránku Webmin.
+themes_ok=Téma se nyní úspěšně přesměrovalo ..
+themes_ok2=Překryvná vrstva motivu se nyní úspěšně přesměrovala ..
 themes_err4=Téma překrytí se nepodařilo změnit
 themes_eoverlay=Vybrané překrytí není kompatibilní s aktuálním globálním tématem
 
 referers_none2=VAROVÁNÍ: Tím se váš systém otevře až do útoků XSS!
 
 third_title=Vyberte modul třetí strany
+
+lock_mode=Soubory pro Webmin k uzamčení
+lock_s=sekundy
+lock_m=minut
+lock_h=hodin
+lock_pid=PID
+lock_cmd=Skript
+lock_file=Uzamčený soubor
+lock_files=Uzamčené soubory
+lock_nfiles=Žádné uzamčené soubory
+lock_age=Drženo pro
+lock_noneopen=Webmin aktuálně nezamkne žádné soubory.
+lock_msg=Níže uvedené soubory jsou aktuálně uzamčeny procesem Webmin.
+lock_kill=Zabijte vybrané zámky
+lock_term=Ukončit vybrané zámky
+lock_return=seznam zámků
+
+kill_title=Odstranění zámků
+kill_err=Zámky se nepodařilo odstranit
+kill_enone=Nebyl vybrán žádný!
+kill_pid=Proces zabíjení $1 ..
+term_pid=Ukončování procesu $1 ..
+kill_gone=.. proces již neexistuje!
+kill_gone2=.. zámek již neexistuje!
+kill_dead=.. zabil $1 a uvolnil zámek $2
+kill_alive=.. odeslal signál zabití $1, ale neukončil!
+kill_failed=.. zabití se nezdařilo kvůli $1, ale přesto byl uvolněn zámek $2
+kill_already=.. uvolněn zámek na $1
 
 ipkey_ips2=Pro adresy IP a názvy hostitelů
 ipkey_eip2='$1' není platná IP adresa nebo název hostitele
@@ -209,6 +260,8 @@ advanced_precache1=Textové soubory v anglickém jazyce
 advanced_precache2=Soubory odpovídající vzorům prostředí $1
 advanced_eprecache=Chybějící seznam vzorů prostředí pro předběžnou vyrovnávací paměť
 advanced_etempallowed=Adresář dočasných souborů $1 je systémový adresář
+advanced_pass_desc=Zpřístupnit heslo pro programy Usermin?
+advanced_pass_help=Nefunguje, když je povoleno ověřování relace
 advanced_chattr=Povolit úpravu neměnných souborů?
 advanced_sclass=Třída IO pro naplánované úlohy
 advanced_sprio=IO priorita pro naplánované úlohy
@@ -225,7 +278,9 @@ advanced_headers=Extra záhlaví HTTP
 advanced_eheader=Záhlaví musí být formátována jako <tt>Záhlaví: Hodnota</tt>
 advanced_sortconfigs=Uložit konfigurační soubory seřazené podle jeho klíčů?
 advanced_bufsize=Velikost vyrovnávací paměti sítě v bajtech
+advanced_bufsize_binary=Velikost síťové vyrovnávací paměti pro stahování v bajtech
 advanced_ebufsize=Velikost vyrovnávací paměti sítě musí být číslo větší než nula
+advanced_ebufsize_binary=Velikost vyrovnávací paměti sítě pro stahování musí být číslo větší než nula
 
 savekey_echain=Chybějící nebo neplatný zřetězený certifikát formátu PEM
 savekey_done3=Dodaný zřetězený SSL certifikát byl uložen do souboru $1.
@@ -289,6 +344,7 @@ status_interval0=Každý
 status_mins=minut
 status_pkgs=Shromažďovat dostupné aktualizace balíků?
 status_temp=Sbírejte jízdní teploty?
+status_temp2=Sbírat teploty procesoru a rychlost ventilátorů?
 status_units=Jednotky pro teploty
 status_celsius=Celsia
 status_fahrenheit=Fahrenheita
@@ -319,6 +375,9 @@ sendmail_authdef=Výchozí (aktuálně Cram-MD5)
 sendmail_from=Z adresy pro e-mail od Webmin
 sendmail_fromdef=Výchozí ($1)
 sendmail_fromaddr=Adresa
+sendmail_toaddr=Výchozí cílová adresa pro oznámení
+sendmail_to_def=Žádná nastavena
+sendmail_etoaddr=Chybějící nebo nesprávně naformátovaná cílová adresa
 sendmail_err=Možnosti odeslání pošty se nepodařilo uložit
 sendmail_esmtp=Chybějící nebo nerozlišitelný název hostitele serveru SMTP
 sendmail_eport=Chybějící nebo nečíselný port SMTP
@@ -393,6 +452,7 @@ twofactor_title=Dvoufaktorové ověření
 twofactor_header=Možnosti dvoufaktorové autentizace
 twofactor_provider=Poskytovatel ověřování
 twofactor_none=Žádný
+twofactor_totp=TOTP Authenticator
 twofactor_apikey=Authy API API
 twofactor_test=Používáte testovací režim poskytovatele?
 twofactor_desc=Dvojfaktorová autentizace umožňuje uživatelům Webminu povolit při přihlášení používat další autentizační zařízení, například jednorázový generátor přístupového kódu. Po aktivaci této stránky se uživatelé musí u vybraného poskytovatele ověřování samostatně zaregistrovat.
@@ -415,10 +475,9 @@ twofactor_eauthyotp=Authy token je neplatný
 twofactor_enrolllink=Nyní se můžete přihlásit k dvoufaktorové autentizaci v modulu <a href='$1'>Webmin Users</a>.
 twofactor_url=Další informace o $1 naleznete na webových stránkách <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=Modul Perl <tt>$1</tt> potřebný pro dvoufaktorovou autentizaci není nainstalován. Chcete-li ji nainstalovat, použijte <a href='$2'>Perl moduly</a> ve Webminu.
-twofactor_qrcode=Do aplikace Google Authenticator zadejte tajný kód $1 nebo naskenujte níže uvedený QR kód.
+twofactor_qrcode=Zadejte tajný kód $1 v aplikaci TOTP nebo naskenujte QR kód níže.
 twofactor_etotpid=Neplatné tajné kódování TOTP base32
-twofactor_etotptoken=Token Google Authenticator musí být číslo
-twofactor_etotpmodule2=Chybí modul Perl $1
+twofactor_etotptoken=TOTP token musí být číslo
 twofactor_etotpmatch=Nesprávný kód OTP
 twofactor_secret=Osobní tajný klíč
 twofactor_secret1=Generováno náhodně
@@ -443,6 +502,7 @@ letsencrypt_ecert=Očekávaný soubor certifikátů $1 nebyl nalezen
 letsencrypt_ekey=Očekávaný soubor soukromého klíče $1 nebyl nalezen
 letsencrypt_doing=Žádost o nový certifikát pro $1 pomocí adresáře webových stránek $2 ..
 letsencrypt_doingdns=Vyžádání nového certifikátu pro $1 pomocí ověření DNS.
+letsencrypt_doingcertbot=Žádost o nový certifikát pro $1 pomocí webového serveru Certbot ..
 letsencrypt_failed=.. požadavek se nezdařil : $1
 letsencrypt_done=.. žádost byla úspěšná!
 letsencrypt_show=Nový certifikát a soukromý klíč byly zapsány do následujících souborů :
@@ -459,6 +519,34 @@ letsencrypt_ecsr=Nepodařilo se vygenerovat CSR : $1
 letsencrypt_ekeygen=Generování soukromého klíče se nezdařilo : $1
 letsencrypt_enative=V tomto systému byl dříve použit nativní klient Encrypt (certbot) a musí být použit pro všechny budoucí žádosti o certifikát
 letsencrypt_eacmedns=Pouze oficiální klient Let's Encrypt podporuje ověření založené na DNS
+letsencrypt_eacmecertbot=Ověření Certbot podporuje pouze oficiální klient Let's Encrypt
 
 announce_hide=Skrýt toto oznámení
 alert_hide=Skrýt upozornění
+
+os_eol=Upozornění na odpočítávání OS EOL
+os_eol_countdown=měsíce předtím
+os_eol_ecountdown=Měsíc před odpočítáváním musí být celé číslo
+os_eol_until=Až do
+os_eol_type1=Údržba OS a podpora zabezpečení
+os_eol_type2=Rozšířená údržba zabezpečení OS
+os_eol_years=let
+os_eol_year=rok
+os_eol_months=měsíce
+os_eol_month=Měsíc
+os_eol_weeks=týdnů
+os_eol_week=týden
+os_eol_days=dní
+os_eol_day=den
+os_eol_hours=hodin
+os_eol_hour=hodina
+os_eol_minutes=minut
+os_eol_minute=minuta
+os_eol_seconds=sekundy
+os_eol_second=druhý
+os_eol_reached=EOL dosaženo
+os_eol_reaching=EOL in
+os_eol_reaching2=EOL se blíží
+
+qr_err=Vygenerování QR kódu se nezdařilo
+qr_estr=Chybí řetězec QR kódu!

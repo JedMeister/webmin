@@ -1,7 +1,7 @@
-os_support=!windows
-version=2.102
-longdesc=Edit recipes in the global /etc/procmailrc file, which apply to all incoming email.
-desc=Procmail Mail Filter
 name=Procmail
+desc=Procmail Mail Filter
 category=servers
-depends=2.102
+longdesc=Edit recipes in the global /etc/procmailrc file, which apply to all incoming email.
+os_support=!windows
+version=2.402
+depends=2.402

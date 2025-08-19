@@ -17,6 +17,7 @@ index_loginsuser=Sadece kullanıcı
 index_loginsdesc=SSH veya Usermin ile bağlanan bazı veya tüm Unix kullanıcılarından son oturum açma bilgilerini göster.
 index_whodesc=Şu anda SSH veya Usermin ile giriş yapmış kullanıcıları göster.
 
+nologin=Parola doğrulamasını devre dışı bırak
 sshkey=SSH ortak anahtarı
 uedit_manual=rehber
 uedit_allg=Tüm gruplar
@@ -43,6 +44,9 @@ gedit_prinone=Hiçbir kullanıcı birincil olarak bu gruba sahip değil
 gedit_clone=Klon Grubu
 
 gsave_egidused2=GID zaten kullanılıyor
+
+logins_head=$1 kullanıcısı için kaydedilen tüm oturum açmalar
+logins_head_limit=Son $2 kullanıcı $1 için kaydedilen oturum açmalar
 
 udel_ugroupother=Bu kullanıcının grubunu diğer modüllerde silme ..
 

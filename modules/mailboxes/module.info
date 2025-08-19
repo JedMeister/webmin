@@ -1,7 +1,7 @@
-os_support=!windows
-readonly=1
-version=2.102
-longdesc=Read email in users' mailboxes.
 desc=Read User Mail
 category=servers
-depends=2.102
+longdesc=Read email in users' mailboxes.
+readonly=1
+os_support=!windows
+version=2.402
+depends=2.402

@@ -211,14 +211,18 @@ foreach $u (@subn) {
 		push(@sicons, $i = "images/shared.gif");
 		push(@checkboxids, $u->{'index'});
 		}
-	if ($config{'desc_name'} && $u->{'comment'}) {
-		push(@utitles, $t = &html_escape($u->{'comment'}));
+	if ($config{'desc_name'} == 0) {
+		$t = $u->{'values'}->[0];
+		}
+	elsif ($config{'desc_name'} == 1) {
+		$t = $u->{'comment'} || $u->{'values'}->[0];
 		}
 	else {
-		push(@utitles, $t = &html_escape($u->{'values'}->[0]));
+		$t = $u->{'values'}->[0].($u->{'comment'} ? " ($u->{'comment'})" : "");
 		}
+	push(@utitles, &html_escape($t));
 	push(@uslinks, $l);	# so that ordering is preserved
-	push(@ustitles, $t);
+	push(@ustitles, &html_escape($t));
 	push(@usicons, $i);
 	}
 @checkboxes = map { &ui_checkbox("d", $_) } @checkboxids;
@@ -270,21 +274,21 @@ if ($show_subnet_delete) {
 if ($show_subnet_shared) {
 	if (@ulinks >= $display_max) {
 		# Could not show all subnets, so show lookup form
-        print &ui_form_start("lookup_subnet.cgi", "get");
-        print &ui_table_start(undef, undef, 2);
-        print &ui_table_row($text{'index_subtoomany'}, &ui_submit($text{'index_sublook2'}));
-        print &ui_table_row($matches, &ui_textbox("subnet", "", 30));
-	    print &ui_table_end();
-        print &ui_form_end(undef,undef,1);
+		print &ui_form_start("lookup_subnet.cgi", "get");
+		print &ui_table_start(undef, undef, 2);
+		print &ui_table_row($text{'index_subtoomany'}, &ui_submit($text{'index_sublook2'}));
+		print &ui_table_row($matches, &ui_textbox("subnet", "", 30));
+		    print &ui_table_end();
+		print &ui_form_end(undef,undef,1);
 		}
 	if (@slinks >= $display_max) {
 		# Could not show all shared nets, so show lookup form
-        print &ui_form_start("lookup_shared.cgi", "get");
-        print &ui_table_start(undef, undef, 2);
-        print &ui_table_row($text{'index_shatoomany'}, &ui_submit($text{'index_shalook2'}));
-        print &ui_table_row($matches, &ui_textbox("shared", "", 30));
-	    print &ui_table_end();
-        print &ui_form_end(undef,undef,1);
+		print &ui_form_start("lookup_shared.cgi", "get");
+		print &ui_table_start(undef, undef, 2);
+		print &ui_table_row($text{'index_shatoomany'}, &ui_submit($text{'index_shalook2'}));
+		print &ui_table_row($matches, &ui_textbox("shared", "", 30));
+		    print &ui_table_end();
+		print &ui_form_end(undef,undef,1);
 		}
 	}
 
@@ -336,12 +340,16 @@ foreach $h (@host) {
 			(defined($subnet{$h}) ? "&uidx=$subnet{$h}" : "").
 			(defined($shared{$h}) ? "&sidx=$shared{$h}" : "") :
 			undef);
-		if ($config{'desc_name'} && $h->{'comment'}) {
-			push(@htitles, &html_escape($h->{'comment'}));
+		if ($config{'desc_name'} == 0) {
+			$t = $h->{'values'}->[0];
+			}
+		elsif ($config{'desc_name'} == 1) {
+			$t = $h->{'comment'} || $h->{'values'}->[0];
 			}
 		else {
-			push(@htitles, &html_escape($h->{'values'}->[0]));
+			$t = $h->{'values'}->[0].($h->{'comment'} ? " ($h->{'comment'})" : "");
 			}
+		push(@htitles, &html_escape($t));
 		if ($config{'show_ip'}) {
 			$fv = &fixedaddr($h);
 			$htitles[$#htitles] .= "<br>".$fv if ($fv);
@@ -589,7 +597,13 @@ sub host_table
 {
 local ($i, $h, $parent);
 local @tds = ( "width=5" );
-print &ui_columns_start([ "", $text{'index_hostgroup'},
+my $hascmt;
+for ($i = $_[1]; $i < $_[2]; $i++) {
+	$hascmt++ if ($_[4]->[$i] =~ /\(.*\)/);
+	}
+print &ui_columns_start([ "",
+			  $text{'index_hostgroup'},
+			  $hascmt ? ( $text{'index_comment'} ) : ( ),
 			  $text{'index_parent'}, $text{'index_hardware'},
 			  $text{'index_nameip'} ], 100, 0, \@tds);
 for ($i = $_[1]; $i < $_[2]; $i++) {
@@ -605,6 +619,10 @@ for ($i = $_[1]; $i < $_[2]; $i++) {
 		$firstcol .= $text{'index_group'}." ";
 		$sp = "\&nbsp;\&nbsp;";
 		}
+	my $cmt;
+	if ($_[4]->[$i] =~ s/\s+\((.*)\)//) {
+		$cmt = $1;
+		}
 	if ($_[3]->[$i]) {
 		$firstcol .= &ui_link($_[3]->[$i], $_[4]->[$i]);
 		}
@@ -612,6 +630,7 @@ for ($i = $_[1]; $i < $_[2]; $i++) {
 		$firstcol .= $_[4]->[$i];
 		}
 	push(@cols, $firstcol);
+	push(@cols, $cmt) if ($hascmt);
 
 	if ($par{$h}->{'name'} eq "group") {		
 	    $par_type = $text{'index_togroup'};
@@ -640,7 +659,14 @@ sub net_table
 {
 local ($i, $n);
 local @tds = ( "width=5" );
-print &ui_columns_start([ "", $text{'index_net'}, $text{'index_netmask'},
+my $hascmt;
+for ($i = $_[1]; $i < $_[2]; $i++) {
+	$hascmt++ if ($_[4]->[$i] =~ /\(.*\)/);
+	}
+print &ui_columns_start([ "",
+			  $text{'index_net'},
+			  $hascmt ? ( $text{'index_comment'} ) : ( ),
+			  $text{'index_netmask'},
 			  $text{'index_desc'}, $text{'index_parent'} ], 100,
 			0, \@tds);
 for ($i = $_[1]; $i < $_[2]; $i++) {
@@ -653,6 +679,10 @@ for ($i = $_[1]; $i < $_[2]; $i++) {
 	else {
 		$sp = "\&nbsp;\&nbsp;";
 		}
+	my $cmt;
+	if ($_[4]->[$i] =~ s/\s+\((.*)\)//) {
+		$cmt = $1;
+		}
 	if ($_[3]->[$i]) {
 		$first .= &ui_link($_[3]->[$i],$_[4]->[$i]);
 		}
@@ -660,6 +690,7 @@ for ($i = $_[1]; $i < $_[2]; $i++) {
 		$first .= $_[4]->[$i];
 		}
 	push(@cols, $first);
+	push(@cols, $cmt) if ($hascmt);
 	push(@cols, $_[3]->[$i] ? &netmask($n) : "");
 	push(@cols, $n->{'comment'});
 	push(@cols, $par{$n} ? 

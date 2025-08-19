@@ -148,6 +148,22 @@ if ($ok) {
 		print &ui_form_end();
 		}
 
+	# Allow/block given IP
+	my $blockip_placeholder =
+		&text('index_blockip_placeholder', '1.2.3.4', '2001:db8::1/64');
+	foreach my $action (['allow', $text{'index_allowip_go'},
+			     $text{'index_allowip_permanent'}],
+			    ['block', $text{'index_blockip_go'},
+			     $text{'index_blockip_permanent'}]) {
+		print "<br>".&ui_form_start("manage_ip.cgi");
+		print &ui_hidden("zone", $zone->{'name'});
+		print &ui_submit($action->[1], $action->[0]),
+			&ui_textbox("ip", undef, 21, undef, undef,
+				"placeholder='$blockip_placeholder'")."&nbsp;".
+			&ui_checkbox("permanent", 1, $action->[2], 1);
+		print &ui_form_end();
+		}
+	print &ui_form_end();
 	print &ui_hr();
 	
 	# Show start/apply buttons
@@ -162,7 +178,10 @@ if ($ok) {
 	print &ui_buttons_row("stop.cgi", $text{'index_stop'},
 			      $text{'index_stopdesc'},
 			      [ [ "zone", $zone->{'name'} ] ]);
-}
+	}
+else {
+	print &ui_alert_box($text{'index_downrules'}, 'warn');
+	}
 
 # Show Start and disable/enabled at boot button
 if (!$ok) {

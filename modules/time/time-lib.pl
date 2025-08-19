@@ -13,6 +13,8 @@ our ($timezones_file, $currentzone_link, $currentzone_file, $timezones_dir,
      $sysclock_file);
 our ($get_hardware_time_error);
 our $cron_cmd = "$module_config_directory/sync.pl";
+our $cronyd_name = $gconfig{'os_type'} eq 'debian-linux' ? 'chrony' : 'chronyd';
+our $rawtime;
 if ($config{'zone_style'}) {
 	do "$config{'zone_style'}-lib.pl";
 	}
@@ -48,10 +50,22 @@ if (&has_command("ntpdate")) {
 elsif (&has_command("sntp")) {
 	$out = &backquote_logged("sntp -s $servs 2>&1");
 	}
-elsif (&has_command("chronyc")) {
-	$out = &backquote_logged("systemctl restart chronyd 2>&1");
+elsif (&foreign_require('init') && &init::action_status($cronyd_name) > 0 && &has_command("chronyc")) {
+	my $chronyd_running = &init::status_action($cronyd_name);
+	$out = &backquote_logged("systemctl restart $cronyd_name 2>&1");
 	$out .= &backquote_logged("chronyc makestep 2>&1");
-	sleep 5;
+	sleep ($chronyd_running ? 5 : 15);
+	if (!$chronyd_running) {
+		&backquote_logged("systemctl stop $cronyd_name 2>&1");
+		}
+	}
+elsif (&foreign_require('init') && &init::action_status('systemd-timesyncd') > 0) {
+	my $systemd_timesyncd_running = &init::status_action('systemd-timesyncd');
+	$out = &backquote_logged("systemctl restart systemd-timesyncd 2>&1");
+	sleep ($systemd_timesyncd_running ? 5 : 15);
+	if (!$systemd_timesyncd_running) {
+		&backquote_logged("systemctl stop systemd-timesyncd 2>&1");
+		}
 	}
 else {
 	$out = "Missing ntpdate and sntp commands";
@@ -64,7 +78,6 @@ if ($? && $config{'ntp_only'}) {
 elsif ($?) {
 	# error using ntp. use timeservice
 	my ($err, $serv);
-	my $rawtime;
 	foreach $serv (@servs) {
 		$err = undef;
 		my $fh = "SOCK";
@@ -193,7 +206,7 @@ my ($second, $minute, $hour, $date, $month, $year) = @_;
 $month++;
 $year += 1900;
 my $format = "--set --date=".
-		quotemeta("$month/$date/$year $hour:$minute:$second");
+		quotemeta("$year-$month-$date $hour:$minute:$second");
 my $flags = &get_hwclock_flags();
 my $out = &backquote_logged("hwclock $flags $format 2>&1");
 return $? ? $out : undef;
@@ -209,22 +222,30 @@ $hour = &zeropad($hour, 2);
 $date = &zeropad($date, 2);
 $month = &zeropad($month+1, 2);
 $year = &zeropad($year+1900, 4);
-my $format;
-if ($config{'seconds'} == 2) {
-	$format = $year.$month.$date.$hour.$minute.".".$second;
-	}
-elsif ($config{'seconds'} == 1) {
-	$format = $month.$date.$hour.$minute.$year.".".$second;
-	}
-else {
-	$format = $month.$date.$hour.$minute.substr($year, -2);
-	}
-my $out = &backquote_logged("echo yes | date ".quotemeta($format)." 2>&1");
-if ($gconfig{'os_type'} eq 'freebsd' || $gconfig{'os_type'} eq 'netbsd') {
-	return int($?/256) == 1 ? $out : undef;
+if (&has_command('timedatectl')) {
+	my ($out, $err);
+	 &execute_command("timedatectl set-time ".
+		quotemeta("$year-$month-$date $hour:$minute:$second"), undef, \$out, \$err);
+	return $out || $err ? ($out || $err) : undef;
 	}
 else {
-	return $? ? $out : undef;
+	my $format;
+	if ($config{'seconds'} == 2) {
+		$format = $year.$month.$date.$hour.$minute.".".$second;
+		}
+	elsif ($config{'seconds'} == 1) {
+		$format = $month.$date.$hour.$minute.$year.".".$second;
+		}
+	else {
+		$format = $month.$date.$hour.$minute.substr($year, -2);
+		}
+	my $out = &backquote_logged("echo yes | date ".quotemeta($format)." 2>&1");
+	if ($gconfig{'os_type'} eq 'freebsd' || $gconfig{'os_type'} eq 'netbsd') {
+		return int($?/256) == 1 ? $out : undef;
+		}
+	else {
+		return $? ? $out : undef;
+		}
 	}
 }
 

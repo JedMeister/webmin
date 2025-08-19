@@ -36,6 +36,10 @@ if ($in{'webroot_mode'} == 3) {
 	# Validation via DNS
 	$mode = "dns";
 	}
+elsif ($in{'webroot_mode'} == 4) {
+	# Validation via Certbot webserver
+	$mode = "certbot";
+	}
 elsif ($in{'webroot_mode'} == 2) {
 	# Some directory
 	$in{'webroot'} =~ /^\/\S+/ && -d $in{'webroot'} ||
@@ -50,8 +54,11 @@ else {
 				"VirtualHost", $conf)) {
 		my $sn = &apache::find_directive(
 			"ServerName", $virt->{'members'});
+		my @sa = &apache::find_directive(
+			"ServerAlias", $virt->{'members'});
 		my $match = 0;
-		if ($in{'webroot_mode'} == 0 && $sn eq $doms[0]) {
+		if ($in{'webroot_mode'} == 0 &&
+		    &indexof($doms[0], $sn, @sa) >= 0) {
 			# Based on domain name
 			$match = 1;
 			}
@@ -59,7 +66,16 @@ else {
 			# Specifically selected domain
 			$match = 1;
 			}
-		if ($match) {
+		my @ports;
+		foreach my $w (@{$virt->{'words'}}) {
+			if ($w =~ /:(\d+)$/) {
+				push(@ports, $1);
+				}
+			else {
+				push(@ports, 80);
+				}
+			}
+		if ($match && &indexof(80, @ports) >= 0) {
 			# Get document root
 			$webroot = &apache::find_directive(
 				"DocumentRoot", $virt->{'members'}, 1);
@@ -72,18 +88,22 @@ else {
 
 if ($in{'save'}) {
 	# Just update renewal
-	&save_renewal_only(\@doms, $webroot, $mode);
+	&save_renewal_only(\@doms, $webroot, $mode, $size,
+			   $in{'subset'}, $in{'use'});
 	&redirect("edit_ssl.cgi");
 	}
 else {
 	# Request the cert
 	&ui_print_unbuffered_header(undef, $text{'letsencrypt_title'}, "");
 
-	print &text($mode eq 'dns' ? 'letsencrypt_doingdns'
-				   : 'letsencrypt_doing',
+	print &text($mode eq 'dns' ? 'letsencrypt_doingdns' :
+		    $mode eq 'certbot' ? 'letsencrypt_doingcertbot' :
+					 'letsencrypt_doing',
 		    "<tt>".&html_escape(join(", ", @doms))."</tt>",
 		    "<tt>".&html_escape($webroot)."</tt>"),"<p>\n";
-	my ($ok, $cert, $key, $chain) = &request_letsencrypt_cert(\@doms, $webroot, undef, $size, $mode, $in{'staging'});
+	my ($ok, $cert, $key, $chain) = &request_letsencrypt_cert(
+		\@doms, $webroot, undef, $size, $mode, $in{'staging'},
+		undef, undef, undef, undef, undef, undef, $in{'subset'});
 	if (!$ok) {
 		print &text('letsencrypt_failed', $cert),"<p>\n";
 		}
@@ -91,8 +111,12 @@ else {
 		# Worked, now copy to Webmin
 		print $text{'letsencrypt_done'},"<p>\n";
 
+		# Save the renewal schedule
+		&save_renewal_only(\@doms, $webroot, $mode,
+				   $size, $in{'subset'}, $in{'use'});
+
+		# Copy cert, key and chain to Webmin
 		if ($in{'use'}) {
-			# Copy cert, key and chain to Webmin
 			print $text{'letsencrypt_webmin'},"<br>\n";
 			&lock_file($ENV{'MINISERV_CONFIG'});
 			&get_miniserv_config(\%miniserv);
@@ -122,36 +146,33 @@ else {
 			&put_miniserv_config(\%miniserv);
 			&unlock_file($ENV{'MINISERV_CONFIG'});
 
-			&save_renewal_only(\@doms, $webroot, $mode);
-
 			&webmin_log("letsencrypt");
 			&restart_miniserv(1);
 			print $text{'letsencrypt_wdone'},"<p>\n";
 			}
-		else {
-			# Just tell the user
-			print $text{'letsencrypt_show'},"<p>\n";
-			my @grid = ( $text{'letsencrypt_cert'}, $cert,
-				     $text{'letsencrypt_key'}, $key );
-			if ($chain) {
-				push(@grid, $text{'letsencrypt_chain'}, $chain);
-				}
-			print &ui_grid_table(\@grid, 2);
-			}
+
+		# Tell the user what was done
+		print $text{'letsencrypt_show'},"<p>\n";
+		my @grid = ( $text{'letsencrypt_cert'}, $cert,
+			     $text{'letsencrypt_key'}, $key );
+		push(@grid, $text{'letsencrypt_chain'}, $chain) if ($chain);
+		print &ui_grid_table(\@grid, 2);
 		}
 
 	&ui_print_footer("", $text{'index_return'});
 	}
 
-# save_renewal_only(&doms, webroot, mode)
+# save_renewal_only(&doms, webroot, mode, size, subset-mode, used-by-webmin)
 # Save for future renewals
 sub save_renewal_only
 {
-my ($doms, $webroot, $mode) = @_;
+my ($doms, $webroot, $mode, $size, $subset, $usewebmin) = @_;
 $config{'letsencrypt_doms'} = join(" ", @$doms);
 $config{'letsencrypt_webroot'} = $webroot;
 $config{'letsencrypt_mode'} = $mode;
 $config{'letsencrypt_size'} = $size;
+$config{'letsencrypt_subset'} = $subset;
+$config{'letsencrypt_nouse'} = $usewebmin ? 0 : 1;
 &save_module_config();
 if (&foreign_check("webmincron")) {
 	my $job = &find_letsencrypt_cron_job();

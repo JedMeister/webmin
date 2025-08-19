@@ -8,6 +8,24 @@ $pragma_no_cache = 1;
 #$ENV{'MINISERV_INTERNAL'} || die "Can only be called by miniserv.pl";
 &init_config();
 &ReadParse(undef, undef, undef, 2);
+
+# Redirect to the forgot page that this theme supports if generate in SPA theme
+if ($gconfig{'forgot_pass'} && $ENV{'REQUEST_URI'}) {
+	my ($forgot_id) = $ENV{'REQUEST_URI'} =~ /[?&]forgot=([0-9a-fA-F]{32})/;
+	if ($forgot_id) {
+		&redirect("@{[&get_webprefix()]}/forgot.cgi?id=$forgot_id");
+		return;
+		}
+	}
+
+# Redirect to forgot form if return param is set from SPA theme
+if ($gconfig{'forgot_pass'} && $ENV{'REQUEST_URI'} &&
+    $ENV{'REQUEST_URI'} =~ /[?&]return=(http?\S+)/) {
+	&redirect("@{[&get_webprefix()]}/forgot_form.cgi");
+	return;
+	}
+
+# Login banner
 if ($gconfig{'loginbanner'} && $ENV{'HTTP_COOKIE'} !~ /banner=1/ &&
     !$in{'logout'} && $in{'initial'}) {
 	# Show pre-login HTML page
@@ -90,8 +108,24 @@ if (!$in{'initial'}) {
 	print &ui_submit($text{'pam_restart'}, 'restart');
 	}
 print &ui_form_end();
-print "</center>\n";
 
+if ($gconfig{'forgot_pass'}) {
+	# Show forgotten password link
+	my $link = &get_webmin_base_url();
+	my $param = '';
+	if ($link) {
+		my $src_link = ($ENV{'HTTPS'} eq 'ON'
+			? 'https'
+			: 'http').'://'.$ENV{'HTTP_HOST'};
+		$src_link .= ($gconfig{'webprefix'} || '')."/";
+		$param = "?return=".&urlize($src_link);
+		}
+	print &ui_form_start($link."forgot_form.cgi".$param, "post");
+	print &ui_hidden("failed", $in{'failed'});
+	print &ui_form_end([ [ undef, $text{'session_forgot'} ] ]);
+	}
+
+print "</center>\n";
 print "$text{'pam_postfix'}\n";
 
 # Output frame-detection Javascript, if theme uses frames

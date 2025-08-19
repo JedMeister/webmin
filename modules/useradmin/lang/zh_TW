@@ -40,7 +40,6 @@ extra=額外選項
 pass=密碼
 none1=在第一次登入時詢問
 none2=不需要密碼
-nologin=不允許登入
 encrypted=已編碼的密碼
 nochange=保持不變
 clear=純文字密碼
@@ -153,7 +152,6 @@ usave_efromroot=您不能從 / 搬移這個家目錄
 usave_etoroot=您不能將家目錄般移到 /
 
 logins_title=登入紀錄
-logins_head=$1 的登入紀錄
 logins_from=登入來源
 logins_tty=終端機
 logins_in=登入於

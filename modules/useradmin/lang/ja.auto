@@ -17,6 +17,7 @@ index_loginsuser=ユーザーのみ
 index_loginsdesc=SSHまたはUsermin経由で接続した一部またはすべてのUnixユーザーの最近のログインを表示します。
 index_whodesc=現在SSHまたはUsermin経由でログインしているユーザーを表示します。
 
+nologin=パスワード認証を無効にする
 sshkey=SSH公開鍵
 uedit_manual=ディレクトリ
 uedit_allg=すべてのグループ
@@ -40,6 +41,9 @@ gedit_selu=グループのユーザー
 gedit_pri=プライマリグループメンバー
 gedit_prinone=このグループをプライマリとして持っているユーザーはいません
 gedit_clone=クローングループ
+
+logins_head=ユーザー $1 のすべての記録されたログイン
+logins_head_limit=ユーザー $1 の最後の $2 回のログインが記録されました
 
 udel_ugroupother=他のモジュールでこのユーザーのグループを削除します ..
 

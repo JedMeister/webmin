@@ -1556,7 +1556,8 @@ if ($err) {
 
 =head2 cleanup_temp_files
 
-Called from cron to delete old files in the Webmin /tmp directory
+Called from cron to delete old files in the Webmin /tmp directory, and also
+old lock links directories.
 
 =cut
 sub cleanup_temp_files
@@ -1566,27 +1567,64 @@ if (!$gconfig{'tempdelete_days'}) {
 	print STDERR "Temp file clearing is disabled\n";
 	return;
 	}
+
+# Cleanup files in /tmp/.webmin
 if ($gconfig{'tempdir'} && !$gconfig{'tempdirdelete'}) {
 	print STDERR "Temp file clearing is not done for the custom directory $gconfig{'tempdir'}\n";
-	return;
 	}
+else {
+	my $tempdir = &transname();
+	$tempdir =~ s/\/([^\/]+)$//;
+	if (!$tempdir || $tempdir eq "/") {
+		$tempdir = "/tmp/.webmin";
+		}
 
-local $tempdir = &transname();
-$tempdir =~ s/\/([^\/]+)$//;
-if (!$tempdir || $tempdir eq "/") {
-	$tempdir = "/tmp/.webmin";
-	}
-
-local $cutoff = time() - $gconfig{'tempdelete_days'}*24*60*60;
-opendir(DIR, $tempdir);
-foreach my $f (readdir(DIR)) {
-	next if ($f eq "." || $f eq "..");
-	local @st = lstat("$tempdir/$f");
-	if ($st[9] < $cutoff) {
-		&unlink_file("$tempdir/$f");
+	my $cutoff = time() - $gconfig{'tempdelete_days'}*24*60*60;
+	if (opendir(DIR, $tempdir)) {
+		foreach my $f (readdir(DIR)) {
+			next if ($f eq "." || $f eq "..");
+			my @st = lstat("$tempdir/$f");
+			if ($st[9] < $cutoff) {
+				&unlink_file("$tempdir/$f");
+				}
+			}
+		closedir(DIR);
 		}
 	}
-closedir(DIR);
+
+# Delete stale lock files
+my $lockdir = $var_directory."/locks";
+if (opendir(DIR, $lockdir)) {
+	foreach my $f (readdir(DIR)) {
+		next if ($f eq "." || $f eq "..");
+		next if ($f !~ /^\d+$/);
+		if (!kill(0, $f)) {
+			# Process is gone, but never cleaned up!
+			&unlink_file("$lockdir/$f");
+			}
+		}
+	closedir(DIR);
+	}
+
+# Cleanup old websockets
+foreach (&get_miniserv_websockets_modules()) {
+	&cleanup_miniserv_websockets(undef, $_);
+	}
+
+# Delete forgot-password files older than 1 day
+if (opendir(DIR, $main::forgot_password_link_dir)) {
+	my $cutoff = time() - 24*60*60;
+	foreach my $f (readdir(DIR)) {
+		next if ($f eq "." || $f eq "..");
+		next if ($f eq "ratelimit");
+		my $path = $main::forgot_password_link_dir."/".$f;
+		my @st = stat($path);
+		if ($st[9] < $cutoff) {
+			&unlink_file($path);
+			}
+		}
+	closedir(DIR);
+	}
 }
 
 =head2 list_cron_files()

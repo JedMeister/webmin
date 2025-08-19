@@ -1,7 +1,7 @@
-readonly=1
-version=2.102
-longdesc=View detailed logs of actions by Webmin users.
+category=webmin
 desc=Webmin Actions Log
 name=WebminLog
-category=webmin
-depends=2.102
+longdesc=View detailed logs of actions by Webmin users.
+readonly=1
+version=2.402
+depends=2.402

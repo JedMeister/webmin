@@ -5,9 +5,8 @@ index_efiles2=Non è stato trovato alcun file di configurazione di PHP. Modifica
 index_file=File di configurazione
 index_desc=Tipologia
 index_actions=Azioni
-index_edit=Modifica
+index_medit=Modifica
 index_manual=Modifica manualmente
-index_anyfile=Modifica gli altri file di configurazione di PHP:
 index_return=file di configurazione
 
 file_global=Configurazione globale di PHP
@@ -28,12 +27,10 @@ dirs_title=Impostazioni della directory
 dirs_header=Impostazioni per la directory degli script PHP e delle estensioni
 dirs_include=Directory in cui cercare i file da includere
 dirs_below=Elencate sotto:
-dirs_ext=Directory per le estensioni
 dirs_upload=Permettere l'invio di file?
 dirs_utmp=Directory temporanea per i file inviati
 dirs_err=Salvataggio delle impostazioni della directory non riuscito
 dirs_eutmp=Directory per i file temporanei mancante o non valida
-dirs_eext=Directory delle estensioni mancante
 
 db_title=Impostazioni database
 db_header1=Impostazioni di connessione a MySQL

@@ -1,7 +1,7 @@
-os_support=*-linux
-version=2.102
-longdesc=Configure the WV-Dial package to connect to the Internet with a modem PPP connection
-desc=PPP Dialup Client
 name=PPP
+desc=PPP Dialup Client
 category=net
-depends=proc init cron 2.102
+longdesc=Configure the WV-Dial package to connect to the Internet with a modem PPP connection
+os_support=*-linux
+depends=proc init cron 2.402
+version=2.402

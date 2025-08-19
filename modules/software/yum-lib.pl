@@ -19,12 +19,17 @@ sub list_update_system_commands
 return ($yum_command);
 }
 
-# update_system_install([packages], [&in])
+# update_system_install([packages], [&in], [no-force], [flags])
 # Install some package with yum
 sub update_system_install
 {
 local $update = $_[0] || $in{'update'};
 local $in = $_[1];
+local $force = !$_[2];
+local $flags = $_[3];
+local $qflags;
+$qflags = &trim(join(" ", map { quotemeta($_) } split(/ /, $flags)))
+	if ($flags);
 $update =~ s/\.\*/\*/g;
 local $enable;
 if ($in->{'enablerepo'}) {
@@ -57,7 +62,9 @@ else {
 
 # Work out the command to run, which may enable some repos
 my $uicmd = "$yum_command $enable -y $cmd ".join(" ", @names);
+$uicmd .= " $flags" if ($flags);
 my $fullcmd = "$yum_command $enable -y $cmd $update";
+$fullcmd .= " $qflags" if ($flags);
 foreach my $u (@updates) {
 	my $repo = &update_system_repo($u);
 	if ($repo) {
@@ -65,7 +72,7 @@ foreach my $u (@updates) {
 		}
 	}
 
-print "<b>",&text('yum_install', "<tt>".&html_escape($uicmd)."</tt>"),"</b><p>\n";
+print &text('yum_install', "<tt>".&html_escape($uicmd)."</tt>"),"\n";
 print "<pre>";
 &additional_log('exec', undef, $fullcmd);
 $SIG{'TERM'} = 'ignore';	# Installing webmin itself may kill this script
@@ -122,11 +129,11 @@ while(<CMD>) {
 close(CMD);
 print "</pre>\n";
 if ($? || $nopackage) {
-	print "<b>$text{'yum_failed'}</b><p>\n";
+	print "$text{'yum_failed'}<p>\n";
 	return ( );
 	}
 else {
-	print "<b>$text{'yum_ok'}</b><p>\n";
+	print "$text{'yum_ok'}<p>\n";
 	return &unique(@rv);
 	}
 }
@@ -212,19 +219,18 @@ return undef;
 # the name used by YUM.
 sub update_system_resolve
 {
-local ($name) = @_;
-local $maria = $gconfig{'real_os_type'} =~ /CentOS|Redhat|Scientific/ &&
-	       $gconfig{'real_os_version'} >= 7;
-return $name eq "apache" ? "httpd mod_.*" :
-       $name eq "dhcpd" ? "dhcp" :
-       $name eq "mysql" && $maria ? "mariadb mariadb-server mariadb-devel" :
-       $name eq "mysql" && !$maria ? "mysql mysql-server mysql-devel" :
-       $name eq "openssh" ? "openssh openssh-server" :
-       $name eq "postgresql" ? "postgresql postgresql-libs postgresql-server" :
-       $name eq "openldap" ? "openldap-servers openldap-clients" :
-       $name eq "ldap" ? "nss-pam-ldapd pam_ldap nss_ldap" :
-       $name eq "virtualmin-modules" ? "wbm-.*" :
-       			  $name;
+my ($name) = @_;
+$name = $name eq "apache" ? "httpd mod_.*" :
+        $name eq "dhcpd" ? "dhcp dhcp-server" :
+        $name eq "mysql" ? "perl-DBD-MySQL mariadb mariadb-server mysql mysql-server" :
+        $name eq "openssh" ? "openssh openssh-server" :
+        $name eq "postgresql" ? "postgresql postgresql-libs postgresql-server" :
+        $name eq "openldap" ? "openldap-servers openldap-clients" :
+        $name eq "ldap" ? "nss-pam-ldapd pam_ldap nss_ldap" :
+        $name eq "virtualmin-modules" ? "wbm-.*" : $name;
+my $flags;
+$flags = '--skip-broken' if ($_[0] =~ /^dhcpd|mysql$/);
+return wantarray ? ($name, $flags) : $name;
 }
 
 # update_system_repo(package)
@@ -332,7 +338,6 @@ if ($yum_command =~ /dnf/) {
 else {
 	&open_execute_command(PKG, "$yum_command check-update 2>/dev/null | tr '\n' '#' | sed -e 's/# / /g' | tr '#' '\n'", 1, 1);
 	}
-
 while(<PKG>) {
         s/\r|\n//g;
 	if (/^(\S+)\.([^\.]+)\s+(\S+)\s+(\S+)/ && $2 ne 'src') {
@@ -346,6 +351,7 @@ while(<PKG>) {
 		$done{$pkg->{'name'}} = $pkg;
 		push(@rv, $pkg);
 		}
+	last if (/Obsoleting\s+Packages/i);
 	}
 close(PKG);
 &set_yum_security_field(\%done);

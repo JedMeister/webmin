@@ -40,8 +40,8 @@ index_cdeletesel=Verwijder Geselecteerde
 index_cmovesel=Verplaats Geselecteerden
 index_cadd=Nieuwe schakel toevoegen met de naam:
 index_apply=Configuratie Toevoegen
-index_applydesc=Klik op deze knop om de firewall configuratie die hierboven staat te activeren. Iedere firewall regel waar op dit moment mee gewerkt word, zullen  worden gewist en vervangen.
-index_applydesc2=Klik op deze knop om de firewall configuratie die hierboven staat te activeren op alle servers in de cluster. Iedere firewall regel waar op dit moment mee gewerkt word, zullen  worden gewist en vervangen.
+index_applydesc=Klik op deze knop om de firewall configuratie die hierboven staat te activeren. Iedere firewall regel waar op dit moment mee gewerkt word, zullen worden gewist en vervangen.
+index_applydesc2=Klik op deze knop om de firewall configuratie die hierboven staat te activeren op alle servers in de cluster. Iedere firewall regel waar op dit moment mee gewerkt word, zullen worden gewist en vervangen.
 index_unapply=Omkeren Configuratie
 index_unapplydesc=Klik op deze knop om de configuratie die hierboven staat te resetten naar de configuratie die op dit moment actief is
 index_table_filter=Pakket filteren (filter)
@@ -127,9 +127,6 @@ desc_always=Altijd
 redhat_eoutput=Er ontstond een fout bij het opvragen van de IPtabellen status met de opdracht $1. Waarschijnlijk is dit een indicatie dat uw systeem is geconfigureerd om IPschakels te gebruiken ipv IPtabellen.
 
 gentoo_escript=De Gentoo IPtables opstart script $1 is niet gevonden op uw systeem.
-
-eiptables=Onbekende IPtables file om op te slaan op regel: $1
-eip6tables=Onbekende ip6tables file om op te slaan op regel: $1
 
 edit_title1=Toevoegen Regel
 edit_title2=Bewerk Regel

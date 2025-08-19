@@ -17,12 +17,13 @@ sub groupfiles_type
 return &password_file($config{'gshadow_file'}) ? 2 : 0;
 }
 
-# open_last_command(handle, user)
+# open_last_command(handle, user, [max])
 sub open_last_command
 {
-local ($fh, $user) = @_;
-local $quser = quotemeta($user);
-open($fh, "(last -F $quser || last $quser) |");
+my ($fh, $user, $max) = @_;
+my $quser = quotemeta($user);
+$max = " -n $max" if ($max);
+open($fh, "(last -F -w$max $quser || last -w$max $quser) |");
 }
 
 # read_last_line(handle)
@@ -39,12 +40,16 @@ while(1) {
 		# jcameron  pts/0  fudu Thu Feb 22 09:47 - 10:15
 		return ($1, $2, $3, $4, $5 eq "down" ? "Shutdown" : $5, $6);
 		}
-	elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+\-\s+(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+\((\d+:\d+)\)/) {
+	elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+\-\s+(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+\((.*?\d+:\d+)\)/) {
 		# jcameron  pts/0  fudu Thu Feb 22 09:47 - 10:15
+		# jcameron  pts/0  fudu Sun Feb  4 02:26:28 2024 - Wed Feb  7 18:25:09 2024 (3+15:58)
 		return ($1, $2, $3, $4, $5 eq "down" ? "Shutdown" : $5, $6);
 		}
-	elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+)\s+still/) {
-		# root  pts/0  fudu  Fri Feb 23 18:46  still logged in   
+	elsif ($line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+)\s+(still|gone)/ ||
+	       $line =~ /^(\S+)\s+(\S+)\s+(\S+)?\s+(\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+)\s+(still|gone)/) {
+		# root  pts/0  fudu  Fri Feb 23 18:46  still logged in
+		# root  ftpd10 fudu  Thu Jun 20 11:19  gone - no logout
+		# root  pts/0  fudu  Tue Jun 18 23:10:30 2024  still logged in
 		return ($1, $2, $3, $4);
 		}
 	}

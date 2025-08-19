@@ -5,8 +5,7 @@
 require './proftpd-lib.pl';
 
 # Check if proftpd is installed
-@st = stat($config{'proftpd_path'});
-if (!@st) {
+if (!&has_command($config{'proftpd_path'})) {
 	&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0,
 		&help_search_link("proftpd", "man", "doc", "google"));
 	print &text('index_eproftpd', "<tt>$config{'proftpd_path'}</tt>",
@@ -18,7 +17,20 @@ if (!@st) {
 	print $lnk,"<p>\n" if ($lnk);
 
 	&ui_print_footer("/", $text{'index'});
-	exit;
+	return;
+	}
+
+# Check that the command is actually proftpd
+if (!$site{'version'}) {
+	&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0,
+		&help_search_link("proftpd", "man", "doc", "google"));
+	print &text('index_eproftpd2',
+		  "<tt>$config{'proftpd_path'}</tt>",
+		  "@{[&get_webprefix()]}/config.cgi?$module_name",
+		  "<tt>$config{'proftpd_path'} -v</tt>",
+		  "<pre>$out</pre>"),"<p>\n";
+	&ui_print_footer("/", $text{'index'});
+	return;
 	}
 
 # Check if the config file exists
@@ -29,53 +41,12 @@ if (!@$conf) {
 	print &text('index_econf', "<tt>$config{'proftpd_conf'}</tt>",
 		  "@{[&get_webprefix()]}/config.cgi?$module_name"),"<p>\n";
 	&ui_print_footer("/", $text{'index'});
-	exit;
-	}
-
-# Check if the executable has changed ..
-if ($site{'size'} != $st[7]) {
-	# Check if it really is proftpd and the right version
-	$site{'size'} = $st[7];
-	$ver = &get_proftpd_version(\$out);
-	if (!$ver) {
-		&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0,
-			&help_search_link("proftpd", "man", "doc", "google"));
-		print &text('index_eproftpd2',
-			  "<tt>$config{'proftpd_path'}</tt>",
-			  "@{[&get_webprefix()]}/config.cgi?$module_name",
-			  "<tt>$config{'proftpd_path'} -v</tt>",
-			  "<pre>$out</pre>"),"<p>\n";
-		&ui_print_footer("/", $text{'index'});
-		exit;
-		}
-	$site{'version'} = $ver;
-	if ($site{'version'} < 0.99) {
-		&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0,
-			&help_search_link("proftpd", "man", "doc", "google"));
-		print &text('index_eversion',
-			  "<tt>$config{'proftpd_path'}</tt>",
-			  "@{[&get_webprefix()]}/config.cgi?$module_name"),"<p>\n";
-		&ui_print_footer("/", $text{'index'});
-		exit;
-		}
-
-	# Get the list of modules
-	local @mods;
-	open(MODS, "$config{'proftpd_path'} -l |");
-	while(<MODS>) {
-		s/\r|\n//g;
-		if (/^\s*(\S+)\.c$/) {
-			push(@mods, $1);
-			}
-		}
-	close(MODS);
-	$site{'modules'} = join(" ", @mods);
-	&write_file("$module_config_directory/site", \%site);
+	return;
 	}
 
 &ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0,
 	&help_search_link("proftpd", "man", "doc", "google"),
-	undef, undef, &text('index_version', $site{'version'}));
+	undef, undef, &text('index_version', $site{'fullversion'}));
 $conf = &get_config();
 
 # Display global category icons
@@ -115,33 +86,21 @@ if (@dir) {
 		}
 	&icons_table(\@links, \@titles, \@icons, 3);
 	}
+print "<p>\n";
 
-print "<table width=100%><tr><td>\n";
+print &ui_form_start("create_dirlimit.cgi", "post");
+print &ui_hidden("global", 1);
+print &ui_table_start($text{'index_dlheader'}, undef, 2);
 
-print "<form action=create_dir.cgi>\n";
-print "<input type=hidden name=global value=1>\n";
-print "<table border>\n";
-print "<tr $tb> <td><b>$text{'virt_adddir'}</b></td> </tr>\n";
-print "<tr $cb> <td><table>\n";
-print "<tr> <td><b>$text{'virt_path'}</b></td>\n";
-print "<td><input name=dir size=30>\n";
-print "<input type=submit value=\"$text{'create'}\"></td> </tr>\n";
-print "</table></td></tr></table></form>\n";
+print &ui_table_row($text{'index_dlmode'},
+	&ui_radio_table("mode", 0,
+		[ [ 0, $text{'virt_path'},
+		    &ui_textbox("dir", undef, 50) ],
+		  [ 1, $text{'virt_cmds'},
+		    &ui_textbox("cmd", undef, 30) ] ]));
 
-print "</td><td>\n";
-
-print "<form action=create_limit.cgi>\n";
-print "<input type=hidden name=global value=1>\n";
-print "<table border>\n";
-print "<tr $tb> <td><b>$text{'virt_addlimit'}</b></td> </tr>\n";
-print "<tr $cb> <td><table>\n";
-print "<tr> <td><b>$text{'virt_cmds'}</b></td>\n";
-print "<td><input name=cmd size=20>\n";
-print "<input type=submit value=\"$text{'create'}\"></td> </tr>\n";
-print "</table></td></tr></table></form>\n";
-
-print "</td></tr></table>\n";
-
+print &ui_table_end();
+print &ui_form_end([ [ undef, $text{'create'} ] ]);
 
 # Start virtual server list with default
 push(@vname, $text{'index_defserv'});
@@ -170,22 +129,21 @@ print &ui_subheading($text{'index_virts'});
 
 if ($config{'show_list'} && scalar(@vname)) {
 	# as list for people with lots of servers
-	print "<table width=100% border=1>\n";
-	print "<tr $tb> <td><b>$text{'index_type'}</b></td> ",
-	      "<td><b>$text{'index_addr'}</b></td> ",
-	      "<td><b>$text{'index_name'}</b></td> </tr>\n";
+	print &ui_columns_start([ $text{'index_type'},
+				  $text{'index_addr'},
+				  $text{'index_name'} ], 100, 0);
 	for($i=0; $i<@vname; $i++) {
-		print "<tr $cb>\n";
-		print "<td><a href=\"$vlink[$i]\">",
-		      &html_escape($vname[$i]),"</a></td>\n";
-		print "<td>",&html_escape($vaddr[$i]),"</td>\n";
-		print "<td>",&html_escape($vserv[$i]),"</td>\n";
-		print "</tr>\n";
+		print &ui_columns_row([
+			&ui_link($vlink[$i], &html_escape($vname[$i])),
+			&html_escape($vaddr[$i]),
+			&html_escape($vserv[$i]),
+			]);
 		}
-	print "</table>\n";
+	print &ui_columns_end();
 	}
 else {
 	# as icons for niceness
+	# XXX fix this
 	print "<table width=100% cellpadding=5>\n";
 	for($i=0; $i<@vname; $i++) {
 		print "<tr> <td valign=top align=center nowrap>";
@@ -204,21 +162,23 @@ else {
 		}
 	print "</table>\n";
 	}
+print "<p>\n";
 
-print "<form action=create_virt.cgi>\n";
-print "<table border>\n";
-print "<tr $tb> <td><b>$text{'index_create'}</b></td> </tr>\n";
-print "<tr $cb> <td><table>\n";
-print "<tr> <td><b>$text{'index_addr'}</b></td>\n";
-print "<td><input name=addr size=25></td> </tr>\n";
-print "<tr> <td><b>$text{'index_port'}</b></td>\n";
-print "<td>",&opt_input(undef, "Port", $text{'default'}, 6),"</td> </tr>\n";
-print "<tr> <td><b>$text{'index_name'}</b></td>\n";
-print "<td>",&opt_input(undef, "ServerName", $text{'default'}, 25);
-print "&nbsp;&nbsp;\n";
-print "<input type=submit value=\"$text{'create'}\"></td> </tr>\n";
-print "</table></td></tr></table>\n";
-print "</form>\n";
+# Form to create a virtual FTP server
+print &ui_form_start("create_virt.cgi", "post");
+print &ui_table_start($text{'index_create'}, undef, 2);
+
+print &ui_table_row($text{'index_addr'},
+	&ui_textbox("addr", undef, 25));
+
+print &ui_table_row($text{'index_port'},
+	&opt_input(undef, "Port", $text{'default'}, 6));
+
+print &ui_table_row($text{'index_name'},
+	&opt_input(undef, "ServerName", $text{'default'}, 25));
+
+print &ui_table_end();
+print &ui_form_end([ [ undef, $text{'create'} ] ]);
 
 # Find out how ProFTPd is running
 ($inet, $inet_mod) = &running_under_inetd();
@@ -231,7 +191,7 @@ if (!$inet) {
 if (!$inet && $pid) {
 	print &ui_buttons_row("apply.cgi",
 			      $text{'index_apply'},
-			      &get_proftpd_version() > 1.22 ? 
+			      $site{'version'} > 1.22 ? 
 				$text{'index_applymsg2'} :
 				$text{'index_applymsg'});
 	print &ui_buttons_row("stop.cgi",

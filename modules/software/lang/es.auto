@@ -1,5 +1,14 @@
-index_epackagecmd=El sistema de paquetes $1 requiere el comando $2 
-index_eupdatecmd=El sistema de actualización $1 requiere el comando $2 
+index_tabpkgs=Paquetes instalados
+index_tabinstall=Instalar un nuevo paquete
+index_tabupdate=Paquetes de actualización
+index_finddesc=Busque en la base de datos $1 por nombre de paquete o por el contenido de un paquete, o explore todo el árbol de paquetes.
+index_findtext=Buscar paquete:
+index_installmsg=Seleccione la ubicación para instalar un nuevo paquete $1.
+index_ftp=Desde URL
+index_identok2=Buscar paquetes para archivos:
+index_tree2=Examinar el árbol de paquetes
+index_epackagecmd=El sistema de paquetes $1 requiere el comando $2
+index_eupdatecmd=El sistema de actualización $1 requiere el comando $2
 index_epackagecheck=El sistema de administración de paquetes seleccionado no es válido: $1. <br>Es posible que deba seleccionar un sistema diferente en la página<a href='$2'> configuración del módulo </a>.
 index_eupdatecheck=El sistema de actualización seleccionado no es válido: $1. <br>Es posible que deba seleccionar un método de actualización diferente en la página<a href='$2'> configuración del módulo </a>.
 index_echeckpackage=¡No se detectó ningún sistema de paquete!
@@ -8,6 +17,14 @@ index_filter=Paquetes de filtros
 index_filterclear=Filtro claro
 index_filtered=Visualización de paquetes <tt>$1</tt> de <tt>$2</tt>
 
+edit_deps=Dependencias
+edit_dname=Depende de
+edit_dtype=Tipo de dependencia
+edit_dvers=Versión
+edit_dpackage=Paquete
+edit_dfile=Archivo
+edit_dother=Capacidad
+edit_dlibrary=Biblioteca
 edit_listdesc=Mostrar todos los archivos de este paquete y su estado de verificación actual.
 edit_uninstdesc=Elimine este paquete de su sistema.
 
@@ -21,21 +38,26 @@ rpm_findrpm=Nombre del paquete
 rpm_finddistro=Distribución
 rpm_finddesc=Descripción
 
-slack_edir=Falta el directorio de paquetes de Slackware $1 
+slack_edir=Falta el directorio de paquetes de Slackware $1
+
+debian_manager=Debian
 
 log_install_yum_l=Paquete (s) instalado (s) $1 de YUM
 log_install_yum=$2 paquete (s) instalado desde YUM
 log_install_rhn_l=Paquete (s) instalado (s) $1 de Redhat Network
 log_install_rhn=Se instalaron $2 paquete (s) de Redhat Network
 
+rhn_ok=..instalación completa
 rhn_header=Opciones de actualización automática de paquetes
 
+apt_ok=..instalación completa
 apt_header=Opciones de actualización del paquete APT
 apt_repo_url=URL base del repositorio
 apt_repo_path=Componentes de ruta de distribución
 apt_repo_eurl=URL base faltante o de aspecto no válido
 apt_repo_epath=Falta la ruta de distribución
 
+yum_ok=..instalación completa
 yum_repo_id=ID del repositorio
 yum_repo_name=Descripción del repositorio
 yum_repo_url=URL base del paquete
@@ -48,8 +70,13 @@ yum_repo_eurl=URL del repositorio faltante o no válida
 yum_repo_egpg=Falta el archivo de certificado GPG o no existe
 yum_repo_efile=¡El archivo del repositorio ya existe!
 
-cygwin_edb=Falta la base de datos de paquetes de Cygwin $1 
+urpmi_ok=..instalación completa
 
+emerge_ok=..instalación completa
+
+cygwin_edb=Falta la base de datos de paquetes de Cygwin $1
+
+csw_ok=..instalación completa
 csw_already=.. ya instalado.
 csw_retry=.. intentando de nuevo con nuevas dependencias.
 csw_form=Paquetes de actualización
@@ -120,7 +147,7 @@ IPKG_updatedesc=Ejecutando el comando $1 ..
 IPKG_upgradefailed=.. ¡ha fallado!
 IPKG_upgradeok=.. completo.
 IPKG_install=Instalación de paquete (s) con el comando $1 ..
-IPKG_ok=.. instalación completa.
+IPKG_ok=..instalación completa
 IPKG_failed=.. ¡instalación fallida!
 IPKG_index_tree=Administrar paquetes IPKG
 IPKG_install_package=Instalar en pc

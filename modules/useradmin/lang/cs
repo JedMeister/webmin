@@ -37,7 +37,7 @@ index_gmass=Smazat vybrané skupiny
 search_title=Výsledek hledání
 search_notfound=Nenalezeni žádní odpovídající uživatelé
 search_found=Nalezeno $1 odpovídajících uživatelů ..
-search_gnotfound=Nenalezeny žádné odpovídající  skupiny
+search_gnotfound=Nenalezeny žádné odpovídající skupiny
 search_gfound=Nalezeno $1 odpovídajících skupin ..
 
 uedit_title=Editovat uživatele
@@ -55,7 +55,6 @@ extra=Extra možnosti
 pass=Heslo
 none1=Dotaz při prvním přihlášení
 none2=Heslo není vyžadováno
-nologin=Není nutné přihlášení
 encrypted=Kryptované heslo
 nochange=Opustit beze změn
 clear=Heslo jako text
@@ -194,7 +193,6 @@ usave_efromroot=Nemůžete přesunout domovský adresář z /
 usave_etoroot=Nemůžete přesunout domovský adresář do /
 
 logins_title=Zaznamenaná přihlášení
-logins_head=Přihlášení zaznamenané od $1
 logins_from=Přihlášení od
 logins_tty=TTY
 logins_in=Prihlášení na

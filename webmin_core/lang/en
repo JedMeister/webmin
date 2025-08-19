@@ -43,6 +43,7 @@ header_servers=Webmin Servers
 index=index
 yes=Yes
 no=No
+or=or
 save=Save
 create=Create
 delete=Delete
@@ -143,6 +144,44 @@ session_twofailed=Two-factor authentication failed : $1
 session_logout=Logout successful. Use the form below to login again.
 session_timed_out=Session timed out after $1 minutes of inactivity.
 session_save=Remember login permanently?
+session_forgot=Forgot Password?
+
+forgot_title=Reset Forgotten Password
+forgot_user=Username:
+forgot_desc=If your account has a recovery email set, you can use this form to send yourself a password reset link.
+forgot_go=Send Password Reset Link
+forgot_ecannot=Forgotten password recovery is not enabled!
+forgot_euser=The user either does not exist or does not have a recovery email configured.
+forgot_msg=You are receiving this email due to a request for password recovery from the Webmin system at $4 from $3, for the username $1.\n\nIf you would like to proceed with resetting the password, follow this link:\n$2
+forgot_subject=Password reset for user $1
+forgot_sent=A link to reset your password for user $2 has been sent to the recovery email address $1.
+forgot_erandom=Failed to generate random ID!
+forgot_eid=Missing or invalid-looking reset ID!
+forgot_eid2=Reset ID is not valid!
+forgot_etime=Password reset email is more than $1 minutes old.
+forgot_newpass=New password for user $1
+forgot_newpass2=New password again
+forgot_passok=Change Password
+forgot_euser2=Webmin user $1 does not exist!
+forgot_euser3=Mailbox user $1 does not exist!
+forgot_esync=The password cannot be changed for this user
+forgot_elock=The password for this user is locked
+forgot_err=Failed to reset password
+forgot_enewpass=No new password entered!
+forgot_enewpass2=New passwords do not match!
+forgot_equality=Password requirements were not met : $1
+forgot_wdoing=Changing password for user $1 ..
+forgot_done=.. password change complete.
+forgot_retry=The password for Webmin user $2 was reset successfully. You can now <a href='$1'>log in</a> using your new password.
+forgot_retry2=The password for mailbox user $1 was reset successfully.
+forgot_edisabled=The password for a disabled Virtualmin domain cannot be reset
+forgot_vdoing=Changing password for Virtualmin domain $1 ..
+forgot_udoing=Changing password for Unix user $1 ..
+forgot_eunix=Unix user does not exist!
+forgot_eunixlock=User user's password is locked!
+forgot_elogin=Forgotten password pages cannot be used when you are already logged in to Webmin!
+forgot_erate=Too many password reset attempts for $1! Please try again later.
+forgot_eremote=Webmin server on this system is not running or is not configured to allow forgotten password recovery.
 
 pam_header=Login to Webmin
 pam_mesg=You must respond to the question below to login to Webmin server on $1.
@@ -266,7 +305,7 @@ progress_size2=Downloading $1 ($2) ..
 progress_nosize=Downloading $1 ..
 progress_datan=Received $1 ($2 %)
 progress_data2n=Received $1
-progress_done=.. download complete.
+progress_done=.. download complete
 progress_incache=Found $1 in cache ..
 
 readparse_cdheader=Missing Content-Disposition header
@@ -286,6 +325,7 @@ password_done=Your password has been successfully changed. You may now <a href='
 password_err=Failed to change password
 password_euser=Your login name was not found in the password file!
 password_eold=The current password is incorrect
+password_euserpass=Invalid username or password
 password_enew1=No new password was entered
 password_enew2=Your new passwords do not match
 password_epam=PAM error : $1
@@ -307,6 +347,11 @@ ui_paging=Showing rows $1 to $2 of $3
 ui_rowlabel=$2 in row $1 :
 ui_filterbox=Type to filter..
 ui_of=of
+ui_success=Success
+ui_info=Information
+ui_warning=Warning
+ui_error=Error
+ui_error_fatal=Fatal Error
 
 header_statusmsg=$1 logged into $2 $3 on $4 ($5)
 
@@ -365,7 +410,6 @@ log_email_time=Action performed at: $1
 log_email_system=Performed on system: $1
 log_email_user=Performed by user: $1
 log_email_script=Webmin script: $1
-log_email_session=Session ID: $1
 log_email_remote=Client address: $1
 
 nice_size_PB=PB
@@ -384,6 +428,7 @@ paginator_showing_start=Showing $1 to $2 of $3 items on page
 paginator_showing_end=of $1 pages
 paginator_nosearchrs=There are no results matching <tt>$1</tt> query
 
+langneutral_include=Include neutral translations
 langauto_include=Include machine translations
 
 file_truncated_message=fetched $1 of data, truncated $2 out of $3
@@ -391,5 +436,7 @@ file_truncated_message_head=fetched beginning $1 of data, truncated $2 out of $3
 file_truncated_message_tail=fetched ending $1 of data, truncated $2 out of $3
 
 defcert_error=Default $1 bundled SSL certificate is being used. It is highly advised to update default <tt>$2</tt> certificate before proceeding with login.
+
+main_error_details=Error details
 
 __norefs=1

@@ -103,17 +103,22 @@ if ($access{'forcelink'}) {
 	}
 else {
 	# Login mode
+	my $qulbl = &quote_escape($text{'edit_user'}, '"');
+	my $qplbl = &quote_escape($text{'edit_pass'}, '"');
 	my $linksel = &ui_radio("mode", $mode,
 		[ [ 0, "$text{'edit_mode0'}<br>" ],
-		  [ 1, $text{'edit_mode1'}." ".$text{'edit_user'}." ".
-		       &ui_textbox("wuser", $mode == 1 ? $s->{'user'} : "", 10).
-		       " ".$text{'edit_pass'}.
-		       &ui_password("wpass", $s->{'pass'}, 10)."<br>" ],
+		  [ 1, &text('edit_mode12',
+			&ui_textbox("wuser", $mode == 1 ? $s->{'user'} : "", 8,
+			    undef, undef,
+			    " aria-label=\"$qulbl\" placeholder=\"$qulbl\""),
+			&ui_password("wpass", $s->{'pass'}, 8, undef, undef,
+			    " aria-label=\"$qplbl\" placeholder=\"$qplbl\"")).
+			"<br>" ],
 		  [ 2, "$text{'edit_mode2'}<br>" ],
 		  ($access{'pass'} && !$main::session_id || $mode == 3 ?
 		    ( [ 3, "$text{'edit_mode3'}<br>".
 			   (defined($main::remote_pass) ? "" :
-			    "<font size=-1>($text{'edit_same'})</font><br>") ] )
+			    &ui_note($text{'edit_same'})."<br>") ] )
 		    : ( ) ) ]);
 	print &ui_table_row($text{'edit_link'}, $linksel);
 	}
@@ -124,14 +129,14 @@ if ($access{'forcefast'}) {
 					    : $s->{'fast'});
 	}
 else {
-	if ($in{'new'} || $s->{'fast'} == 2) {
+	if (($in{'new'} && $config{'deffast'} != 1) || $s->{'fast'} == 2) {
 		print &ui_table_row($text{'edit_fast'},
 			&ui_radio("fast", $config{'deffast'},
 				[ [ 1, $text{'yes'} ],
 				  [ 2, $text{'edit_auto'} ],
 				  [ 0, $text{'no'} ] ]));
 		}
-	else {
+	elsif (!$in{'new'} && $s->{'fast'} != 1) {
 		print &ui_table_row($text{'edit_fast'},
 			&ui_radio("fast", int($s->{'fast'}),
 				[ [ 1, $text{'yes'} ],

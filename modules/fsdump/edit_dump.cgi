@@ -32,6 +32,7 @@ if (!$in{'id'}) {
 	$dump = { 'dir' => $in{'dir'},
 		  'fs' => $fs,
 		  'rsh' => &has_command("ssh"),
+		  'email' => $gconfig{'webmin_email_to'},
 		   $config{'simple_sched'} ?
 			( 'special' => 'daily' ) :
 			( 'mins' => '0',
@@ -51,6 +52,7 @@ else {
 		}
 	else {
 		&ui_print_header(undef, $text{'edit_title2'}, "", "create");
+		$dump->{'rsh'} = &has_command("ssh") if (!$dump->{'host'});
 		}
 	}
 

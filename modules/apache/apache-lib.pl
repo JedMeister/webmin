@@ -26,81 +26,93 @@ $last_restart_time_flag = $module_var_directory."/restart-flag";
 # if the Apache binary changes, when Webmin is upgraded, or once every five
 # minutes if automatic rebuilding is enabled.
 if ($module_name ne 'htaccess') {
-	local %oldsite;
-	local $httpd = &find_httpd();
-	local @st = stat($httpd);
-	&read_file($site_file, \%oldsite);
-	local @sst = stat($site_file);
-	if ($oldsite{'path'} ne $httpd ||
-	    $oldsite{'size'} != $st[7] ||
-	    $oldsite{'webmin'} != &get_webmin_version() ||
-	    $config{'auto_mods'} && $sst[9] < time()-5*60) {
-		# Need to build list of supported modules
-		local ($ver, $mods, $fullver) = &httpd_info($httpd);
-		if ($ver) {
-			my @allmods = &available_modules();
-			local @mods = map { "$_/$ver" }
-				          &configurable_modules(\@allmods);
-			foreach my $m (@mods) {
-				if ($m =~ /(\S+)\/(\S+)/) {
-					$httpd_modules{$1} = $2;
-					}
-				}
-			# Call again now that known modules have been set, as
-			# sometimes there are dependencies due to LoadModule
-			# statements in an IfModule block
-			undef(@get_config_cache);
-			@allmods = &available_modules();
-			@mods = map { "$_/$ver" }
-				    &configurable_modules(\@allmods);
-			local %site = ( 'size' => $st[7],
-					'path' => $httpd,
-					'modules' => join(' ', @mods),
-					'allmodules' => join(' ', @allmods),
-					'version' => $ver,
-					'fullversion' => $fullver,
-					'webmin' => &get_webmin_version() );
-			&lock_file($site_file);
-			&write_file($site_file, \%site);
-			chmod(0644, $site_file);
-			&unlock_file($site_file);
-			}
-		}
+	&create_site_file();
 	}
-
-# Read the site-specific setup file, then require in all the module-specific
-# .pl files
-if (&read_file($site_file, \%site)) {
-	local($m, $f, $d);
-	$httpd_size = $site{'size'};
-	foreach $m (split(/\s+/, $site{'modules'})) {
-		if ($m =~ /(\S+)\/(\S+)/) {
-			$httpd_modules{$1} = $2;
-			}
-		}
-	foreach $m (split(/\s+/, $site{'allmodules'})) {
-		$all_httpd_modules{$m} = $site{'version'};
-		}
-	foreach $m (keys %httpd_modules) {
-		if (!-r "$module_root_directory/$m.pl") {
-			delete($httpd_modules{$m});
-			}
-		}
-	foreach $f (split(/\s+/, $site{'htaccess'})) {
-		if (-r $f) { push(@htaccess_files, $f); }
-		}
-	foreach $m (keys %httpd_modules) {
-		do "$m.pl";
-		}
-	foreach $d (split(/\s+/, $site{'defines'})) {
-		$httpd_defines{$d}++;
-		}
-	}
+&read_site_file();
 
 $apache_docbase = $config{'apache_docbase'} ? $config{'apache_docbase'} :
 		  $httpd_modules{'core'} >= 2.0 ?
 			"http://httpd.apache.org/docs-2.0/mod/" :
 			"http://httpd.apache.org/docs/mod/";
+
+# create_site_file()
+# If the Apache binary or Webmin version has changed, create the site
+# file containing all known Apache modules
+sub create_site_file
+{
+my %oldsite;
+my $httpd = &find_httpd();
+my @st = stat($httpd);
+&read_file($site_file, \%oldsite);
+my @sst = stat($site_file);
+if ($oldsite{'path'} ne $httpd ||
+    $oldsite{'size'} != $st[7] ||
+    $oldsite{'webmin'} != &get_webmin_version() ||
+    $config{'auto_mods'} && $sst[9] < time()-5*60) {
+	# Need to build list of supported modules
+	my ($ver, $mods, $fullver) = &httpd_info($httpd);
+	if ($ver) {
+		my @allmods = &available_modules();
+		my @mods = map { "$_/$ver" }
+			       &configurable_modules(\@allmods);
+		foreach my $m (@mods) {
+			if ($m =~ /(\S+)\/(\S+)/) {
+				$httpd_modules{$1} = $2;
+				}
+			}
+		# Call again now that known modules have been set, as
+		# sometimes there are dependencies due to LoadModule
+		# statements in an IfModule block
+		undef(@get_config_cache);
+		@allmods = &available_modules();
+		@mods = map { "$_/$ver" }
+			    &configurable_modules(\@allmods);
+		my %site = ( 'size' => $st[7],
+			     'path' => $httpd,
+			     'modules' => join(' ', @mods),
+			     'allmodules' => join(' ', @allmods),
+			     'version' => $ver,
+			     'fullversion' => $fullver,
+			     'webmin' => &get_webmin_version() );
+		&lock_file($site_file);
+		&write_file($site_file, \%site);
+		chmod(0644, $site_file);
+		&unlock_file($site_file);
+		}
+	}
+}
+
+# read_site_file()
+# Read the site-specific setup file, then require in all the module-specific
+# .pl files
+sub read_site_file
+{
+if (&read_file($site_file, \%site)) {
+	foreach my $m (split(/\s+/, $site{'modules'})) {
+		if ($m =~ /(\S+)\/(\S+)/) {
+			$httpd_modules{$1} = $2;
+			}
+		}
+	foreach my $m (split(/\s+/, $site{'allmodules'})) {
+		$all_httpd_modules{$m} = $site{'version'};
+		}
+	foreach my $m (keys %httpd_modules) {
+		if (!-r "$module_root_directory/$m.pl") {
+			delete($httpd_modules{$m});
+			}
+		}
+	foreach my $f (split(/\s+/, $site{'htaccess'})) {
+		if (-r $f) { push(@htaccess_files, $f); }
+		}
+	foreach my $m (keys %httpd_modules) {
+		do "$m.pl";
+		}
+	foreach my $d (split(/\s+/, $site{'defines'})) {
+		$httpd_defines{$d}++;
+		}
+	}
+
+}
 
 # parse_config_file(handle, lines, file, [recursive])
 # Parses lines of text from some config file into a data structure. The
@@ -549,7 +561,7 @@ local($i, @old, $lref, $change, $len, $v);
 @old = &find_directive_struct($_[0], $_[2]);
 local @files;
 for($i=0; $i<@old || $i<@{$_[1]}; $i++) {
-	$v = ${$_[1]}[$i];
+	$v = $i<@{$_[1]} ? $_[1]->[$i] : undef;
 	if ($i >= @old) {
 		# a new directive is being added. If other directives of this
 		# type exist, add it after them. Otherwise, put it at the end of
@@ -580,7 +592,8 @@ for($i=0; $i<@old || $i<@{$_[1]}; $i++) {
 			# in this section
 			local($f, %v, $j);
 			$f = $_[2]->[0]->{'file'};
-			for($j=0; $_[2]->[$j]->{'file'} eq $f; $j++) { }
+			for($j=0; $j < @{$_[2]} &&
+				  $_[2]->[$j]->{'file'} eq $f; $j++) { }
 			$lref = &read_file_lines($f);
 			if ($_[2] eq $_[3]) {
 				# Top-level, so add to the end of the file
@@ -654,16 +667,19 @@ if ($newdir) {
 	if ($isrc) {
 		&recursive_set_indent($newdir, $isrc->{'indent'});
 		}
+	$newdir{'words'} = &wsplit($newdir{'value'});
 	@newlines = &directive_lines($newdir);
 	}
 if ($olddir && $newdir) {
 	# Update in place
+	$newdir->{'words'} = &wsplit($newdir->{'value'});
 	if ($first) {
 		# Just changing first and last line, like virtualhost IP
 		$lref->[$olddir->{'line'}] = $newlines[0];
 		$lref->[$olddir->{'eline'}] = $newlines[$#newlines];
 		$olddir->{'name'} = $newdir->{'name'};
 		$olddir->{'value'} = $newdir->{'value'};
+		$olddir->{'words'} = $newdir->{'words'};
 		}
 	else {
 		# Re-writing whole block
@@ -707,6 +723,7 @@ elsif (!$olddir && $newdir) {
 		$addpos--;
 		$addline = $pconf->[$addpos]->{'eline'}+1;
 		}
+	$newdir->{'words'} = &wsplit($newdir->{'value'});
 	$newdir->{'file'} = $file;
 	$newdir->{'line'} = $addline;
 	$newdir->{'eline'} = $addline + scalar(@newlines) - 1;
@@ -748,13 +765,11 @@ foreach my $dir (@$dirs) {
 	if ($dir->{'type'}) {
 		# Do sub-members too
 		&recursive_set_lines_files($dir->{'members'}, $line+1, $file);
-		$line += scalar(@{$dir->{'members'}})+1;
-		$dir->{'eline'} = $line;
+		$line += scalar(grep { $_->{'name'} ne 'dummy' }
+				     @{$dir->{'members'}})+1;
 		}
-	else {
-		$dir->{'eline'} = $line;
-		}
-	$line++;
+	$dir->{'eline'} = $line;
+	$line++ if ($dir->{'name'} ne 'dummy');
 	}
 return $line;
 }
@@ -778,17 +793,17 @@ unlink($file);
 # beyond the given line.
 sub renumber
 {
-local($d);
-if (!$_[3]) { return; }
-foreach $d (@{$_[0]}) {
-	if ($d->{'file'} eq $_[2] && $d->{'line'} >= $_[1]) {
-		$d->{'line'} += $_[3];
+my ($conf, $line, $file, $offset) = @_;
+return if (!$offset);
+foreach my $d (@$conf) {
+	if ($d->{'file'} eq $file && $d->{'line'} >= $_[1]) {
+		$d->{'line'} += $offset;
 		}
-	if ($d->{'file'} eq $_[2] && $d->{'eline'} >= $_[1]) {
-		$d->{'eline'} += $_[3];
+	if ($d->{'file'} eq $file && $d->{'eline'} >= $_[1]) {
+		$d->{'eline'} += $offset;
 		}
 	if ($d->{'type'}) {
-		&renumber($d->{'members'}, $_[1], $_[2], $_[3]);
+		&renumber($d->{'members'}, $line, $file, $offset);
 		}
 	}
 }
@@ -826,21 +841,21 @@ return $_[0] ? $_[0] : $_[1];
 }
 
 # make_directives(ref, version, module)
+# Return directives suitable for this system and version
 sub make_directives
 {
-local(@rv, $aref);
-$aref = $_[0];
-local $ver = $_[1];
+my ($aref, $ver, $mod) = @_;
+my @rv;
 if ($ver =~ /^(1)\.(3)(\d+)$/) {
 	$ver = sprintf "%d.%d%2.2d", $1, $2, $3;
 	}
-foreach $d (@$aref) {
+foreach my $d (@$aref) {
 	local(%dir);
 	$dir{'name'} = $d->[0];
 	$dir{'multiple'} = $d->[1];
 	$dir{'type'} = int($d->[2]);
 	$dir{'subtype'} = $d->[2] - $dir{'type'};
-	$dir{'module'} = $_[2];
+	$dir{'module'} = $mod;
 	$dir{'version'} = $ver;
 	$dir{'priority'} = $d->[5];
 	foreach $c (split(/\s+/, $d->[3])) { $dir{$c}++; }
@@ -1466,10 +1481,11 @@ foreach $f (@main::locked_apache_files) {
 }
 
 # directive_lines(directive, ...)
+# Convery a list of Apache directives into a list of lines
 sub directive_lines
 {
-local @rv;
-foreach $d (@_) {
+my @rv;
+foreach my $d (@_) {
 	next if ($d->{'name'} eq 'dummy');
 	my $indent = (" " x $d->{'indent'});
 	if ($d->{'type'}) {
@@ -2268,6 +2284,16 @@ if($saved_conf_files) {
 sub format_config_allowed
 {
 return $config{'format_config'};
+}
+
+# clear_apache_modules_cache()
+# If new Apache modules were enabled, force re-gen of the site file
+# that contains the modules cache
+sub clear_apache_modules_cache
+{
+&unlink_file($site_file);
+&create_site_file();
+&read_site_file();
 }
 
 1;

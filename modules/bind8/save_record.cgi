@@ -450,11 +450,11 @@ else {
 		# Save DNSSEC parameters
 		$in{'value2'} =~ /^\d+$/ ||
 			&error($text{'edit_ensec3value2'});
-		$in{'value3'} =~ /^[a-zA-Z0-9\+\/]+$/ ||
-			&error($text{'edit_ensec3value2'});
+		$in{'value3_def'} || $in{'value3'} =~ /^[a-zA-Z0-9\+\/]+$/ ||
+			&error($text{'edit_ensec3value3'});
 		$vals = join(" ", "(", $in{'value0'}, $in{'value1'},
-                                       $in{'value2'},
-				       $in{'value3'}, ")");
+			     $in{'value2'},
+			     ($in{'value3_def'} ? '-' : $in{'value3'}), ")");
 		}
 	elsif ($in{'type'} eq 'CAA') {
 		$in{'value2'} =~ /^\S+$/ ||
@@ -666,8 +666,8 @@ else {
 	    &expandall_ip6($ofwdrec->{'values'}->[0]) &&
 	    $fulloldvalue0 eq $ofwdrec->{'name'}) {
 		# Updating the forward record
-		&before_editing($ofwdfile);
-		&before_editing($fwdfile);
+		&before_editing($ofwdconf);
+		&before_editing($fwdconf);
 		&lock_file(&make_chroot($ofwdfile));
 		&lock_file(&make_chroot($fwdfile));
 		my @ofrecs = &read_zone_file($ofwdfile, $ofwdconf->{'name'});
@@ -702,8 +702,8 @@ else {
 			&bump_soa_record($ofwdfile, \@ofrecs);
 			&sign_dnssec_zone_if_key($ofwdconf, \@ofrecs);
 			}
-		&after_editing($fwdfile);
-		&after_editing($ofwdfile);
+		&after_editing($fwdconf);
+		&after_editing($ofwdconf);
 		}
 	}
 &bump_soa_record($in{'file'}, \@recs);

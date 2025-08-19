@@ -152,7 +152,34 @@ elsif ($in{'md5pass'} == 3) {
 	$need = &acl::check_yescrypt();
 	$need && &error(&text('session_eyescrypt', "<tt>$need</tt>"));
 	}
+
 $gconfig{'md5pass'} = $in{'md5pass'};
+
+# Save forgotten password mode
+if ($in{'forgot'} && &foreign_installed("virtualmin-password-recovery") &&
+    $text{'session_postfix'} =~ /virtualmin-password-recovery/) {
+	&error(&text('session_eforgot', 'edit_mods.cgi?tab=delete'));
+	}
+$gconfig{'forgot_pass'} = $in{'forgot'};
+
+# Save bad password requests
+if ($in{'blockpass_on'}) {
+	$in{'passreset_time'} =~ /^\d+$/ && $in{'passreset_time'} > 0 ||
+		&error($text{'session_eblockhost_time'});
+	$in{'passreset_failures'} =~ /^\d+$/ && $in{'passreset_failures'} > 0 ||
+		&error($text{'session_epassreset_failures'});
+	$gconfig{'passreset_time'} = $in{'passreset_time'};
+	$gconfig{'passreset_failures'} = $in{'passreset_failures'};
+	}
+else {
+	$gconfig{'passreset_time'} = $gconfig{'passreset_failures'} = undef;
+	}
+
+# Password expiry
+$in{'passreset_timeout'} =~ /^\d+$/ && $in{'passreset_timeout'} > 0 ||
+		&error($text{'session_epassreset_timeout'});
+$gconfig{'passreset_timeout'} = $in{'passreset_timeout'};
+
 &write_file("$config_directory/config", \%gconfig);
 &unlock_file("$config_directory/config");
 

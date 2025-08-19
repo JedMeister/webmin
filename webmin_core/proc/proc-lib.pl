@@ -156,14 +156,14 @@ else {
 		close(OUTr); close(INw);
 
 		if ($_[1]) {
+			local @u = getpwuid($_[1]);
 			if (defined($_[2])) {
 				# switch to given UID and GID
 				&switch_to_unix_user(
-					[ undef, undef, $_[1], $_[2] ]);
+					[ $u[0], undef, $_[1], $_[2] ]);
 				}
 			else {
 				# switch to UID and all GIDs
-				local @u = getpwuid($_[1]);
 				&switch_to_unix_user(\@u);
 				}
 			}
@@ -195,7 +195,7 @@ else {
 		local $sel = select($rmask, undef, undef, 1);
 		if ($sel > 0 && vec($rmask, $fn, 1)) {
 			# got something to read.. print it
-			sysread(OUTr, $buf, 65536) || last;
+			sysread(OUTr, $buf, &get_buffer_size()) || last;
 			$got += length($buf);
 			if ($_[5]) {
 				$buf = &html_escape($buf);
@@ -286,8 +286,9 @@ if (!$@) {
 
 		close(STDIN); close(STDOUT); close(STDERR);
 		untie(*STDIN); untie(*STDOUT); untie(*STDERR);
-		if ($_[1]) {
-			&switch_to_unix_user([ undef, undef, $_[1], $_[2] ]);
+		if ($uid) {
+			my $username = getpwuid($uid);
+			&switch_to_unix_user([ $username, undef, $uid, $gid ]);
 			}
 
 		close($ptyfh);		# Used by other side only
@@ -345,8 +346,9 @@ else {
 		close(STDIN); close(STDOUT); close(STDERR);
 		untie(*STDIN); untie(*STDOUT); untie(*STDERR);
 		#setpgrp(0, $$);
-		if ($_[1]) {
-			&switch_to_unix_user([ undef, undef, $_[1], $_[2] ]);
+		if ($uid) {
+			my $username = getpwuid($uid);
+			&switch_to_unix_user([ $username, undef, $uid, $gid ]);
 			}
 
 		open(STDIN, "<$tty");
@@ -584,6 +586,7 @@ sub can_view_process
 {
 local ($p) = @_;
 return 0 if ($p->{'pid'} == $$ && $config{'hide_self'});
+return 0 if ($p->{'_pscmd'} && $config{'hide_self'});
 local $user = $p->{'user'};
 if ($hide{$user}) {
 	return 0;
@@ -704,6 +707,30 @@ elsif (time() - $p->{'_stime_unix'} > 86400) {
 	}
 else {
 	return &make_date($p->{'_stime_unix'});
+	}
+}
+
+# count_processes()
+sub count_processes
+{
+my $process_count = 0;
+if ($gconfig{'os_type'} eq 'windows') {
+	open(my $ps, '-|', 'tasklist /FO CSV') || return -1;
+	while (my $line = <$ps>) {
+		next if $. == 1;  # Skip the header line
+		$process_count++;
+		}
+	close($ps);
+	return $process_count;
+	}
+else {
+	open(my $ps, '-|', 'ps -e') || return -1;
+	while (<$ps>) {
+		$process_count++;
+		}
+	close($ps);
+	# Skip the header line
+	return $process_count - 1;
 	}
 }
 
