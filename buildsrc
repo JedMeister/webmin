@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+"""Build TurnKey Webmin deb packages from upstream Webmin tarballs"""
+
+import argparse
+import sys
+from typing import NoReturn
+
+from buildsrc_lib import Webmin, WebminUpdateError, CTRL_FILE
+
+
+def fatal(msg: str | WebminUpdateError) -> NoReturn:
+    print(msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    # TODO
+    # - support building specific version
+    # - support building pre-release version
+    parser.add_argument(
+            "-c", "--control-file",
+            default=CTRL_FILE,
+            help=f"path to control file (default: {CTRL_FILE})"
+    )
+    parser.add_argument(
+            "-u", "--update-check",
+            action="store_true",
+            help="just check for newer version; if new version exit 0,"
+                 " otherwise exit 100"
+    )
+    parser.add_argument(
+            "-V", "--build-version",
+            default="latest",
+            help="version to build (default: 'latest')"
+    )
+    parser.add_argument(
+            "-f", "--force",
+            action="store_true",
+            help="force actions"
+    )
+    parser.add_argument(
+            "-q", "--quiet",
+            action="store_true",
+            help="minimise output"
+    )
+    args = parser.parse_args()
+
+    try:
+        webmin = Webmin(force=args.force, quiet=args.quiet)
+        if args.update_check:
+            # if check_only=True, method will exit with appropriate exit code
+            webmin.new_version(check_only=True)
+        else:
+            updated = webmin.update(version=args.build_version)
+            if updated:
+                webmin.write_control(control_file=args.control_file)
+                if not args.quiet:
+                    print("Double check changes, commit and rebuild packages")
+    except WebminUpdateError as e:
+        fatal(e)
+
+
+if __name__ == "__main__":
+    main()
