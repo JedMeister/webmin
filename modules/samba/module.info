@@ -1,0 +1,7 @@
+os_support=solaris *-linux aix hpux freebsd osf1 irix openserver unixware openbsd macos netbsd 
+version=2.102
+longdesc=Create and edit samba file and print shares.
+desc=Samba Windows File Sharing
+name=Samba Manager
+category=servers
+depends=2.102

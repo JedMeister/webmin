@@ -1,0 +1,92 @@
+bind_maxconns=Connexions simultànies totals màximes
+bind_maxconns_per_ip=Connexions simultànies màximes per IP
+bind_maxconns_per_net=Connexions simultànies màximes per xarxa
+bind_emaxconns=Les connexions simultànies màximes han de ser un nombre superior a 1
+bind_emaxconns_per_ip=Les connexions simultànies màximes per IP han de ser un nombre superior a 1
+bind_emaxconns_per_net=Les connexions simultànies màximes per xarxa han de ser un nombre superior a 1
+bind_maxlifetime=Vida màxima del procés de Webmin
+bind_maxlifetime_def=Il·limitat
+bind_maxlifetime_secs=segons
+bind_emaxlifetime=La vida útil màxima del procés ha de ser un nombre superior a 60 segons
+
+ui_nice_size_type=Utilitzeu unitats de mesura binàries (KiB, MiB, GiB en lloc de KB, MB, GB)
+
+delete_rusure=Esteu segur que voleu suprimir el mòdul (s) $2? $1 kB de fitxers s'esborraran per sempre.
+
+os_incorrect=El sistema operatiu $1 s'ha actualitzat a la versió $2 
+os_release_notes=Notes de publicació
+
+lang_title=Idioma i entorn local
+lang_title2=Idioma i configuració regional de Webmin
+lang_lang=Llenguatge
+lang_locale=Localització
+lang_dateformat=Format de visualització de dates
+lang_dateformat_dd/mon/yyyy=dd/llun/aaaa (és a dir, 16/set/2001)
+lang_dateformat_dd/mm/yyyy=dd/mm/aaaa (és a dir, 16/09/2001)
+lang_dateformat_mm/dd/yyyy=mm/dd/aaaa (és a dir, 16/09/2001)
+lang_dateformat_yyyy/mm/dd=aaaa/mm/dd (és a dir, 16/09/2001)
+
+ssl_hsts=Apliqueu SSL amb la capçalera HSTS
+ssl_letsdoms=Noms d'amfitrió del certificat
+
+upgrade_setup=S'està executant l'script <tt>setup.sh</tt> per actualitzar Webmin ..
+upgrade_setuprpm=S'està executant <tt>RPM</tt> per actualitzar Webmin ..
+upgrade_setupdeb=S'està executant <tt>DPKG</tt> per actualitzar Webmin ..
+upgrade_setuppackage=S'està executant <tt>pkgadd</tt> per actualitzar Webmin ..
+
+update_webmin=Actualització de www.webmin.com
+
+session_utmp=Enregistrar els inicis de sessió i tancaments de sessió a <tt>utmp</tt>?
+session_pmodedesc3=Política de caducitat de contrasenya
+session_md5off=Determinar automàticament
+session_md5on=Utilitzeu el format hashing <tt>MD5</tt>
+session_sha512=Utilitzeu el format hashing <tt>SHA512</tt>
+session_yescrypt=Utilitzeu el format hashing <tt>yescrypt</tt>
+session_emd5mod=El format hashing MD5 no es pot utilitzar, ja que el mòdul Perl $1 no està instal·lat
+session_esha512mod=El format hashing SHA512 no es pot utilitzar, ja que el mòdul Perl $1 no està instal·lat
+session_eyescrypt=El format hashing yescrypt no es pot utilitzar, ja que el mòdul Perl $1 no està instal·lat
+session_passapi=Voleu activar l'API de canvi de contrasenya remota?
+session_passapi0=API desactivada
+session_passapi1=API habilitada per als usuaris d'Unix
+session_passurl=Quan està activat, les contrasenyes d'usuari es poden canviar mitjançant una sol·licitud POST a $1 
+
+log_fixrepo=S'ha solucionat el repositori Webmin
+
+ipkey_eip2="$1" no és una adreça IP o un nom d'amfitrió vàlids
+
+advanced_etempallowed=El directori de fitxers temporals $1 és un directori del sistema
+advanced_sortconfigs=Voleu desar els fitxers de configuració ordenats per les seves claus?
+advanced_bufsize=Mida de la memòria intermèdia de xarxa en bytes
+advanced_ebufsize=La mida del buffer de xarxa ha de ser un nombre superior a zero
+
+notify_yumrepo=El vostre sistema utilitza l'antic dipòsit Webmin YUM. Feu clic al botó següent per canviar a la nova URL del repositori <tt>$1</tt> per utilitzar la nostra darrera clau de signatura i garantir l'accés a les versions actualitzades de Webmin.
+notify_aptrepo=El vostre sistema utilitza l'antic dipòsit Webmin APT. Feu clic al botó següent per canviar a l'URL del repositori <tt>stable</tt> <tt>$1</tt> per utilitzar la nostra darrera clau de signatura i garantir l'accés a les versions actualitzades de Webmin.
+notif_fixreponow=Actualitza el repositori Webmin
+
+status_err=No s'ha pogut desar la col·lecció d'estat de fons
+status_einterval=L'interval de col·lecció ha de ser un nombre enter
+
+sendmail_port=Port SMTP
+sendmail_ssl0=Mai xifreu
+sendmail_ssl1=Utilitzeu sempre TLS
+sendmail_ssl2=Canvieu amb STARTTLS
+sendmail_url=URL Webmin per utilitzar-lo al correu electrònic
+sendmail_url_def=Predeterminat ($1)
+sendmail_url_custom=URL personalitzat
+sendmail_eurl=Falta un URL personalitzat o no és vàlid
+
+web_rediruurl=URL de redirecció del canvi després de l'inici de sessió
+web_redirdesc=Substitucions d'URL de redirecció interna
+web_eredirurl="$1" conté espais i no és un URL vàlid
+web_redirhost=Redirigeix l'amfitrió
+web_eredirhost='$1' no és un nom d'amfitrió vàlid
+web_redirport=Port de redirecció
+web_redirpref=Prefix de redirecció
+web_eredirpref=El prefix ha de començar amb una barra inclinada
+web_eredirpref2=El prefix no ha de contenir espais
+web_redirssl=Redirigeix SSL
+
+letsencrypt_certbot=Certbot
+letsencrypt_eacmedns=Només el client Let's Encrypt oficial és compatible amb la validació basada en DNS
+
+alert_hide=Amaga l'alerta

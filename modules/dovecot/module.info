@@ -1,0 +1,6 @@
+os_support=!windows
+version=2.102
+longdesc=Configure the Dovecot IMAP and POP3 mail retrieval server.
+desc=Dovecot IMAP/POP3 Server
+category=servers
+depends=init 2.102

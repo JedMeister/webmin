@@ -1,0 +1,6 @@
+os_support=!windows
+version=2.102
+longdesc=View reports on bandwidth usage by host, port, protocol and time on a Linux system.
+desc=Bandwidth Monitoring
+category=net
+depends=net cron 2.102

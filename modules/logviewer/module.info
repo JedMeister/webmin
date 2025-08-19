@@ -1,0 +1,8 @@
+version=2.102
+longdesc=View and search all logs available on system
+name=logviewer
+os_support=*-linux
+readonly=1
+desc=System Logs Viewer
+category=system
+depends=proc 2.102

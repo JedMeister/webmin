@@ -1,0 +1,6 @@
+os_support=!windows
+version=2.102
+longdesc=Install new Perl modules on your system, and view those already installed.
+desc=Perl Modules
+name=CPAN
+depends=2.102
