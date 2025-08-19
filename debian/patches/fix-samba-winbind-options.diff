@@ -1,0 +1,64 @@
+Description: Fix Samba module "Winbind options"
+ A user was having problems with samba config via the webmin samba module, this patch
+ resolved the issue for him
+Author: Jeremy Davis <jeremy@turnkeylinux.org>
+Bug-TurnKey: https://github.com/turnkeylinux/tracker/issues/2038
+Forwarded: no
+Last-Update: 2025-08-16
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: webmin/modules/samba/conf_bind.cgi
+===================================================================
+--- webmin.orig/modules/samba/conf_bind.cgi	2025-08-16 22:48:36.825400499 +1000
++++ webmin/modules/samba/conf_bind.cgi	2025-08-16 22:48:36.821400433 +1000
+@@ -17,19 +17,19 @@
+ print &ui_table_start($text{'bind_title'}, undef, 2);
+ 
+ print &ui_table_row($text{'bind_local'},
+-	&yesno_input("winbind enable local accounts", "local"));
++	&yesno_input("winbind enable local accounts", &getval("local")),20);
+ 
+ print &ui_table_row($text{'bind_trust'},
+-	&yesno_input("winbind trusted domains only", "trust"));
++	&yesno_input("winbind scan trusted domains", &getval("trust")),20);
+ 
+ print &ui_table_row($text{'bind_users'},
+-	&yesno_input("winbind enum users", "users"));
++	&yesno_input("winbind enum users", &getval("users")),20);
+ 
+ print &ui_table_row($text{'bind_groups'},
+-	&yesno_input("winbind enum groups", "groups"));
++	&yesno_input("winbind enum groups", &getval("groups")),20);
+ 
+ print &ui_table_row($text{'bind_defaultdomain'},
+-	&yesno_input("winbind use default domain", "defaultdomain"));
++	&yesno_input("winbind use default domain", &getval("defaultdomain")),20);
+ 
+ print &ui_table_row($text{'bind_realm'},
+ 	&ui_textbox("realm", &getval("realm"), 20));
+Index: webmin/modules/samba/save_bind.cgi
+===================================================================
+--- webmin.orig/modules/samba/save_bind.cgi	2025-08-16 22:48:36.825400499 +1000
++++ webmin/modules/samba/save_bind.cgi	2025-08-16 22:48:36.821400433 +1000
+@@ -15,7 +15,7 @@
+ &error_setup($text{'bind_err'});
+ &setval("winbind enable local accounts", $in{'local'} ? "yes" : "no");
+ 
+-&setval("winbind trusted domains only", $in{'trust'} ? "yes" : "no");
++&setval("winbind scan trusted domains", $in{'trust'} ? "yes" : "no");
+ 
+ &setval("winbind enum users", $in{'users'} ? "yes" : "no");
+ 
+Index: webmin/modules/samba/samba-lib.pl
+===================================================================
+--- webmin.orig/modules/samba/samba-lib.pl	2025-08-16 22:47:21.180154310 +1000
++++ webmin/modules/samba/samba-lib.pl	2025-08-16 22:45:49.586649638 +1000
+@@ -519,7 +519,7 @@
+ 			"write list",undef,
+ 			"winbind cache time",300,
+ 			"winbind enable local accounts","yes",
+-			"winbind trusted domains only","no",
++			"winbind scan trusted domains","no",
+ 			"winbind enum users","yes",
+ 			"winbind enum groups","yes",
+ 		);

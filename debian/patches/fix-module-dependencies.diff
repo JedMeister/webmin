@@ -1,0 +1,31 @@
+Description: Patch fdisk and lvm module.info dependencies
+ When translated to the control file, the default module dependencies have
+ circular dependencies. The dependencies are fixed in the control file itself
+ when running the 'buildsrc' script, this patch makes the module.info consistent
+ with the control file.
+Author: Jeremy Davis <jeremy@turnkeylinux.org>
+Forwarded: no
+Last-Update: 2025-08-16
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: webmin/modules/fdisk/module.info
+===================================================================
+--- webmin.orig/modules/fdisk/module.info	2025-08-16 22:44:13.617079013 +1000
++++ webmin/modules/fdisk/module.info	2025-08-16 22:44:13.613078948 +1000
+@@ -5,5 +5,5 @@
+ desc=Partitions on Local Disks
+ category=hardware
+ noopenvz=1
+-depends=mount proc raid 2.102
++depends=mount proc 2.102
+ novserver=1
+Index: webmin/modules/lvm/module.info
+===================================================================
+--- webmin.orig/modules/lvm/module.info	2025-08-16 22:44:13.617079013 +1000
++++ webmin/modules/lvm/module.info	2025-08-16 22:44:13.613078948 +1000
+@@ -4,4 +4,4 @@
+ desc=Logical Volume Management
+ name=LVM
+ category=hardware
+-depends=mount fdisk 2.102
++depends=mount fdisk raid 2.102

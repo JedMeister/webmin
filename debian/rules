@@ -1,5 +1,7 @@
 #! /usr/bin/make -f
 
+DH_VERBOSE = 1
+
 progname=$(shell awk '/^Source/ {print $$2}' debian/control)
 buildroot=debian/$(progname)
 
@@ -15,27 +17,15 @@ clean:
 build:
 	dh_prep
 	mkdir -p $(tmp)
-	tar -zxf webmin.tar.gz -C $(tmp)
 
 install: build
 	dh_testdir
 	dh_testroot
-	chown -R root:root $(tmp)
 	mkdir -p $(share)
-	mv $(tmp)/webmin-*/* $(share)
+	cp -aR webmin_core/* $(share)
 	dh_install debian/etc/pam.d/webmin etc/pam.d
+	DH_VERBOSE=$(DH_VERBOSE) ./plugins_deb_rules.sh
 	rm -rf $(tmp)
-	for p in module-archives/* theme-archives/*; do \
-		plugin=$$(basename $$p | sed 's/.wb[m|t].gz//'); \
-		plugindir=$(buildroot)-$$plugin/usr/share/$(progname)/$$(dirname $$p); \
-		mkdir -p $$plugindir; \
-		cp $$p $$plugindir; \
-		echo -e "#!/bin/sh\nset -e\n\nexport PERL5LIB=/usr/share/$(progname)\ncd /usr/share/$(progname)\n./install-module.pl $$p\n\n#DEBHELPER#\n" > debian/$(progname)-$$plugin.postinst ; \
-		[ -e debian/postinst.d/$$plugin ] && cat debian/postinst.d/$$plugin >> debian/$(progname)-$$plugin.postinst; \
-		echo -e "#!/bin/sh\nset -e\n\nrm -rf /usr/share/$(progname)/$$plugin\n\n#DEBHELPER#\n" > debian/$(progname)-$$plugin.postrm ; \
-		sed -i "s|^-e #!/bin/sh|#!/bin/sh|" debian/$(progname)-$$plugin.postinst ; \
-		sed -i "s|^-e #!/bin/sh|#!/bin/sh|" debian/$(progname)-$$plugin.postrm ; \
-	done
 
 binary-indep: install
 	dh_testdir
