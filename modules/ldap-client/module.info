@@ -3,5 +3,5 @@ category=system
 os_support=*-linux
 longdesc=Configure your system as an LDAP client for users and groups.
 cpan=1
-version=2.402
-depends=2.402
+version=2.501
+depends=2.501

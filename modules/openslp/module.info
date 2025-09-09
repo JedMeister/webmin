@@ -4,5 +4,5 @@ name=OpenSLP
 longdesc=Configure the service location protocol server.
 os_support=!windows
 library=slp-lib.pl
-version=2.402
-depends=2.402
+version=2.501
+depends=2.501

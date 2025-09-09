@@ -383,12 +383,7 @@ foreach $mod (split(/\s+/, $config{'preuse'})) {
 	}
 
 # Open debug log if set
-if ($config{'debuglog'}) {
-	open(DEBUG, ">>$config{'debuglog'}");
-	chmod(0700, $config{'debuglog'});
-	select(DEBUG); $| = 1; select(STDOUT);
-	print DEBUG "miniserv.pl starting ..\n";
-	}
+&open_debug_to_log("miniserv.pl starting ..\n");
 
 # Write out (empty) blocked hosts file
 &write_blocked_file();
@@ -595,9 +590,16 @@ if ($config{'logclear'}) {
 					# need to clear log
 					$write_logtime = 1;
 					unlink($config{'logfile'});
+					unlink($config{'errorlog'})
+						if ($config{'errorlog'} &&
+						    $config{'errorlog'} ne '-');
+					unlink($config{'debuglog'})
+						if ($config{'debuglog'});
 					}
 				}
-			else { $write_logtime = 1; }
+			else {
+				$write_logtime = 1;
+				}
 			if ($write_logtime) {
 				open(LOGTIME, ">$config{'logfile'}.time");
 				print LOGTIME time(),"\n";
@@ -634,6 +636,16 @@ local $remove_session_count = 0;
 $need_pipes = $config{'passdelay'} || $config{'session'};
 $cron_runs = 0;
 while(1) {
+	# Periodically re-open error and debug logs if deleted via regular
+	# log clearing
+	if ($config{'errorlog'} && $config{'errorlog'} ne '-' &&
+	    !-e $config{'errorlog'}) {
+		&redirect_stderr_to_log();
+		}
+	if ($config{'debuglog'} && !-e $config{'debuglog'}) {
+		&open_debug_to_log();
+		}
+
 	# Check if any webmin cron jobs are ready to run
 	&execute_ready_webmin_crons($cron_runs++);
 
@@ -918,11 +930,27 @@ while(1) {
 
 				# Initialize SSL for this connection
 				if ($use_ssl) {
-					($ssl_con, $ssl_certfile,
-					 $ssl_keyfile) = &ssl_connection_for_ip(
-							   SOCK, $ipv6fhs{$s});
-					print DEBUG "ssl_con returned $ssl_con\n";
-					$ssl_con || exit;
+					my $byte = '';
+					# Look at the first byte of the socket
+					# buffer but don't consume it
+					recv(SOCK, $byte, 1, MSG_PEEK);
+					if (length($byte) &&
+					    # Check if the first byte is a TLS
+					    (ord($byte) == 0x16 ||
+					    # Check if the first byte is SSL
+					    (ord($byte) & 0x80))) {
+						($ssl_con,
+						 $ssl_certfile,
+						 $ssl_keyfile) =
+							&ssl_connection_for_ip(
+							    SOCK, $ipv6fhs{$s});
+						print DEBUG "ssl_con returned ".
+							"$ssl_con\n";
+						$ssl_con || exit;
+						}
+					else {
+						$use_ssl = 0;
+						}
 					}
 
 				print DEBUG
@@ -1091,8 +1119,8 @@ while(1) {
 			elsif ($inline =~ /^verify\s+(\S+)\s+(\S+)\s+(\S+)/) {
 				# Verifying a session ID
 				local $session_id = $1;
-				local $notimeout = $2;
-				local $vip = $3;
+				local $vip = $2;
+				local $uptime = $3;
 				local $skey = $sessiondb{$session_id} ?
 						$session_id : 
 						&hash_session_id($session_id);
@@ -1105,8 +1133,7 @@ while(1) {
 					  split(/\s+/, $sessiondb{$skey});
 					local $lot = &get_logout_time($user, $session_id);
 					if ($lot &&
-					    $time_now - $ltime > $lot*60 &&
-					    !$notimeout) {
+					    $time_now - $ltime > $lot*60) {
 						# Session has timed out due to
 						# idle time being hit
 						print $outfd "1 ",($time_now - $ltime),"\n";
@@ -1131,7 +1158,9 @@ while(1) {
 						# Session is OK, update last time
 						# and remote IP
 						print $outfd "2 $user\n";
-						$sessiondb{$skey} = "$user $time_now $vip";
+						if ($uptime) {
+							$sessiondb{$skey} = "$user $time_now $vip";
+							}
 						}
 					}
 				}
@@ -1349,91 +1378,38 @@ local $origreqline = &read_line();
 $method = $page = $request_uri = undef;
 print DEBUG "handle_request reqline=$reqline\n";
 alarm(0);
-if (!$reqline && (!$use_ssl || $checked_timeout > 1)) {
+if (!$use_ssl && $config{'ssl'} && $config{'ssl_enforce'}) {
+	# This is an http request when https must be enforced
+	local $urlhost = $config{'musthost'} || $host;
+	$urlhost = "[".$urlhost."]" if (&check_ip6address($urlhost));
+	local $wantport = $port;
+	if ($wantport == 80 &&
+	    &indexof(443, @listening_on_ports) >= 0) {
+		# Connection was to port 80, but since we are also
+		# accepting on port 443, redirect to that
+		$wantport = 443;
+		}
+	local $url = $wantport == 443
+		? "https://$urlhost/"
+		: "https://$urlhost:$wantport/";
+	&write_data("HTTP/1.0 302 Moved Temporarily\r\n");
+	&write_data("Date: $datestr\r\n");
+	&write_data("Server: @{[&server_info()]}\r\n");
+	&write_data("Location: $url\r\n");
+	&write_keep_alive(0);
+	&write_data("\r\n");
+	&log_error("Redirecting HTTP request to HTTPS for $acptip");
+	&log_request($loghost, $authuser, $reqline, 302, 0);
+	return 0;
+	}
+elsif (!$reqline && $checked_timeout > 1) {
 	# An empty request .. just close the connection
 	print DEBUG "handle_request: rejecting empty request\n";
 	return 0;
 	}
-elsif ($reqline !~ /^(\S+)\s+(.*)\s+HTTP\/1\..$/) {
-	print DEBUG "handle_request: invalid reqline=$reqline\n";
-	if ($use_ssl) {
-		# This could be an http request when it should be https
-		$use_ssl = 0;
-		local $urlhost = $config{'musthost'} || $host;
-		$urlhost = "[".$urlhost."]" if (&check_ip6address($urlhost));
-		local $wantport = $port;
-		if ($wantport == 80 &&
-		    &indexof(443, @listening_on_ports) >= 0) {
-			# Connection was to port 80, but since we are also
-			# accepting on port 443, redirect to that
-			$wantport = 443;
-			}
-		local $url = $wantport == 443 ? "https://$urlhost/"
-					      : "https://$urlhost:$wantport/";
-		local $jsurl = $config{'musthost'} ?
-				                   $url :
-				                   "https://'+location.host+'";
-		local $jsredir = $config{'musthost'} ?
-				                   "location.href='$url'" :
-				                   "location.protocol='https:'";
-		$reqline = "GET / HTTP/1.1";	# Fake it for the log
-		&http_error(200, "Document follows",
-			"This web server is running in SSL mode. ".
-			"Trying to redirect to <a href='$url'>$url</a> instead ...".
-			"<script>".
-			"if (location.protocol != 'https:') {".
-			"  document.querySelector('a').href='".$jsurl."';document.querySelector('a').innerText='".$jsurl."';".
-			"".$jsredir."".
-			"}".
-			"</script>",
-			0, 1);
-		}
-	elsif (ord(substr($reqline, 0, 1)) == 128 && !$use_ssl) {
-		# This could be an https request when it should be http ..
-		# need to fake a HTTP response
-		eval <<'EOF';
-			use Net::SSLeay;
-			eval "Net::SSLeay::SSLeay_add_ssl_algorithms()";
-			eval "Net::SSLeay::load_error_strings()";
-			$ssl_ctx = Net::SSLeay::CTX_new();
-			Net::SSLeay::CTX_use_RSAPrivateKey_file(
-				$ssl_ctx, $config{'keyfile'},
-				&Net::SSLeay::FILETYPE_PEM);
-			Net::SSLeay::CTX_use_certificate_file(
-				$ssl_ctx,
-				$config{'certfile'} || $config{'keyfile'},
-				&Net::SSLeay::FILETYPE_PEM);
-			$ssl_con = Net::SSLeay::new($ssl_ctx);
-			pipe(SSLr, SSLw);
-			if (!fork()) {
-				close(SSLr);
-				select(SSLw); $| = 1; select(STDOUT);
-				print SSLw $origreqline;
-				local $buf;
-				while(sysread(SOCK, $buf, 1) > 0) {
-					print SSLw $buf;
-					}
-				close(SOCK);
-				exit;
-				}
-			close(SSLw);
-			Net::SSLeay::set_wfd($ssl_con, fileno(SOCK));
-			Net::SSLeay::set_rfd($ssl_con, fileno(SSLr));
-			Net::SSLeay::accept($ssl_con) || die "accept() failed";
-			$use_ssl = 1;
-			local $url = $config{'musthost'} ?
-					"https://$config{'musthost'}:$port/" :
-					"https://$host:$port/";
-			$reqline = "GET / HTTP/1.1";	# Fake it for the log
-			&http_error(200, "Bad Request", "This web server is not running in SSL mode. Try the URL <a href='$url'>$url</a> instead.", 0, 1);
-EOF
-		if ($@) {
-			&http_error(400, "Bad Request");
-			}
-		}
-	else {
-		&http_error(400, "Bad Request");
-		}
+elsif ($reqline && $reqline !~ /^(\S+)\s+(.*)\s+HTTP\/1\..$/) {
+	&http_error(400, "Bad Request");
+	return 0;
 	}
 $method = $1;
 $request_uri = $page = $2;
@@ -1520,7 +1496,8 @@ if (defined($header{'host'})) {
 	else {
 		$host = $header{'host'};
 		}
-	if ($config{'musthost'} && $host ne $config{'musthost'}) {
+	if ($config{'musthost'} && $host ne $config{'musthost'} &&
+	    !$config{'musthost_redirect'}) {
 		# Disallowed hostname used
 		&http_error(400, "Invalid HTTP hostname");
 		}
@@ -1542,6 +1519,22 @@ if ($config{'redirect_prefix'}) {
 	$hostport .= $config{'redirect_prefix'}
 	}
 $prot = $ssl ? "https" : "http";
+
+# Redirect to the configured "musthost", if "musthost_redirect" is set, rather
+# than showing an error
+if ($config{'musthost'} && $host ne $config{'musthost'} &&
+    $config{'musthost_redirect'}) {
+	&write_data("HTTP/1.0 302 Moved Temporarily\r\n");
+	&write_data("Date: $datestr\r\n");
+	&write_data("Server: @{[&server_info()]}\r\n");
+	&write_data("Location: $prot://$config{'musthost'}:$redirport\r\n");
+	&write_keep_alive(0);
+	&write_data("\r\n");
+	&log_request($loghost, $authuser, $reqline, 302, 0) if $reqline;
+	shutdown(SOCK, 1);
+	close(SOCK);
+	return;
+	}
 
 undef(%in);
 if ($page =~ /^([^\?]+)\?(.*)$/) {
@@ -1818,7 +1811,7 @@ if ($config{'session'} && !$deny_authentication &&
 			&http_error(500, "Invalid session",
 			    "Session ID contains invalid characters");
 			}
-		print $PASSINw "verify $sid 0 $acptip\n";
+		print $PASSINw "verify $sid $acptip 1\n";
 		<$PASSOUTr> =~ /^(\d+)\s+(\S+)/;
 		if ($1 != 2) {
 			&http_error(500, "Invalid session",
@@ -1989,9 +1982,7 @@ if ($config{'session'} && !$validated) {
 		local $cookie = $header{'cookie'};
 		while($cookie =~ s/(^|\s|;)$sidname=([a-f0-9]+)//) {
 			$session_id = $2;
-			local $notimeout =
-				$in{'webmin_notimeout'} ? 1 : 0;
-			print $PASSINw "verify $session_id $notimeout $acptip\n";
+			print $PASSINw "verify $session_id $acptip 1\n";
 			<$PASSOUTr> =~ /(\d+)\s+(\S+)/;
 			if ($1 == 2) {
 				# Valid session continuation
@@ -4781,6 +4772,10 @@ if ($config{'ssl_honorcipherorder'}) {
 		&Net::SSLeay::OP_CIPHER_SERVER_PREFERENCE)';
 	}
 
+# Disable TLS renegotiation when possible, OpenSSL >= 1.1.0h
+eval 'Net::SSLeay::CTX_set_options($ssl_ctx,
+        &Net::SSLeay::OP_NO_RENEGOTIATION)';
+
 return { 'keyfile' => $keyfile,
 	 'keytime' => $kst[9],
 	 'certfile' => $certfile,
@@ -5508,14 +5503,7 @@ foreach my $pe (split(/\t+/, $config{'expires_paths'})) {
 	}
 
 # Re-open debug log
-close(DEBUG);
-if ($config{'debuglog'}) {
-	open(DEBUG, ">>$config{'debuglog'}");
-	select(DEBUG); $| = 1; select(STDOUT);
-	}
-else {
-	open(DEBUG, ">/dev/null");
-	}
+&open_debug_to_log();
 
 # Reset cache of sudo checks
 undef(%sudocache);
@@ -5886,23 +5874,26 @@ while(1) {
 	vec($rmask, fileno(SOCK), 1) = 1;
 	my $sel = select($rmask, undef, undef, 10);
 	my ($buf, $ok);
+	my $uptime = 0;
 	if (vec($rmask, fileno($fh), 1)) {
 		# Got something from the websockets backend
 		$ok = sysread($fh, $buf, 1024);
 		last if ($ok <= 0);	# Backend has closed
 		&write_data($buf);
+		$uptime = 1;
 		}
 	if (vec($rmask, fileno(SOCK), 1)) {
 		# Got something from the browser
 		$buf = &read_data(1024);
 		last if (!defined($buf) || length($buf) == 0);
 		syswrite($fh, $buf, length($buf)) || last;
+		$uptime = 1;
 		}
 	my $now = time();
 	if ($now - $last_session_check_time > 10) {
 		# Re-validate the browser session every 10 seconds
 		print DEBUG "verifying websockets session $session_id\n";
-		print $PASSINw "verify $session_id 0 $acptip\n";
+		print $PASSINw "verify $session_id $acptip $uptime\n";
 		<$PASSOUTr> =~ /(\d+)\s+(\S+)/;
 		if ($1 != 2) {
 			print DEBUG "session $session_id has expired!\n";
@@ -6664,6 +6655,7 @@ else {
 sub redirect_stderr_to_log
 {
 if ($config{'errorlog'} ne '-') {
+	close(STDERR);
 	open(STDERR, ">>$config{'errorlog'}") ||
 		die "failed to open $config{'errorlog'} : $!";
 	if ($config{'logperms'}) {
@@ -6671,6 +6663,23 @@ if ($config{'errorlog'} ne '-') {
 		}
 	}
 select(STDERR); $| = 1; select(STDOUT);
+}
+
+# open_debug_to_log([msg])
+# Direct the DEBUG file handle somewhere
+sub open_debug_to_log
+{
+my ($msg) = @_;
+close(DEBUG);
+if ($config{'debuglog'}) {
+	open(DEBUG, ">>$config{'debuglog'}");
+	chmod(0700, $config{'debuglog'});
+	select(DEBUG); $| = 1; select(STDOUT);
+	print DEBUG $msg if ($msg);
+	}
+else {
+	open(DEBUG, ">/dev/null");
+	}
 }
 
 # should_gzip_file(filename)
