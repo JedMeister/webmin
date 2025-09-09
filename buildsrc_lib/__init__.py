@@ -1,16 +1,15 @@
+import filecmp
 import os
-from os.path import join, exists, abspath, isfile, islink
-import subprocess
 import shutil
-from packaging.version import Version, InvalidVersion
-from debian.deb822 import Deb822
-from typing import NoReturn
+import subprocess
 import sys
 import tarfile
 from dataclasses import dataclass
-import filecmp
-import requests
+from os.path import abspath, exists, isfile, islink, join
 
+import requests
+from debian.deb822 import Deb822
+from packaging.version import InvalidVersion, Version
 
 CWD = abspath(os.getcwd())
 TMP = join(CWD, "tmp")
@@ -62,13 +61,13 @@ class WebminUpdateError(Exception):
 
 def get_remote_versions(
     user_repo: str, stable_only: bool = True, quiet: bool = True
-) -> list[str] | NoReturn:
+) -> list[str]:
     """Leverages 'gh_releases' to return a list of validated versions in order
     from newest to oldest - with or without pre-release versions
     """
 
     # find 'gh_releases' if not in PATH and common available
-    def common(path):
+    def common(path: str) -> str:
         return join(
             path,
             "overlays/turnkey.d/github-latest-release",
@@ -93,7 +92,7 @@ def get_remote_versions(
             check=True,
         )
     except (FileNotFoundError, subprocess.CalledProcessError) as e:
-        raise WebminUpdateError(e)
+        raise WebminUpdateError(e) from e
     # use a dict to preserve original version strings while also sorting,
     # validating and removing pre-releases versions where relevant
     _versions: dict[Version, str] = {}
@@ -106,7 +105,7 @@ def get_remote_versions(
                 elif not stable_only:
                     _versions[_version] = version
             except InvalidVersion as e:
-                raise WebminUpdateError(e)
+                raise WebminUpdateError(e) from e
     sorted_versions = dict(sorted(_versions.items(), reverse=True))
     if sorted_versions:
         return list(sorted_versions.values())
@@ -135,7 +134,7 @@ def untar(outdir: str, tarball: str, force: bool = False) -> None:
 
 
 def trim_line(line: str, line_length: int = 60) -> list[str]:
-    lines_to_return = []
+    lines_to_return: list[str] = []
     start_index: int = 0
     last_safe_split: int = 0
     i: int = 0
@@ -174,7 +173,7 @@ class Plugin(_Common):
     strict: bool = True
     quiet: bool = False
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.dir = join(self.source_dir, self.name)
         self.type = self._plugin_type()
         self.info = self._read_info()
@@ -295,7 +294,7 @@ class Webmin(_Common):
         self,
         force: bool = False,
         quiet: bool = False,
-    ):
+    ) -> None:
         self.force = force
         self.quiet = quiet
         self.module_no = self._count(MODULES)
@@ -304,17 +303,17 @@ class Webmin(_Common):
             WEBMIN_CORE, force=self.force
         )
         self.stable_only = True
-        self.remote_versions = []
+        self.remote_versions: list[str] = []
 
     @staticmethod
-    def get_local_version(path: str, force: bool = False) -> str | NoReturn:
+    def get_local_version(path: str, force: bool = False) -> str:
         version_path = join(path, "version")
         try:
             with open(version_path) as fob:
                 version = fob.read().strip()
         except FileNotFoundError as e:
             if not force:
-                raise WebminUpdateError(e)
+                raise WebminUpdateError(e) from e
             version = "0"
         if version:
             return version
@@ -481,7 +480,7 @@ class Webmin(_Common):
                     check=True,
                 )
             except (subprocess.CalledProcessError, FileNotFoundError) as e:
-                raise WebminUpdateError(e)
+                raise WebminUpdateError(e) from e
         validate = subprocess.run(
             [*gpg_cmd, "--verify", sig, file],
             capture_output=True,

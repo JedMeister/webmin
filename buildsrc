@@ -6,7 +6,7 @@ import argparse
 import sys
 from typing import NoReturn
 
-from buildsrc_lib import Webmin, WebminUpdateError, CTRL_FILE
+from buildsrc_lib import CTRL_FILE, Webmin, WebminUpdateError
 
 
 def fatal(msg: str | WebminUpdateError) -> NoReturn:
@@ -14,7 +14,7 @@ def fatal(msg: str | WebminUpdateError) -> NoReturn:
     sys.exit(1)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     # TODO
     # - support building specific version
