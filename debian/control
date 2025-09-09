@@ -67,46 +67,10 @@ Description: Webmin module - Cluster Cron Jobs
 Package: webmin-cluster-passwd
 Architecture: all
 Depends:
- c,
- l,
- u,
- s,
- t,
- e,
- r,
- -,
- u,
- s,
- e,
- r,
- a,
- d,
- m,
- i,
- n,
-  ,
- p,
- a,
- s,
- s,
- w,
- d,
-  ,
- u,
- s,
- e,
- r,
- a,
- d,
- m,
- i,
- n,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-cluster-useradmin,
+ webmin-passwd,
+ webmin-useradmin
 Description: Webmin module - Cluster Change Passwords
  Change passwords on multiple systems in a Webmin cluster at
  once.
@@ -230,27 +194,10 @@ Description: Webmin module - IPsec VPN Configuration
 Package: webmin-iscsi-client
 Architecture: all
 Depends:
- f,
- d,
- i,
- s,
- k,
-  ,
- m,
- o,
- u,
- n,
- t,
-  ,
- l,
- v,
- m,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-fdisk,
+ webmin-mount,
+ webmin-lvm
 Description: Webmin module - iSCSI Client
  Access disk devices across the network using the iSCSI
  protocol.
@@ -258,31 +205,10 @@ Description: Webmin module - iSCSI Client
 Package: webmin-iscsi-server
 Architecture: all
 Depends:
- f,
- d,
- i,
- s,
- k,
-  ,
- l,
- v,
- m,
-  ,
- r,
- a,
- i,
- d,
-  ,
- i,
- n,
- i,
- t,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-fdisk,
+ webmin-lvm,
+ webmin-raid
 Description: Webmin module - iSCSI Server
  Share disk devices across the network using the iSCSI
  protocol with the netbsd-iscsi package.
@@ -290,31 +216,10 @@ Description: Webmin module - iSCSI Server
 Package: webmin-iscsi-target
 Architecture: all
 Depends:
- f,
- d,
- i,
- s,
- k,
-  ,
- l,
- v,
- m,
-  ,
- r,
- a,
- i,
- d,
-  ,
- i,
- n,
- i,
- t,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-fdisk,
+ webmin-lvm,
+ webmin-raid
 Description: Webmin module - iSCSI Target
  Share disk devices across the network using the iSCSI
  protocol with the iscsitarget package.
@@ -322,31 +227,10 @@ Description: Webmin module - iSCSI Target
 Package: webmin-iscsi-tgtd
 Architecture: all
 Depends:
- f,
- d,
- i,
- s,
- k,
-  ,
- l,
- v,
- m,
-  ,
- r,
- a,
- i,
- d,
-  ,
- i,
- n,
- i,
- t,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-fdisk,
+ webmin-lvm,
+ webmin-raid
 Description: Webmin module - iSCSI TGTd
  Share disk devices across the network using the iSCSI
  protocol with the TGTd package.
@@ -367,33 +251,9 @@ Description: Webmin module - LDAP Client
 Package: webmin-ldap-useradmin
 Architecture: all
 Depends:
- u,
- s,
- e,
- r,
- a,
- d,
- m,
- i,
- n,
-  ,
- l,
- d,
- a,
- p,
- -,
- c,
- l,
- i,
- e,
- n,
- t,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-useradmin,
+ webmin-ldap-client
 Description: Webmin module - LDAP Users and Groups
  Manage users and groups stored in an LDAP database, used for
  Unix, Samba and Cyrus IMAP authentication.
@@ -421,28 +281,10 @@ Description: Webmin module - Printer Administration
 Package: webmin-lvm
 Architecture: all
 Depends:
- m,
- o,
- u,
- n,
- t,
-  ,
- f,
- d,
- i,
- s,
- k,
-  ,
- 2,
- .,
- 4,
- 0,
- 2,
-  ,
- r,
- a,
- i,
- d
+ webmin (>= 2.402),
+ webmin-mount,
+ webmin-fdisk,
+ webmin-raid
 Description: Webmin module - Logical Volume Management
  Configure volume groups, physical volumes and logical
  volumes for Linux LVM.
@@ -490,35 +332,9 @@ Description: Webmin module - OpenSLP Server
 Package: webmin-package-updates
 Architecture: all
 Depends:
- s,
- o,
- f,
- t,
- w,
- a,
- r,
- e,
-  ,
- c,
- r,
- o,
- n,
-  ,
- m,
- a,
- i,
- l,
- b,
- o,
- x,
- e,
- s,
-  ,
- 2,
- .,
- 4,
- 0,
- 2
+ webmin (>= 2.402),
+ webmin-software,
+ webmin-mailboxes
 Description: Webmin module - Software Package Updates
  Displays available package updates from YUM, APT or other
  update systems

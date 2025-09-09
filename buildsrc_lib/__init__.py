@@ -242,13 +242,15 @@ class Plugin(_Common):
         # patch required dependencies
         depends = self._fix_deps(self.name, depends)
         ctrl_depends = [f"webmin (>= {self.version})"]
-        for depend in depends.split():
+        for depend in depends.split(" "):
+            if not depend or depend[0].isdigit():
+                continue
             # only depend on installable modules
             if depend in self.installable_mods:
                 ctrl_depends.append(f"webmin-{depend}")
         joined_depends = ", ".join(ctrl_depends)
         if len(f"Depends: {joined_depends}") > 60:
-            joined_depends = "\n " + ",\n ".join(depends)
+            joined_depends = "\n " + ",\n ".join(ctrl_depends)
         description = "\n ".join(
             [
                 f"Webmin {self.type} - {self.info['desc']}",
