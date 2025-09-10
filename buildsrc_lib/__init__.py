@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tarfile
 from dataclasses import dataclass
+from datetime import date
 from os.path import abspath, exists, isfile, islink, join
 
 import requests
@@ -13,6 +14,7 @@ from packaging.version import InvalidVersion, Version
 
 CWD = abspath(os.getcwd())
 TMP = join(CWD, "tmp")
+DEBIAN_DIR = join(CWD, "debian")
 MODULES = join(CWD, "modules")
 THEMES = join(CWD, "themes")
 WEBMIN_CORE = join(CWD, "webmin_core")
@@ -329,6 +331,7 @@ class Webmin(_Common):
         force_update: bool = False,
     ) -> str:
         """Returns version number of upstream Webmin source; either:
+
         - latest version (version = "latest")
         - version asked for if it exists (format: x.xxx)
         - note cached info will be used unless either no cached data exists or
@@ -348,6 +351,37 @@ class Webmin(_Common):
         raise WebminUpdateError(
             f"version '{version}' not found or not valid"
             f" - available versions: {self.remote_versions}"
+        )
+
+    @staticmethod
+    def _update_quilt_patch(old_version: str, new_version: str) -> str:
+        """Hack to update Webmin version in quilt patch."""
+        patch_file = join(
+            DEBIAN_DIR, "patches", "fix-module-dependencies.diff"
+        )
+        changed_lines = 0
+        try:
+            with open(patch_file) as fob:
+                lines = fob.readlines()
+            with open(patch_file, "w") as fob:
+                for line in lines:
+                    if line.startswith("Last-Update:"):
+                        today = date.today().strftime("%Y-%m-%d")
+                        line = f"Last-Update: {today}\n"
+                    elif line[0] in ["-", "+"] and old_version in line:
+                        line = line.replace(old_version, new_version)
+                        changed_lines += 1
+                    fob.write(line)
+        except OSError as e:
+            raise WebminUpdateError(e) from e
+        if changed_lines != 0 and changed_lines % 2 == 0:
+            return (
+                f"- updated Webmin version in {patch_file}\n"
+                f"  {old_version} -> {new_version} on {changed_lines} lines"
+            )
+        raise WebminUpdateError(
+            f"Incorect number of version changes in {patch_file} - changed"
+            f" {changed_lines} lines but should be even number > 0"
         )
 
     @property
@@ -561,6 +595,7 @@ class Webmin(_Common):
         self.load_plugins(
             join(TMP, "all", f"webmin-{version}"), version=version
         )
+        self._p(self._update_quilt_patch(self.local_version, version))
         self._p(f"Updated Webmin source to {version}")
         self._p(f"- {len(self.modules)} modules and {len(self.themes)} themes")
         return True
