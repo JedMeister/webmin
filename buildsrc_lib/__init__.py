@@ -303,8 +303,8 @@ class Webmin(_Common):
     ) -> None:
         self.force = force
         self.quiet = quiet
-        self.module_no = self._count(MODULES)
-        self.theme_no = self._count(THEMES)
+        self.module_no = self._count_plugins(MODULES)
+        self.theme_no = self._count_plugins(THEMES)
         self.local_version = self.get_local_version(
             WEBMIN_CORE, force=self.force
         )
@@ -411,8 +411,8 @@ class Webmin(_Common):
             f"local Webmin version ({local_v}) newer than remote ({remote_v})"
         )
 
-    def _count(self, path: str) -> int:
-        """Counter..."""
+    def _count_plugins(self, path: str) -> int:
+        """Count the number of modules/themes."""
         if exists(path):
             return len(os.listdir(path))
         return 0
