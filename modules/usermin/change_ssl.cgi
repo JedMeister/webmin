@@ -10,11 +10,11 @@ require './usermin-lib.pl';
 &get_usermin_miniserv_config(\%miniserv);
 $sslcurr = $miniserv{'ssl'};
 $miniserv{'ssl'} = $in{'ssl'};
-$miniserv{'ssl_hsts'} = ($in{'ssl'} && $in{'ssl_hsts'}) ? 1 : 0;
+$miniserv{'ssl_enforce'} = int($in{'ssl_enforce'});
+$miniserv{'ssl_hsts'} = $miniserv{'ssl_enforce'} == 2 ? 1 : 0;
 &webmin::validate_key_cert($in{'key'}, $in{'cert_def'} ? undef : $in{'cert'});
 $miniserv{'keyfile'} = $in{'key'};
 $miniserv{'certfile'} = $in{'cert_def'} ? undef : $in{'cert'};
-$miniserv{'ssl_redirect'} = $in{'ssl_redirect'};
 $miniserv{'no_sslcompression'} = !$in{'ssl_compression'};
 $miniserv{'ssl_honorcipherorder'} = $in{'ssl_honorcipherorder'};
 if ($in{'version_def'}) {

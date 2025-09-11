@@ -3,5 +3,5 @@ category=webmin
 desc=Webmin Users
 longdesc=Create Webmin users and configure which modules and features they are allowed to access.
 readonly=1
-version=2.402
-depends=2.402
+version=2.501
+depends=2.501

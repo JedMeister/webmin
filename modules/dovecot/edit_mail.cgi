@@ -13,24 +13,48 @@ $envmode = 4;
 if (&find("default_mail_env", $conf, 2)) {
 	$env = &find_value("default_mail_env", $conf);
 	}
+elsif (&find("mail_path", $conf, 2)) {
+	$env = &find_value("mail_path", $conf);
+	}
 else {
 	$env = &find_value("mail_location", $conf);
 	}
 if ($env =~ s/:INDEX=([^:]+)//) {
 	$index = $1;
 	}
+elsif (&find("mail_index_path", $conf, 2)) {
+	$index = &find_value("mail_index_path", $conf);
+	}
 if ($env =~ s/:CONTROL=([^:]+)//) {
 	$control = $1;
+	}
+elsif (&find("mail_control_path", $conf, 2)) {
+	$control = &find_value("mail_control_path", $conf);
 	}
 for($i=0; $i<@mail_envs; $i++) {
 	$envmode = $i if ($mail_envs[$i] eq $env);
 	}
 print &ui_table_row($text{'mail_env'},
 	&ui_radio("envmode", $envmode,
-		[ ( map { [ $_, $text{'mail_env'.$_}."<br>" ] } (0.. 3) ),
+		[ ( map { [ $_, $text{'mail_env'.$_}."<br>" ] } (
+			&version_atleast("2.4") ? (0) : (0 .. 3)) ),
 		  [ 4, &text('mail_env4',
 			&ui_textbox("other", $envmode == 4 ? $env : undef, 40)) ] ],
 		), 3);
+
+# Mail file format
+if (&version_atleast("2.4")) {
+	$driver = &find_value("mail_driver", $conf);
+	print &ui_table_row($text{'mail_driver'},
+		&ui_radio("driver", $driver,
+			   [ [ "", $text{'mail_driver_def'} ],
+			     [ "auto", $text{'mail_driver_auto'} ],
+			     [ "mbox", $text{'mail_driver_mbox'} ],
+			     [ "maildir", $text{'mail_driver_maildir'} ],
+			     [ "dbox", $text{'mail_driver_dbox'} ],
+			     [ "imapc", $text{'mail_driver_imapc'} ],
+			     [ "pop3c", $text{'mail_driver_auto'} ] ]));
+	}
 
 # Index files location
 $indexmode = $index eq 'MEMORY' ? 1 :
@@ -89,26 +113,10 @@ print &ui_table_row($text{'mail_change'},
 	    [ "", &getdef($dirty, \@opts) ] ]), 3);
 
 # Permissions on files
-$umask = &find_value("umask", $conf);
-print &ui_table_row($text{'mail_umask'},
-	&ui_opt_textbox("umask", $umask, 5, &getdef("umask")), 3);
-
-# UIDL format
-if (&find("pop3_uidl_format", $conf, 2)) {
-	$uidl = &find_value("pop3_uidl_format", $conf);
-	@opts = ( $uidl ? ( ) : ( [ "", $text{'mail_uidl_none'} ] ),
-		  [ "%v.%u", $text{'mail_uidl_dovecot'} ],
-		  [ "%08Xv%08Xu", $text{'mail_uidl_uw'} ],
-		  [ "%f", $text{'mail_uidl_courier0'} ],
-		  [ "%u", $text{'mail_uidl_courier1'} ],
-		  [ "%v-%u", $text{'mail_uidl_courier2'} ],
-		  [ "%Mf", $text{'mail_uidl_tpop3d'} ] );
-	($got) = grep { $_->[0] eq $uidl } @opts;
-	print &ui_table_row($text{'mail_uidl'},
-		&ui_select("pop3_uidl_format", $got ? $uidl : "*",
-			   [ @opts, [ "*", $text{'mail_uidl_other'} ] ])."\n".
-		&ui_textbox("pop3_uidl_format_other", $got ? "" : $uidl, 10),
-		3);
+if (&version_below("2")) {
+	$umask = &find_value("umask", $conf);
+	print &ui_table_row($text{'mail_umask'},
+		&ui_opt_textbox("umask", $umask, 5, &getdef("umask")), 3);
 	}
 
 # Allow POP3 last command

@@ -1,0 +1,9 @@
+category=servers
+desc=MySQL Database Server
+name=MySQL
+longdesc=Setup databases, tables and permissions in your MySQL database server.
+readonly=1
+syslog=1
+cpan=1
+version=2.501
+depends=2.501

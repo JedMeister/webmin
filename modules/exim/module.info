@@ -1,0 +1,6 @@
+name=Exim Mail Server
+category=servers
+hidden=1
+desc=Exim Mailserver
+version=2.501
+depends=2.501

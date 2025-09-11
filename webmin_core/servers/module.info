@@ -3,5 +3,5 @@ category=webmin
 desc=Webmin Servers Index
 longdesc=Displays an index of other Webmin servers for easy linking.
 readonly=1
-depends=mailboxes cron 2.402
-version=2.402
+depends=mailboxes cron 2.501
+version=2.501

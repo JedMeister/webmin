@@ -672,8 +672,12 @@ if (@$data) {
 $rv .= &ui_columns_table($heads, $width, $data, $types, $nosort, $title,
 			 $emptymsg);
 
+# Add the bottom links unless excluded
+if ($selectall && $selectall != 2) {
+	$rv .= $links;
+	}
+
 # Add form end
-$rv .= $links;
 if (@$data) {
 	$rv .= &ui_form_end($buttons);
 	}
@@ -791,7 +795,7 @@ if ( !$nojs ) {
 return $rv;
 }
 
-=head2 ui_textbox(name, value, size, [disabled?], [maxlength], [tags])
+=head2 ui_textbox(name, value, size, [disabled?], [maxlength], [tags], [class])
 
 Returns HTML for a text input box. The parameters are :
 
@@ -811,9 +815,11 @@ Returns HTML for a text input box. The parameters are :
 sub ui_textbox
 {
 return &theme_ui_textbox(@_) if (defined(&theme_ui_textbox));
-my ($name, $value, $size, $dis, $max, $tags) = @_;
+my ($name, $value, $size, $dis, $max, $tags, $cls) = @_;
+$cls ||= "";
+$cls = " $cls" if ($cls);
 $size = &ui_max_text_width($size);
-return "<input class='ui_textbox' type='text' ".
+return "<input class='ui_textbox$cls' type='text' ".
        "name=\"".&html_escape($name)."\" ".
        "id=\"".&html_escape($name)."\" ".
        "value=\"".&html_escape($value)."\" ".
@@ -1602,7 +1608,7 @@ return &theme_ui_buttons_end(@_) if (defined(&theme_ui_buttons_end));
 return "</table>\n";
 }
 
-=head2 ui_buttons_row(script, button-label, description, [hiddens], [after-submit], [before-submit])
+=head2 ui_buttons_row(script, button-label, description, [hiddens], [after-submit], [before-submit], [postmethod])
 
 Returns HTML for a button with a description next to it, and perhaps other
 inputs. The parameters are :
@@ -1619,15 +1625,18 @@ inputs. The parameters are :
 
 =item before-submit - HTML for text or inputs to appear before the submit button.
 
+=item postmethod - Defines the method used to submit the form. Defaults to 'post'.
+
 =cut
 sub ui_buttons_row
 {
 return &theme_ui_buttons_row(@_) if (defined(&theme_ui_buttons_row));
-my ($script, $label, $desc, $hiddens, $after, $before) = @_;
+my ($script, $label, $desc, $hiddens, $after, $before, $postmethod) = @_;
+$postmethod ||= 'post';
 if (ref($hiddens)) {
 	$hiddens = join("\n", map { &ui_hidden(@$_) } @$hiddens);
 	}
-return "<form action='$script' class='ui_buttons_form' method='post'>\n".
+return "<form action='$script' class='ui_buttons_form' method='$postmethod'>\n".
        $hiddens.
        "<tr class='ui_buttons_row'> ".
        "<td nowrap width='20%' valign='top' class='ui_buttons_label'>".
@@ -3410,7 +3419,7 @@ sub ui_tag_content
 return theme_ui_tag_content(@_) if (defined(&theme_ui_tag_content));
 my ($content) = @_;
 my $rv;
-$rv = $content."\n" if (defined($content));
+$rv = $content if (defined($content));
 return $rv;
 }
 
@@ -3758,6 +3767,57 @@ sub ui_p
 return theme_ui_p(@_) if (defined(&theme_ui_p));
 my ($content, $attrs) = @_;
 return ui_tag('p', $content, $attrs);
+}
+
+=head2 ui_text_mask(text, [tag], [extra_class])
+
+Returns an HTML string with the given text hidden inside a tag that only shows
+on hover. If a second parameter is given, it is used as the outer tag that
+triggers the hover (default is "td"). If a third parameter is provided,
+it is added as an extra class to both the tag and its style.
+
+=cut
+sub ui_text_mask
+{
+return &theme_ui_text_mask(@_) if (defined(&theme_ui_text_mask));
+my ($text, $tag, $extra_class) = @_;
+my $class = 'hover-mask';
+my $classcss = ".$class";
+if ($extra_class) {
+	$class .= " $extra_class";
+	$classcss .= ".$extra_class";
+	}
+$tag ||= 'td';
+my $style_content = <<"CSS";
+x-ui-text-mask${classcss} {
+	position: relative;
+	display: inline-block;
+	color: transparent;
+	transition:color .25s ease;
+}
+x-ui-text-mask${classcss}::after{
+	content: attr(data-mask);
+	position: absolute;
+	inset: 0;
+	color: var(--ui-password-mask-color, #000);
+	pointer-events: none;
+	transition: opacity .25s ease;
+}
+$tag:has(>*>x-ui-text-mask${classcss}):hover x-ui-text-mask${classcss},
+$tag:has(>x-ui-text-mask${classcss}):hover x-ui-text-mask${classcss}{
+	color: inherit;
+}
+$tag:has(>*>x-ui-text-mask${classcss}):hover x-ui-text-mask${classcss}::after,
+$tag:has(>x-ui-text-mask${classcss}):hover x-ui-text-mask${classcss}::after{
+	opacity: 0;
+}
+CSS
+my $rv = '';
+$rv .= &ui_tag('style', $style_content, { type => 'text/css' })
+	if (!$main::ui_text_mask_donecss->{"$tag$class"}++);
+$rv .= &ui_tag('x-ui-text-mask', $text,
+	{ 'class' => $class, 'data-mask' => '••••••••' });
+return $rv;
 }
 
 1;

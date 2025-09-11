@@ -17,25 +17,57 @@ else {
 	}
 
 # Add index file location
-$env || !$in{'indexmode'} || &error($text{'mail_eindexmode'});
-$env || !$in{'controlmode'} || &error($text{'mail_econtrolmode'});
-if ($in{'indexmode'} == 1) {
-	$env .= ":INDEX=MEMORY";
+if (&version_below("2.4")) {
+	$env || !$in{'indexmode'} || &error($text{'mail_eindexmode'});
+	$env || !$in{'controlmode'} || &error($text{'mail_econtrolmode'});
+	if ($in{'indexmode'} == 1) {
+		$env .= ":INDEX=MEMORY";
+		}
+	elsif ($in{'indexmode'} == 2) {
+		$in{'index'} =~ /^\/\S+$/ || &error($text{'mail_eindex'});
+		$env .= ":INDEX=".$in{'index'};
+		}
+	if ($in{'controlmode'}) {
+		$in{'control'} =~ /^\/\S+$/ || &error($text{'mail_econtrol'});
+		$env .= ":CONTROL=".$in{'control'};
+		}
 	}
-elsif ($in{'indexmode'} == 2) {
-	$in{'index'} =~ /^\/\S+$/ || &error($text{'mail_eindex'});
-	$env .= ":INDEX=".$in{'index'};
-	}
-if ($in{'controlmode'}) {
-	$in{'control'} =~ /^\/\S+$/ || &error($text{'mail_econtrol'});
-	$env .= ":CONTROL=".$in{'control'};
+else {
+	# Parse index and control first
+	if ($in{'indexmode'} == 1) {
+		$index = "MEMORY";
+		}
+	elsif ($in{'indexmode'} == 2) {
+		$in{'index'} =~ /^\/\S+$/ || $in{'index'} =~ /^~\S+$/ ||
+			&error($text{'mail_eindex'});
+		$index = $in{'index'};
+		}
+	if ($in{'controlmode'}) {
+		$in{'control'} =~ /^\/\S+$/ || $in{'control'} =~ /^~\S+$/ ||
+			&error($text{'mail_econtrol'});
+		$control = $in{'control'};
+		}
+	# Directly save dedicated mail_index_path and mail_control_path
+	&save_directive($conf, "mail_index_path",
+		$index eq "" ? undef : $index);
+	&save_directive($conf, "mail_control_path",
+		$control eq "" ? undef : $control);
 	}
 
 if (&find("default_mail_env", $conf, 2)) {
 	&save_directive($conf, "default_mail_env", $env eq "" ? undef : $env);
 	}
+elsif (&find("mail_path", $conf, 2)) {
+	&save_directive($conf, "mail_path", $env eq "" ? undef : $env);
+	}
 else {
 	&save_directive($conf, "mail_location", $env eq "" ? undef : $env);
+	}
+
+# Mail file format
+if (&version_atleast("2.4")) {
+	my $driver = $in{'driver'};
+	&save_directive($conf, "mail_driver", $driver eq "" ? undef : $driver);
 	}
 
 # Idle intervals
@@ -57,17 +89,12 @@ else {
 			$in{'change'} ? $in{'change'} : undef);
 	}
 
-# Umask
-$in{'umask_def'} || $in{'umask'} =~ /^[0-7]{4}$/ ||&error($text{'mail_eumask'});
-&save_directive($conf, "umask",
-		$in{'umask_def'} ? undef : $in{'umask'});
-
-# UIDL format
-if (&find("pop3_uidl_format", $conf, 2)) {
-	$uidl = $in{'pop3_uidl_format'} eq '*' ?
-			$in{'pop3_uidl_format_other'} : $in{'pop3_uidl_format'};
-	$uidl =~ /^\S+$/ || &error($text{'mail_euidl'});
-	&save_directive($conf, "pop3_uidl_format", $uidl);
+if (&version_below("2")) {
+	# Umask
+	$in{'umask_def'} || $in{'umask'} =~ /^[0-7]{4}$/ ||
+		&error($text{'mail_eumask'});
+	&save_directive($conf, "umask",
+			$in{'umask_def'} ? undef : $in{'umask'});
 	}
 
 # LAST command

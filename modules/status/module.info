@@ -1,0 +1,5 @@
+desc=System and Server Status
+name=Status
+depends=servers cron mailboxes 2.501
+longdesc=View the status of services on your system and on remote systems.
+version=2.501

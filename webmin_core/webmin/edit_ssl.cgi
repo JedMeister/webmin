@@ -48,7 +48,6 @@ print ui_tabs_start(\@tabs, "mode", $in{'mode'} || $tabs[0]->[0], 1);
 # Basic SSL settings
 print ui_tabs_start_tab("mode", "ssl");
 print $text{'ssl_desc1'},"<p>\n";
-print $text{'ssl_desc2'},"<p>\n";
 
 print ui_form_start("change_ssl.cgi", "post");
 print ui_table_start($text{'ssl_header'}, undef, 2);
@@ -56,8 +55,11 @@ print ui_table_start($text{'ssl_header'}, undef, 2);
 print ui_table_row($text{'ssl_on'},
 	ui_yesno_radio("ssl", $miniserv{'ssl'}));
 
-print ui_table_row($text{'ssl_hsts'},
-	ui_yesno_radio("ssl_hsts", $miniserv{'ssl_hsts'}));
+print ui_table_row($text{'ssl_enforce'},
+	ui_radio("ssl_enforce", $miniserv{'ssl_enforce'} // 1,
+		[ [ 2, $text{'ssl_hsts'} ],
+		  [ 1, $text{'yes'} ],
+		  [ 0, $text{'no'} ] ]));
 
 print ui_table_row($text{'ssl_key'},
 	ui_textbox("key", $miniserv{'keyfile'}, 40)." ".
@@ -240,7 +242,8 @@ print ui_table_row($text{'ssl_privcert'},
 			  [ 0, $text{'ssl_below'} ] ])."<br>\n".
 		    ui_textarea("cert", undef, 7, 70)."<br>\n".
 		    "<b>$text{'ssl_upload'}</b>\n".
-		    ui_upload("certfile"));
+		    ui_upload("certfile", undef, undef,
+			      "onChange='form.cert_def.value = 0'"));
 
 print ui_table_row($text{'ssl_privchain'},
 		    ui_radio("chain_def", 1,
@@ -249,7 +252,8 @@ print ui_table_row($text{'ssl_privchain'},
 			  [ 0, $text{'ssl_below'} ] ])."<br>\n".
 		    ui_textarea("chain", undef, 7, 70)."<br>\n".
 		    "<b>$text{'ssl_upload'}</b>\n".
-		    ui_upload("chainfile"));
+		    ui_upload("chainfile", undef, undef,
+			      "onChange='form.chain_def.value = 0'"));
 
 print ui_table_end();
 print ui_form_end([ [ "save", $text{'save'} ] ]);

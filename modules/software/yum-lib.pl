@@ -73,7 +73,7 @@ foreach my $u (@updates) {
 	}
 
 print &text('yum_install', "<tt>".&html_escape($uicmd)."</tt>"),"\n";
-print "<pre>";
+print "<pre data-installer>";
 &additional_log('exec', undef, $fullcmd);
 $SIG{'TERM'} = 'ignore';	# Installing webmin itself may kill this script
 &open_execute_command(CMD, "$fullcmd </dev/null", 2);
@@ -117,6 +117,13 @@ while(<CMD>) {
 		local $pkg = $2;
 		$pkg =~ s/^\d://;	# Strip epoch from front
 		$pkg =~ s/\-\d.*$//;	# Strip version number from end
+		push(@rv, $pkg);
+		}
+	elsif (/\]\s+(Upgrading|Installing)\s+(\S+)/) {
+		# Line like :
+		# [3/8] Upgrading libcurl-0:8.11.1-5.fc42 100% ...
+		local $pkg = $2;
+		$pkg =~ s/:\d.*$//;	# Strip version number from end
 		push(@rv, $pkg);
 		}
 	if (!/ETA/ && !/\%\s+done\s+\d+\/\d+\s*$/) {
