@@ -64,22 +64,21 @@ class WebminUpdateError(Exception):
 def get_remote_versions(
     user_repo: str, stable_only: bool = True, quiet: bool = True
 ) -> list[str]:
-    """Leverages 'gh_releases' to return a list of validated versions in order
-    from newest to oldest - with or without pre-release versions
+    """Leverage 'gh_releases' to return sorted list of validated versions -
+    latest to oldest.
     """
 
-    # find 'gh_releases' if not in PATH and common available
-    def common(path: str) -> str:
+    def _path(path: str) -> str:
+        """Return likely gh_releases path."""
         return join(
             path,
             "overlays/turnkey.d/github-latest-release",
             "usr/local/bin/gh_releases",
         )
 
-    gh_releases = "gh_releases"
     for gh_bin in (
         shutil.which("gh_releases"),
-        *list(map(common, ("/turnkey/fab/common", "/turnkey/public/common"))),
+        *list(map(_path, ("/turnkey/fab/common", "/turnkey/public/common"))),
     ):
         if gh_bin and exists(gh_bin):
             gh_releases = gh_bin
@@ -136,6 +135,7 @@ def untar(outdir: str, tarball: str, force: bool = False) -> None:
 
 
 def trim_line(line: str, line_length: int = 60) -> list[str]:
+    """Trim lines to max 60 chars and returns lines as a list."""
     lines_to_return: list[str] = []
     start_index: int = 0
     last_safe_split: int = 0
@@ -165,7 +165,7 @@ class _Common:
 
 @dataclass
 class Plugin(_Common):
-    """An object representing a module or theme"""
+    """Object representing a module or theme"""
 
     name: str
     source_dir: str
@@ -202,25 +202,23 @@ class Plugin(_Common):
 
     @staticmethod
     def _fix_deps(plugin: str, deps: str) -> str:
-        """Fix circular dependencies - the fix is only applied when generating
-        the control file here - the source module.info file is patched via
-        quilt at build time to keep the source code consistent with upstream
+        """Fix dependencies for the generated control entry "Depends" field.
+        Source 'module.info' files are modified at build time via quilt patch.
         """
         if plugin == "fdisk":
             return deps.replace("raid", "")
         elif plugin == "lvm":
-            # just in case upstream add 'raid' dependency for 'lvm' module
             if "raid" not in deps:
                 return f"{deps} raid"
         return deps
 
     def _read_info(self) -> dict[str, str]:
-        """Read the relevant info from the plugin '.info' file"""
+        """Read the relevant info from plugin '.info' file"""
         info_file = join(self.dir, f"{self.type}.info")
         info = {"os_support": "", "depends": "", "desc": "", "longdesc": ""}
         with open(info_file) as fob:
             for line in fob:
-                # assuming all lines are key=value
+                # all lines should be key=value
                 item, content = line.split("=", 1)
                 if item in info.keys():
                     info[item] = content.strip()
@@ -228,6 +226,7 @@ class Plugin(_Common):
 
     @property
     def debian_support(self) -> bool:
+        """Check if plugin supports Debian."""
         os_support = self.info["os_support"]
         if (
             os_support == "!windows"
@@ -240,20 +239,20 @@ class Plugin(_Common):
 
     @property
     def control(self) -> Deb822:
-        self._p(f"- generating control for {self.type}: {self.name}")
-        depends = self.info["depends"]
-        # patch required dependencies
-        depends = self._fix_deps(self.name, depends)
+        """Generate plugin control file entry fields."""
+        self._p(f"- generating control text for {self.type}: {self.name}")
+        # fix plugin dependencies
+        depends = self._fix_deps(self.name, self.info["depends"])
         ctrl_depends = [f"webmin (>= {self.version})"]
         for depend in depends.split():
             if not depend or depend[0].isdigit():
                 continue
-            # only depend on installable modules
+            # only depend on modules not in webmin_core
             if depend in self.installable_mods:
                 ctrl_depends.append(f"webmin-{depend}")
         joined_depends = ", ".join(ctrl_depends)
         if len(f"Depends: {joined_depends}") > 60:
-            joined_depends = "\n " + ",\n ".join(ctrl_depends)
+            joined_depends = "\n " + ",\n ".join(ctrl_depends) + ","
         description = "\n ".join(
             [
                 f"Webmin {self.type} - {self.info['desc']}",
@@ -278,7 +277,7 @@ class Plugin(_Common):
             return
         os.makedirs(base_dst_dir, exist_ok=True)
         if self.link:
-            # see __post_init__ for info
+            # see __post_init__ for info on this
             os.makedirs(dst_dir)
             with open(join(dst_dir, "README"), "w") as fob:
                 fob.write(
@@ -295,6 +294,8 @@ class Plugin(_Common):
 
 
 class Webmin(_Common):
+    """Object for processing TKL Webmin package source updates."""
+
     def __init__(
         self,
         force: bool = False,
@@ -330,15 +331,14 @@ class Webmin(_Common):
         stable_only: bool = True,
         force_update: bool = False,
     ) -> str:
-        """Returns version number of upstream Webmin source; either:
+        """Return version number of upstream Webmin source; either:
 
-        - latest version (version = "latest")
-        - version asked for if it exists (format: x.xxx)
-        - note cached info will be used unless either no cached data exists or
-          <force_update>
-        raises exception if no matching version found
+        - latest version (version == "latest")
+        - requested version - if it exists (format: x.xxx)
+
+        Cached info will be used unless either no cached data exists or force.
+        Raises exception if no matching version found.
         """
-
         if not self.remote_versions or force_update:
             self._p("Checking for new upstream versions - please wait...")
             self.remote_versions = get_remote_versions(
@@ -390,14 +390,11 @@ class Webmin(_Common):
         return self.get_remote_version()
 
     def new_version(self, check_only: bool = False) -> str:
-        """If newer version available, return version number, otherwise empty
-        string
-        """
+        """Return version string of new version if available."""
         local_v = self.local_version
         remote_v = self.latest_version
         msg = f"- local version: {local_v}, remote version: {remote_v}"
         if Version(local_v) < Version(remote_v):
-            # new version available
             self._p(f"New version available {msg}")
             if check_only:
                 sys.exit(0)
@@ -410,18 +407,18 @@ class Webmin(_Common):
             if self.force:
                 return remote_v
             return ""
-        # local version newer than remote - shouldn't ever happen
         raise WebminUpdateError(
-            f"local Webmin version ({local_v})"
-            f" is newer than remote ({remote_v})"
+            f"local Webmin version ({local_v}) newer than remote ({remote_v})"
         )
 
     def _count(self, path: str) -> int:
+        """Counter..."""
         if exists(path):
             return len(os.listdir(path))
         return 0
 
     def _clean_paths(self) -> None:
+        """Prebuild cleanup."""
         self._p("Cleaning paths")
         for path in [TMP, MODULES, THEMES, WEBMIN_CORE]:
             self._p(f"- {path}")
@@ -437,16 +434,18 @@ class Webmin(_Common):
         webmin_min_path: str = WEBMIN_CORE,
         version: str = "",
     ) -> bool:
-        """Validates that versions noted in webmin_all_path/version,
-        webmin_min_path/version and optionally <version> all match
-        """
+        """Validate that all version numbers match."""
         all_version = self.get_local_version(webmin_all_path)
         min_version = self.get_local_version(webmin_min_path)
         valid = all_version == min_version
         if version:
             valid = valid and version == all_version
         if not valid:
-            raise WebminUpdateError("version validation failed")
+            raise WebminUpdateError(
+                "version validation failed"
+                f"(webmin core: {all_version}, webmin minimal: {min_version}"
+                f" and if set; other version: {version})"
+            )
         return True
 
     def load_plugins(
@@ -456,16 +455,16 @@ class Webmin(_Common):
         version: str = "",
         skip_validation: bool = False,
     ) -> None:
-        """Loads modules and themes from the webmin_all_path directory
+        """Load modules and themes from the webmin_all_path directory.
 
         - webmin_all_path and webmin_min_path are path to contents of
           (unpacked) webmin-x.xxx.tar.gz and webmin-x.xxx-minimal.tar.gz
           directories respectively
-        - if version not given, version will be read from webmin_all_path
+        - if version not set will be read from webmin_all_path
         - determines plugins by comparing contents of webmin_all_path &
           webmin_min_path (any dir not in webmin_min_path is assumed to be a
           plugin)
-        - plugins not supported on Debian will be skipped
+        - plugins not supported on Debian are skipped
         - matching plugin directories are moved to plugin_type/plugin_name
         """
         self._p("Processing modules and themes")
@@ -496,7 +495,7 @@ class Webmin(_Common):
                 quiet=self.quiet,
             )
             if not plugin.debian_support:
-                self._p(f"{item} not supported on Debian - skipping")
+                self._p(f"- {item} not supported on Debian - skipping")
                 continue
             self._p(f"- moving {plugin.type}: {item}")
             plugin.move()
@@ -506,6 +505,7 @@ class Webmin(_Common):
                 self.themes.append(plugin)
 
     def _validate_file(self, file: str, sig: str) -> None:
+        """Validate file signatures."""
         gpg_cmd = ["gpg", "--no-default-keyring", "--keyring", KEYRING]
         if not exists(KEYRING):
             self._p(f"- generating temp keyring: {KEYRING}")
@@ -530,11 +530,11 @@ class Webmin(_Common):
 
     def download(
         self,
-        version: str = "",
+        version: str = "latest",
         force: bool | None = None,
     ) -> None:
-        """downloads, validates and unpack webmin-<version>.tar.gz and
-        webmin-<version>-minimal.tar.gz. Version defaults to latest stable
+        """Download, validate and unpack webmin-<version>[-minimal].tar.gz
+        files.
         """
         if force is None:
             force = self.force
@@ -571,11 +571,10 @@ class Webmin(_Common):
             untar(tmp, join(TMP, tarball))
 
     def update(self, version: str = "", force: bool | None = None) -> bool:
-        """Update webmin package source to <version> if current source does not
-        match <version>. <version> defaults to checking for latest upstream
-        stable. If local version matches <version> no action is taken, unless
-        <force>.
-        Returns True unless there are no changes.
+        """Update Webmin source if 'version' > local version or force=True.
+
+        Default version is latest upstream stable. Version downgrades are
+        supported.
         """
 
         if force is None:
@@ -604,6 +603,7 @@ class Webmin(_Common):
         return True
 
     def dump_control(self) -> str:
+        """Generate control file contents."""
         full_control = [source_control.dump(), webmin_core_control.dump()]
         for plugin in sorted(
             [*self.modules, *self.themes], key=lambda x: x.name
@@ -612,6 +612,7 @@ class Webmin(_Common):
         return "\n".join(full_control)
 
     def write_control(self, control_file: str = CTRL_FILE) -> None:
+        """Write control file."""
         self._p("Writing control file")
         with open(control_file, "w") as fob:
             fob.write(self.dump_control())
