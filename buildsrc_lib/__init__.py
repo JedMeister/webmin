@@ -243,12 +243,14 @@ class Plugin(_Common):
         depends = self._fix_deps(self.name, depends)
         ctrl_depends = [f"webmin (>= {self.version})"]
         for depend in depends.split():
+            if not depend or depend[0].isdigit():
+                continue
             # only depend on installable modules
             if depend in self.installable_mods:
                 ctrl_depends.append(f"webmin-{depend}")
         joined_depends = ", ".join(ctrl_depends)
         if len(f"Depends: {joined_depends}") > 60:
-            joined_depends = "\n " + ",\n ".join(depends)
+            joined_depends = "\n " + ",\n ".join(ctrl_depends)
         description = "\n ".join(
             [
                 f"Webmin {self.type} - {self.info['desc']}",
@@ -459,7 +461,7 @@ class Webmin(_Common):
                 quiet=self.quiet,
             )
             if not plugin.debian_support:
-                self._p(f"{item} no supported on Debian - skipping")
+                self._p(f"{item} not supported on Debian - skipping")
                 continue
             self._p(f"- moving {plugin.type}: {item}")
             plugin.move()
@@ -548,7 +550,7 @@ class Webmin(_Common):
             if force:
                 self._p(f"Forcing rebuild of version {version}")
             else:
-                self._p("Nothing to do")
+                self._p(f"Nothing to do - local version already {version}")
                 return False
         self._clean_paths()
         self.download(version, force)
