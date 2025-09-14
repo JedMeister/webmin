@@ -91,7 +91,20 @@ print "$text{'session_prefix'}\n";
 
 print &ui_form_start("@{[&get_webprefix()]}/session_login.cgi", "post");
 print &ui_hidden("page", $in{'page'});
-print &ui_table_start($text{'session_header'},
+
+my $not_secure;
+if ($ENV{'HTTPS'} ne 'ON' && $miniserv{'ssl'}) {
+	my $link = ui_tag('a', "&#9888; $text{'login_notsecure'}",
+		{ 'href' => "javascript:void(0);",
+		  'class' => 'inherit-color',
+		  'onclick' => "window.location.href = ".
+		    "window.location.href.replace(/^http:/, 'https:'); return false;",
+		});
+	$not_secure = ui_tag('span', $link,
+		{ class => 'not-secure', title => $text{'login_notsecure_desc'} });
+	}
+
+print &ui_table_start($text{'session_header'} . $not_secure,
 		      "width=40% class='loginform'", 2);
 
 # Login message

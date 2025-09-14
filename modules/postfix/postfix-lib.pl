@@ -76,15 +76,19 @@ sub postfix_module_version
 }
 
 # is_postfix_running()
-# returns 1 if running, 0 if stopped, calls error() if problem
+# returns 1 if running, 0 if stopped
 sub is_postfix_running
 {
-    my $queuedir = get_current_value("queue_directory");
-    my $processid = get_current_value("process_id_directory");
+my $pid = 0;
+eval {
+	local $main::error_must_die = 1;
+	my $queuedir = get_current_value("queue_directory");
+	my $processid = get_current_value("process_id_directory");
 
-    my $pid_file = $queuedir."/".$processid."/master.pid";
-    my $pid = &check_pid_file($pid_file);
-    return $pid ? 1 : 0;
+	my $pid_file = $queuedir."/".$processid."/master.pid";
+	$pid = &check_pid_file($pid_file) ? 1 : 0;
+	};
+return $pid;
 }
 
 
@@ -762,7 +766,7 @@ sub regenerate_dependent_table
 sub regenerate_any_table
 {
     my ($name, $force, $after, $base64) = @_;
-    $base64 = 0 if ($postfix_version < 3.4);
+    $base64 = 0 if (&compare_version_numbers($postfix_version, 3.4) < 0);
     my @files;
     if ($force) {
 	@files = map { [ "hash", $_ ] } @$force;
@@ -1604,7 +1608,7 @@ sub get_real_value
 {
 my ($name) = @_;
 my $v = &get_current_value($name);
-if ($postfix_version >= 2.1 && $v =~ /\$/) {
+if (&compare_version_numbers($postfix_version, 2.1) >= 0 && $v =~ /\$/) {
 	# Try to use the built-in command to expand the param
 	my $out = &backquote_command("$config{'postfix_config_command'} -c $config_dir -x -h ".
 				     quotemeta($name)." 2>/dev/null", 1);

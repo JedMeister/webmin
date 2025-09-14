@@ -3,5 +3,5 @@ desc=Webmin Actions Log
 name=WebminLog
 longdesc=View detailed logs of actions by Webmin users.
 readonly=1
-version=2.402
-depends=2.402
+version=2.501
+depends=2.501

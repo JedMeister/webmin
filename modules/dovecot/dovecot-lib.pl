@@ -4,9 +4,9 @@ BEGIN { push(@INC, ".."); };
 use WebminCore;
 &init_config();
 
-@supported_auths = ( "anonymous", "plain", "digest-md5", "cram-md5", "apop",
-		     "scram-sha-1", "scram-sha-256", "ntlm", "gss-spnego",
-		     "gssapi", "rpa", "otp", "skey", "external",
+@supported_auths = ( "anonymous", "plain", "login", "digest-md5", "cram-md5",
+		     "apop", "scram-sha-1", "scram-sha-256", "ntlm",
+		     "gss-spnego", "gssapi", "rpa", "otp", "skey", "external",
 		     "oauthbearer", "xoauth2" );
 @mail_envs = ( undef, "maildir:~/Maildir", "mbox:~/mail/:INBOX=/var/mail/%u",
 	       "maildir:~/Maildir:mbox:~/mail/" );
@@ -553,6 +553,16 @@ local ($wantver) = @_;
 local $ver = &get_dovecot_version();
 return 0 if (!$ver);
 return &compare_version_numbers($ver, $wantver) >= 0;
+}
+
+# version_below(ver)
+# Returns 1 if running below some version
+sub version_below
+{
+local ($wantver) = @_;
+local $ver = &get_dovecot_version();
+return 0 if (!$ver);
+return &compare_version_numbers($ver, $wantver) < 0;
 }
 
 sub list_lock_methods

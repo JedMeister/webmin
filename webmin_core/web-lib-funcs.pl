@@ -1077,11 +1077,13 @@ sub PrintHeader
 {
 my ($cs, $mt, $headers) = @_;
 $mt ||= "text/html";
-if ($ENV{'SSL_HSTS'} == 1 && uc($ENV{'HTTPS'}) eq "ON") {
-	print "Strict-Transport-Security: max-age=31536000;\n";
-	}
-elsif (uc($ENV{'HTTPS'}) ne "ON") {
-	print "Strict-Transport-Security: max-age=0;\n";
+if (uc($ENV{'HTTPS'}) eq "ON") {
+	if ($ENV{'SSL_HSTS'}) {
+		print "Strict-Transport-Security: max-age=31536000;\n";
+		}
+	else {
+		print "Strict-Transport-Security: max-age=0;\n";
+		}
 	}
 if ($pragma_no_cache || $gconfig{'pragma_no_cache'}) {
 	print "pragma: no-cache\n";
@@ -2405,6 +2407,47 @@ if (ref($only) || !$only) {
 	$date .= sprintf " %2.2d:%2.2d", $tm[2], $tm[1];
 	}
 return $date;
+}
+
+# make_date_relative(timestamp)
+# Return localized relative time from now or to the future
+# for a given timestamp, or undef if not a valid timestamp
+sub make_date_relative
+{
+my $ts = shift;
+return undef unless(defined($ts) && $ts =~ /^-?\d+(?:\.\d+)?$/);
+$ts = 0 + $ts;
+my $last_login;
+my $now = time();
+my $diff = $ts - $now; # >0 future, <0 past
+my $abs = abs($diff);
+return $text{'time_now'} if ($abs < 10); # within ±10 seconds is now
+my @units = (
+    [ 31536000, 'year',  'years'  ],
+    [ 2592000,  'month', 'months' ],
+    [ 604800,   'week',  'weeks'  ],
+    [ 86400,    'day',   'days'   ],
+    [ 3600,     'hour',  'hours'  ],
+    [ 60,       'min',   'mins'   ],
+    [ 1,        'sec',   'secs'   ],
+);
+my ($val, $sing, $plur);
+foreach my $unit (@units) {
+	my ($secs, $s, $p) = @$unit;
+	next if ($abs < $secs);
+	$val = int($abs / $secs);
+	($sing, $plur) = ($s, $p);
+	last;
+	}
+if (defined($val) && $val > 0) {
+	my $key = ($diff > 0 ? 'time_in_' : 'time_ago_').
+		  ($val == 1 ? $sing : $plur);
+	$last_login = &text($key, $val);
+	}
+else {
+	$last_login = $text{'time_now'};
+	}
+return $last_login;
 }
 
 =head2 file_chooser_button(input, type, [form], [chroot], [addmode])
@@ -13104,14 +13147,28 @@ my ($mod, $cgi, $def, $forcehost) = @_;
 # Work out the base URL
 my $url;
 if (!$def && $gconfig{'webmin_email_url'}) {
+	# From a config option
 	$url = $gconfig{'webmin_email_url'};
 	}
+elsif ($ENV{'HTTP_HOST'}) {
+	# From this HTTP request
+	my $host = $ENV{'HTTP_HOST'};
+	my $port = $ENV{'SERVER_PORT'} || 80;
+	if ($host =~ s/:(\d+)$//) {
+		$port = $1;        
+		}
+	my $proto = lc($ENV{'HTTPS'}) eq 'on' ? 'https' : 'http';
+	my $defport = $proto eq 'https' ? 443 : 80;
+	$url = $proto."://".$host.($port == $defport ? "" : ":".$port);
+	$url .= $gconfig{'webprefix'} if ($gconfig{'webprefix'});
+	}
 else {
+	# Work out from miniserv config
 	my %miniserv;
 	&get_miniserv_config(\%miniserv);
 	my $proto = $miniserv{'ssl'} ? 'https' : 'http';
 	my $port = $miniserv{'port'};
-	my $host = $forcehost || &get_system_hostname();
+	my $host = $forcehost || $miniserv{'musthost'} || &get_system_hostname();
 	my $defport = $proto eq 'https' ? 443 : 80;
 	$url = $proto."://".$host.($port == $defport ? "" : ":".$port);
 	$url .= $gconfig{'webprefix'} if ($gconfig{'webprefix'});
@@ -13986,6 +14043,90 @@ if (&read_env_file($wconfig, \%wconfig) &&
 	return $wurl;
 	}
 return '';
+}
+
+# encrypt_phrase(plain, passphrase, [run-as-user])
+# Encrypts a phrase using OpenSSL and a passphrase
+sub encrypt_phrase
+{
+my ($plain, $passphrase, $run_as) = @_;
+my $openssl = &has_command('openssl');
+# Check if parameters are defined
+unless ($plain && $passphrase) {
+	return wantarray ? (undef, 'Missing parameters') : undef;
+	}
+# Check if OpenSSL is available
+unless ($openssl) {
+	return wantarray ? (undef, 'OpenSSL command not found') : undef;
+	}
+# Temp file for plaintext
+my $src = &transname();
+&write_file_contents($src, $plain);
+# Encrypt
+$passphrase = quotemeta($passphrase);
+my @args = (
+	$openssl, 'enc', '-aes-256-cbc', '-a', '-A', '-salt',
+	'-pbkdf2', '-iter', '100000',
+	'-pass', "pass:$passphrase",
+	'-in',   $src,
+);
+my $cmd = &command_as_user($run_as || 'nobody', 0, @args) . ' 2>&1';
+my $out = &backquote_logged($cmd);
+# Return if error
+return wantarray ? (undef, $out) : undef if ($?);
+# Remove newlines
+$out =~ s/\s+\z//;
+# Check if result is valid
+if (!&is_encrypt_phrase($out)) {
+	# Encryption failed
+	return wantarray 
+		? (undef, "Encryption failed with invalid cipher result : $out")
+		: undef;
+	}
+# Return successfully created ciphertext
+return wantarray ? ($out, undef) : $out;
+}
+
+# decrypt_phrase(ciphertext, passphrase, [run-as-user])
+# Decrypts a ciphertext using OpenSSL and a passphrase
+sub decrypt_phrase
+{
+my ($cipher, $passphrase, $run_as) = @_;
+my $openssl = &has_command('openssl');
+# Check if OpenSSL is available
+if (!$openssl) {
+	return wantarray ? (undef, 'OpenSSL command not found') : undef;
+	}
+# Tempfile for ciphertext
+my $src = &transname();
+&write_file_contents($src, $cipher);
+# Decrypt
+$passphrase = quotemeta($passphrase);
+my @args = (
+	$openssl, 'enc', '-d', '-aes-256-cbc', '-a', '-A',
+	'-pbkdf2', '-iter', '100000',
+	'-pass', "pass:$passphrase",
+	'-in',   $src,
+);
+my $cmd = &command_as_user($run_as || 'nobody', 0, @args) . ' 2>&1';
+my $out = &backquote_logged($cmd);
+# Return if error
+return wantarray ? (undef, $out) : undef if ($?);
+# Return result
+return wantarray ? ($out, undef) : $out;
+}
+
+# is_encrypt_phrase(ciphertext)
+# Checks if a ciphertext is encrypted correctly
+sub is_encrypt_phrase
+{
+my ($ct) = @_;
+unless (defined($ct) && $ct =~ /^[A-Za-z0-9+\/]+=*$/ && length($ct) % 4 == 0) {
+	# Invalid ciphertext format
+	return 0;
+	}
+# Check if is OpenSSL salt header
+return &decode_base64($ct) =~ /^Salted__/ ? 1 : 0;
 }
 
 $done_web_lib_funcs = 1;
