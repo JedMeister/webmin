@@ -1,5 +1,5 @@
 desc=Cluster Shell Commands
 category=cluster
 longdesc=Run commands on multiple servers at once.
-version=2.501
-depends=2.501
+version=2.510
+depends=2.510

@@ -1,6 +1,6 @@
 desc=Cluster Change Passwords
 category=cluster
-depends=cluster-useradmin passwd useradmin 2.501
+depends=cluster-useradmin passwd useradmin 2.510
 longdesc=Change passwords on multiple systems in a Webmin cluster at once.
 os_support=!windows
-version=2.501
+version=2.510

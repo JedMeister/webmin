@@ -1,5 +1,5 @@
 desc=System Logs NG
 category=system
-depends=proc 2.501
+depends=proc 2.510
 longdesc=Configure the Syslog-NG server on your system and view its log files.
-version=2.501
+version=2.510

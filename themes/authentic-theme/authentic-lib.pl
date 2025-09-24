@@ -552,27 +552,59 @@ sub print_easypie_chart
 
 sub theme_list_combined_system_info
 {
-    my $skipmods;
-    my $nocache = post_has('xhr-info') || post_has('no-cache') || string_contains(get_env('query_string'), 'no-cache');
+    my $nocache = post_has('xhr-info') || post_has('no-cache') ||
+                  string_contains(get_env('query_string'), 'no-cache');
     my $is_webmin = get_product_name() eq 'webmin';
-    my @opts   = ("combined-system-info-$remote_user", $theme_config{'settings_sysinfo_cache_timeout'}, 1);
-    if (!$nocache && $is_webmin) {
-        $skipmods = ['package-updates', 'webmin', 'cpuio'];
-        my $combined_system_info_cache = theme_cached($opts[0], undef, undef, $opts[1]);
-        return @{$combined_system_info_cache}
-          if ($combined_system_info_cache);
+    my $cache_file = theme_cache_user_file("combined-system-info");
+    my $cache_file_path = theme_cache_path($cache_file);
+    my @data;
+    # Return cached data if available
+    if (!$nocache && $is_webmin && -r $cache_file_path) {
+        my $combined_system_info_cache = theme_cache_read($cache_file);
+        $combined_system_info_cache = $combined_system_info_cache->[0]
+            if ref($combined_system_info_cache) eq 'ARRAY' &&
+               ref($combined_system_info_cache->[0]) eq 'ARRAY';
+        @data = @{$combined_system_info_cache}
+            if (ref($combined_system_info_cache) eq 'ARRAY' &&
+                @{$combined_system_info_cache});
+        # Update the existing sysinfo cache on the fly if we have newer stats
+        if ( -r (my $file = theme_cache_path("real-time-monitoring-now.json")) ) {
+            my $stats_mtime = (stat($file))[9]            // 0;
+            my $cache_mtime = (stat($cache_file_path))[9] // 0;
+            merge_stats_now_into_system_info_data(
+                \@data, &read_file_contents($file))
+                    if ($stats_mtime > $cache_mtime);
+            # Data merged or skipped, delete transient file ether way
+            unlink_file($file) if (&is_under_directory(theme_cache_dir(), $file));
+        }
+    # Update all caches from scratch if cache is missing
+    } else {
+        if (&foreign_check("system-status")) {
+            &foreign_require("system-status");
+            &system_status::scheduled_collect_system_info('manual')
+                if ($system_status::config{'collect_interval'} ne 'none');
+        }
+        
+        # Update caches for Virtualmin-specific info if applicable
+        if (&foreign_check("virtual-server")) {
+            &foreign_require("virtual-server");
+            if ($virtual_server::config{'collect_interval'} ne 'none') {
+                my $info = &virtual_server::collect_system_info('manual');
+                &virtual_server::save_collected_info($info) if ($info);
+            }
+        }
+
+        # Return updated combined info
+        @data =
+            &list_combined_system_info(
+                { 'qshow' => 1,
+                  'max'   =>
+                    $theme_config{'settings_sysinfo_max_servers'} }, undef);
+            theme_cache_write($cache_file, \@data) if ($nocache && $is_webmin);
     }
-    my @combined_system_info =
-      &list_combined_system_info(
-                                 {  'qshow' => 1,
-                                    'max'   => $theme_config{'settings_sysinfo_max_servers'}
-                                 },
-                                 undef,
-                                 $skipmods);
-    if ($nocache && $is_webmin) {
-        theme_cached($opts[0], \@combined_system_info, undef, $opts[2]);
-    }
-    return @combined_system_info;
+
+    # Return data
+    return @data if @data;
 }
 
 sub show_sysinfo_section
@@ -1574,37 +1606,41 @@ sub theme_remote_version
     if (($theme_config{'settings_sysinfo_theme_updates'} eq 'true' || $data) && &webmin_user_is_admin() && post_has('xhr-'))
     {
         if (($tconfig{'beta_updates'} eq '1' || $force_beta_check || $installed_version_devel) && !$force_stable_check) {
+            my $cache_id = 'version-theme-development';
             if (!$nocache) {
-                $remote_version = theme_cached('version-theme-development');
+                $remote_version = theme_cache_read($cache_id);
             }
-            if (!$remote_version) {
+            if (!$remote_version || 
+                ($remote_version && !theme_cache_is_fresh($cache_id))) {
                 http_download('api.github.com',                                             '443',
-                              '/repos/authentic-theme/authentic-theme/contents/theme.info', \$remote_version,
+                              '/repos/webmin/authentic-theme/contents/theme.info', \$remote_version,
                               \$error,                                                      undef,
                               1,                                                            undef,
                               undef,                                                        30,
                               undef,                                                        undef,
                               { 'accept', 'application/vnd.github.v3.raw' });
-                theme_cached('version-theme-development', $remote_version, $error);
+                theme_cache_write($cache_id, $remote_version) if ($remote_version && !$error);
 
             }
 
         } else {
+            my $cache_id = 'version-theme-stable';
             if (!$nocache) {
-                $remote_version = theme_cached('version-theme-stable');
+                $remote_version = theme_cache_read($cache_id);
             }
-            if (!$remote_version) {
-                http_download('api.github.com', '443', '/repos/authentic-theme/authentic-theme/releases/latest',
+            if (!$remote_version ||
+                ($remote_version && !theme_cache_is_fresh($cache_id))) {
+                http_download('api.github.com', '443', '/repos/webmin/authentic-theme/releases/latest',
                               \$remote_release, \$error, undef, 1, undef, undef, 30);
                 $remote_release =~ /tag_name":"(.*?)"/;
                 http_download('api.github.com',                                                            '443',
-                              '/repos/authentic-theme/authentic-theme/contents/theme.info?ref=' . $1 . '', \$remote_version,
+                              '/repos/webmin/authentic-theme/contents/theme.info?ref=' . $1 . '', \$remote_version,
                               \$error,                                                                     undef,
                               1,                                                                           undef,
                               undef,                                                                       30,
                               undef,                                                                       undef,
                               { 'accept', 'application/vnd.github.v3.raw' });
-                theme_cached('version-theme-stable', $remote_version, $error);
+                theme_cache_write($cache_id, $remote_version) if ($remote_version && !$error);
             }
         }
     }
@@ -1617,62 +1653,66 @@ sub theme_remote_version
 
 }
 
-sub theme_cached
+# theme_cache_dir()
+# Returns directory for per-user/admin theme cache
+sub theme_cache_dir
 {
-    my ($id, $cvalue, $error, $cache_interval_option) = @_;
+	if (&webmin_user_is_admin()) {
+		my ($dir) = &theme_var_dir();
+		return $dir;
+	}
+	my $dir = &get_user_home()."/tmp";
+	$dir = &tempname_dir() if (!-d $dir);
+	return $dir;
+}
+
+# theme_cache_path(id)
+# Full path for a given theme cache id
+sub theme_cache_path
+{
+    my ($id) = @_;
     $id || die "Can't use undefined as cache filename";
+    return &theme_cache_dir()."/$id";
+}
 
-    my $theme_var_dir;
-    if (&webmin_user_is_admin()) {
-        ($theme_var_dir) = theme_var_dir();
-    } else {
-        $theme_var_dir = get_user_home() . "/tmp";
-        $theme_var_dir = tempname_dir() if (!-d $theme_var_dir);
-    }
-    my $fcached = "$theme_var_dir/$id";
-    my @cached  = stat($fcached);
-    my $ctime   = $cache_interval_option || $theme_config{'settings_cache_interval'} || 24 * 60 * 60;
-    my $cache   = read_file_contents($fcached);
-    my $cdata   = $cache ? unserialise_variable($cache) : undef;
-    my @data;
+# theme_cache_user_file(id, [user])
+# Returns cache filename with user suffix
+sub theme_cache_user_file
+{
+	my ($id, $user) = @_;
+	$id || die "Missing cache id";
+	$user ||= ($remote_user || $base_remote_user);
+	return "$id-$user";
+}
 
-    if (@cached && $cached[9] > time() - $ctime) {
+# theme_cache_is_fresh(id, [interval_secs])
+# Returns 1 if cache file exists and is fresh enough
+sub theme_cache_is_fresh
+{
+	my ($id, $interval) = @_;
+	my $ttl  = $interval || $theme_config{'settings_cache_interval'} || 24*60*60;
+	my $path = theme_cache_path($id);
+	my @st   = stat($path);
+	return (@st && $st[9] > time() - $ttl) ? 1 : 0;
+}
 
-        # Use cache for now
-        if ($cdata) {
-            @data = @$cdata;
-        } else {
-            return undef;
-        }
-    } else {
+# theme_cache_read(id)
+# Returns deserialized arrayref or undef if missing/invalid
+sub theme_cache_read
+{
+	my ($id) = @_;
+	my $path = theme_cache_path($id);
+	return undef unless -e $path;
+	my $raw = read_file_contents($path) // return undef;
+	return unserialise_variable($raw);
+}
 
-        # Error when catching remote data
-        if ($error) {
-            if ($cdata) {
-
-                # Error: Use current cache for another period
-                @data = @$cdata;
-            } else {
-
-                # Error: No cache available
-                return undef;
-            }
-        } elsif ($cvalue) {
-
-            # Use supplied data
-            push(@data, $cvalue);
-        }
-
-        if (@data) {
-
-            # Write cache
-            my $fh = "cache";
-            open_tempfile($fh, ">$fcached");
-            print_tempfile($fh, serialise_variable(\@data));
-            close_tempfile($fh);
-        }
-    }
-    return wantarray ? @data : $data[0];
+# theme_cache_write(id, &data)
+# Serializes and writes data to cache
+sub theme_cache_write
+{
+	my ($id, $value) = @_;
+    write_file_contents(theme_cache_path($id), serialise_variable($value));
 }
 
 sub theme_var_dir

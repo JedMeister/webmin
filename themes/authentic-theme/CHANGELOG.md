@@ -1,5 +1,15 @@
 ## Changelog
 
+#### Version 25.10 (September 16, 2025)
+* Add optimizations to dashboard graphs with dynamic trimming to prevent page lagging
+* Add improvements to how the system cache for the dashboard is updated
+* Add support to correctly reload the page in proxy mode
+* Add an option to choose if default page should always load when switching navigation
+* Fix to ensure the color palette is preserved for the user [webmin#2537](https://github.com/webmin/webmin/issues/2537)
+* Fix algorithm for calculating rows per page in data table pagination
+* Fix the alert info box text color for dark mode
+* Fix critical lags and appearance of Custom Commands module
+
 #### Version 25.01 (September 6, 2025)
 * Fix broken editor in Bootup and Shutdown module [#1718](https://github.com/webmin/authentic-theme/issues/1718)
 
