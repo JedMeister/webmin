@@ -5,5 +5,5 @@ name=PAM
 longdesc=Configure the PAM authentication steps used by services such as telnet, POP and FTP.
 readonly=1
 cpan=1
-version=2.501
-depends=2.501
+version=2.510
+depends=2.510

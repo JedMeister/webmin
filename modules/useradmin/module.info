@@ -6,5 +6,5 @@ longdesc=Create and edit Unix users and groups from the /etc/passwd and /etc/gro
 readonly=1
 cpan=1
 library=user-lib.pl
-version=2.501
-depends=2.501
+version=2.510
+depends=2.510

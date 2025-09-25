@@ -311,6 +311,11 @@ sub embed_header
     print 'var v___theme_language = ' . get_theme_language();
     print "</script>\n";
 
+    # Print server original webprefix for proxy setups
+    print ' <script type="application/javascript">';
+    print 'const v___server_webprefix = "'.($gconfig{'webprefix'} || '').'"';
+    print "</script>\n";
+
     if ($args[2]) {
         load_devel_dependencies();
     }
@@ -1879,6 +1884,8 @@ sub header_html_data
       ($skip ? '' : ' data-default-theme="' . $theme_config{'settings_navigation_color'} . '"') .
       ' data-editor-palette="' .
       $theme_config{'settings_cm_editor_palette'} .
+      '" data-static-theme-version="' .
+      theme_version('version') .
       '" data-theme-version="' .
       theme_version('version') .
       '" data-theme-version-data="' .

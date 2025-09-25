@@ -5,5 +5,5 @@ desc=Apache Webserver
 longdesc=Configure almost all Apache directives and features.
 readonly=1
 syslog=1
-version=2.501
-depends=2.501
+version=2.510
+depends=2.510

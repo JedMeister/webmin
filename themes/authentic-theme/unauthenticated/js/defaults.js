@@ -6,7 +6,7 @@ var
     settings_right_virtualmin_default = 'sysinfo.cgi',
     settings_right_cloudmin_default = 'index.cgi',
     settings_right_page_keep = true,
-    settings_right_reload = true,
+    settings_right_sync = 1,
     settings_document_title = 1,
     settings_palette_auto = true,
     settings_global_palette_unauthenticated = 'auto',
@@ -147,7 +147,7 @@ var
     // E.g. to change options below, you would need to open browser's console,
     // change an option value and call `theme.config.save()` function.
     //
-    settings_table_auto_datatables = true,
+    settings_table_auto_dt = true,
     settings_table_init_datatables = 20000,
     settings_right_page_hide_persistent_vscroll = true,
     settings_hide_top_loader = false,
@@ -180,6 +180,9 @@ var
 
     // ConfigServer Security & Firewall related
     settings_sysinfo_csf_updates = true,
+    settings_csf_download_domain_privileged = 'download.configserver.com',
+    settings_csf_download_port_privileged = 443,
+    settings_csf_download_path_privileged = '/csf/version.txt',
     settings_sysinfo_csf_temp_list_privileged = true,
 
     // File Manager related
