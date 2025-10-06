@@ -371,6 +371,11 @@ class Webmin(_Common):
                     elif line[0] in ["-", "+"] and old_version in line:
                         line = line.replace(old_version, new_version)
                         changed_lines += 1
+                    elif f"version={old_version}" in line:
+                        # dpkg-buildpackage will fail on "fuzz" so also update
+                        # this line in the patch file - but don't count as a
+                        # "changed line"
+                        line = line.replace(old_version, new_version)
                     fob.write(line)
         except OSError as e:
             raise WebminUpdateError(e) from e
