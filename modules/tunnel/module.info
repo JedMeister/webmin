@@ -1,5 +1,5 @@
 name=Tunnel
 desc=HTTP Tunnel
 longdesc=Connect to another HTTP server via a tunnel through the Webmin server.
-version=2.510
-depends=2.510
+version=2.520
+depends=2.520

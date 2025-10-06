@@ -14,6 +14,12 @@ $trust_unknown_referers = 1;
 $gconfig{'forgot_pass'} || &error($text{'forgot_ecannot'});
 my $timeout = $gconfig{'passreset_timeout'} || 15;
 $remote_user && &error($text{'forgot_elogin'});
+$ENV{'HTTPS'} eq 'ON' || $gconfig{'forgot_pass'} == 2 ||
+        &error($text{'forgot_essl'});
+$ENV{'SSL_CN_CERT'} == 1 ||
+	&error(&text('forgot_esslhost',
+		     &html_escape($ENV{'HTTP_HOST'} || $ENV{'SSL_CN'})))
+			if ($ENV{'HTTPS'} eq 'ON');
 
 # Check that the random ID is valid
 $in{'id'} =~ /^[a-f0-9]+$/i || &error($text{'forgot_eid'});
@@ -22,6 +28,12 @@ my $linkfile = $main::forgot_password_link_dir."/".$in{'id'};
 &read_file($linkfile, \%link) || &error($text{'forgot_eid2'});
 time() - $link{'time'} > 60*$timeout &&
 	&error(&text('forgot_etime', $timeout));
+
+# Check that the hostname in the original email matches the current hostname
+my ($basehost) = &parse_http_url(&get_webmin_email_url());
+if ($basehost ne $link{'host'}) {
+	&error($text{'forgot_ehost'});
+	}
 
 # Get the Webmin user
 &foreign_require("acl");

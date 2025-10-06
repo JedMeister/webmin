@@ -13,9 +13,16 @@ $trust_unknown_referers = 1;
 &error_setup($text{'forgot_err'});
 $gconfig{'forgot_pass'} || &error($text{'forgot_ecannot'});
 $remote_user && &error($text{'forgot_elogin'});
+$ENV{'HTTPS'} eq 'ON' || $gconfig{'forgot_pass'} == 2 ||
+        &error($text{'forgot_essl'});
+$ENV{'SSL_CN_CERT'} == 1 ||
+	&error(&text('forgot_esslhost',
+ 		     &html_escape($ENV{'HTTP_HOST'} || $ENV{'SSL_CN'})))
+		     	if ($ENV{'HTTPS'} eq 'ON');
 
 &ui_print_header(undef, $text{'forgot_title'}, "", undef, undef, 1, 1);
-
+print &ui_alert_box("<b> ⚠ ".$text{'forgot_nossl_warn'}, 'warn')
+        if ($gconfig{'forgot_pass'} == 2 && $ENV{'HTTPS'} ne 'ON');
 print "<center>\n";
 print $text{'forgot_desc'},"<p>\n";
 print &ui_form_start("forgot_send.cgi", "post");

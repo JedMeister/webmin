@@ -1,6 +1,6 @@
 desc=iSCSI Server
 category=hardware
 os_support=*-linux freebsd
-depends=fdisk lvm raid init 2.510
+depends=fdisk lvm raid init 2.520
 longdesc=Share disk devices across the network using the iSCSI protocol with the netbsd-iscsi package.
-version=2.510
+version=2.520

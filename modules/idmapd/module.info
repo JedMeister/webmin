@@ -3,5 +3,5 @@ category=net
 desc=idmapd daemon
 longdesc=Manage the NFS ID mapping daemon.
 os_support=*-linux
-version=2.510
-depends=2.510
+version=2.520
+depends=2.520

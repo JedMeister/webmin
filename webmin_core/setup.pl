@@ -616,6 +616,19 @@ else {
 	print STOP "else\n";
 	print STOP "  echo Stopping Webmin server in $wadir\n";
 	print STOP "fi\n";
+	print STOP "targets=\"stats.pl shellserver.pl\"\n";
+	print STOP "collect_pids() {\n";
+	print STOP "  for s in \$targets; do\n";
+	print STOP "    ps axww | grep \"$wadir/\" | grep \"/\$s\" | grep -v grep\n";
+	print STOP "  done | awk '{print \$1}' | sort -u\n";
+	print STOP "}\n";
+	print STOP "pids=\$(collect_pids)\n";
+	print STOP "[ -n \"\$pids\" ] && kill \$pids 2>/dev/null || true\n";
+	print STOP "if [ \"\$1\" = \"--kill\" ]; then\n";
+	print STOP "  sleep 1\n";
+	print STOP "  pids=\$(collect_pids)\n";
+	print STOP "  [ -n \"\$pids\" ] && kill -KILL \$pids 2>/dev/null || true\n";
+	print STOP "fi\n";
 	print STOP "pidfile=\`grep \"^pidfile=\" $config_directory/miniserv.conf | sed -e 's/pidfile=//g'\`\n";
 	print STOP "pid=\`cat \$pidfile 2>/dev/null\`\n";
 	print STOP "if [ \"\$pid\" != \"\" ]; then\n";
@@ -971,7 +984,7 @@ if (!$ENV{'nostart'}) {
 		print "  - DateTime, DateTime::Locale, DateTime::TimeZone, Data::Dumper,\n";
 		print "  - Digest::MD5, Digest::SHA, Encode::Detect, File::Basename,\n";
 		print "  - File::Path, Net::SSLeay, Time::HiRes, Time::Local, Time::Piece,\n";
-		print "  - JSON::XS, lib, open\n";
+		print "  - Socket6, Sys::Syslog, JSON::XS, lib, open\n";
 		print " Packages:\n";
 		print "  - openssl - Cryptography library with TLS implementation\n";
 		print "  - shared-mime-info - Shared MIME information database\n";
