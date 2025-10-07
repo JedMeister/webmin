@@ -1,6 +1,6 @@
 desc=Squid Report Generator
-depends=cron 2.510
+depends=cron 2.520
 category=servers
 longdesc=Configure and schedule SARG, a tool for generating reports from Squid access logs.
 os_support=!windows
-version=2.510
+version=2.520

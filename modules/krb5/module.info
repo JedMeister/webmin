@@ -3,5 +3,5 @@ category=net
 desc=Kerberos5
 longdesc=Configure the Kerberos 5 client on your system.
 os_support=*-linux
-version=2.510
-depends=2.510
+version=2.520
+depends=2.520

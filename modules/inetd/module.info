@@ -2,5 +2,5 @@ category=net
 os_support=solaris *-linux hpux freebsd unixware openserver osf1 macos openbsd netbsd irix
 desc=Network Services and Protocols
 longdesc=Edit services in /etc/inetd.conf, /etc/services and /etc/rpc.
-version=2.510
-depends=2.510
+version=2.520
+depends=2.520

@@ -941,7 +941,9 @@ while(1) {
 					    (ord($byte) & 0x80))) {
 						($ssl_con,
 						 $ssl_certfile,
-						 $ssl_keyfile) =
+						 $ssl_keyfile,
+						 $ssl_cn,
+						 $ssl_alts) =
 							&ssl_connection_for_ip(
 							    SOCK, $ipv6fhs{$s});
 						print DEBUG "ssl_con returned ".
@@ -1379,26 +1381,48 @@ $method = $page = $request_uri = undef;
 print DEBUG "handle_request reqline=$reqline\n";
 alarm(0);
 if (!$use_ssl && $config{'ssl'} && $config{'ssl_enforce'}) {
-	# This is an http request when https must be enforced
-	local $urlhost = $config{'musthost'} || $host;
-	$urlhost = "[".$urlhost."]" if (&check_ip6address($urlhost));
-	local $wantport = $port;
-	if ($wantport == 80 &&
-	    &indexof(443, @listening_on_ports) >= 0) {
-		# Connection was to port 80, but since we are also
-		# accepting on port 443, redirect to that
-		$wantport = 443;
+	# This is an HTTP request when HTTPS should be enforced
+	my $musthost = $config{'musthost'};
+	my $hostheader;
+	if (!$musthost) {
+		# Read host HTTP header because we want one earlier
+		alarm(10);
+		local $SIG{'ALRM'} = sub { die "timeout" };
+		while (defined(my $line = &read_line())) {
+			$line =~ s/\r|\n//g;
+			last if $line eq '';
+			if ($line =~ /^host:\s*(.*)$/i) {
+				$hostheader = "https://$1";
+				last;
+				}
+			}
+		alarm(0);
 		}
-	local $url = $wantport == 443
-		? "https://$urlhost/"
-		: "https://$urlhost:$wantport/";
+	# Host header must already contain full URL
+	my $url = $hostheader;
+	if (!$url) {
+		# No host header
+		local $urlhost = $musthost || $host;
+		$urlhost = "[".$urlhost."]" if (&check_ip6address($urlhost));
+		local $wantport = $port;
+		if ($wantport == 80 &&
+		&indexof(443, @listening_on_ports) >= 0) {
+			# Connection was to port 80, but since we are also
+			# accepting on port 443, redirect to that
+			$wantport = 443;
+			}
+		$url = $wantport == 443
+			? "https://$urlhost/"
+			: "https://$urlhost:$wantport/";
+		}
+	# Enforce HTTPS
 	&write_data("HTTP/1.0 302 Moved Temporarily\r\n");
 	&write_data("Date: $datestr\r\n");
 	&write_data("Server: @{[&server_info()]}\r\n");
 	&write_data("Location: $url\r\n");
 	&write_keep_alive(0);
 	&write_data("\r\n");
-	&log_error("Redirecting HTTP request to HTTPS for $acptip");
+	&log_error("Redirecting HTTP request to $url");
 	&log_request($loghost, $authuser, $reqline, 302, 0);
 	return 0;
 	}
@@ -2500,6 +2524,11 @@ if (&get_type($full) eq "internal/cgi" && $validated != 4) {
 	$ENV{"MINISERV_CONFIG"} = $config_file;
 	$ENV{"HTTPS"} = $use_ssl ? "ON" : "";
 	$ENV{"SSL_HSTS"} = $config{"ssl_hsts"};
+	if ($use_ssl) {
+		$ENV{"SSL_CN"} = $ssl_cn;
+		$ENV{"SSL_CN_CERT"} =
+			&ssl_hostname_match($header{'host'}, $ssl_alts);
+		}
 	$ENV{"MINISERV_PID"} = $miniserv_main_pid;
 	if ($use_ssl) {
 		$ENV{"MINISERV_CERTFILE"} = $ssl_certfile;
@@ -4776,11 +4805,18 @@ if ($config{'ssl_honorcipherorder'}) {
 eval 'Net::SSLeay::CTX_set_options($ssl_ctx,
         &Net::SSLeay::OP_NO_RENEGOTIATION)';
 
+# Get the hostnames each cert is valid for
+my $info = &cert_names($certfile);
+my @hosts;
+push(@hosts, $info->{'cn'}) if ($info->{'cn'});
+push(@hosts, @{$info->{'alt'}}) if ($info->{'alt'});
+
 return { 'keyfile' => $keyfile,
 	 'keytime' => $kst[9],
 	 'certfile' => $certfile,
 	 'certtime' => $cst[9],
 	 'extracas' => $extracas,
+	 'hosts' => \@hosts,
 	 'ctx' => $ssl_ctx };
 }
 
@@ -4816,8 +4852,9 @@ alarm(0);
 return undef if (!$ok);
 
 # Check for a per-hostname SSL context and use that instead
+my $h;
 if (defined(&Net::SSLeay::get_servername)) {
-	my $h = Net::SSLeay::get_servername($ssl_con);
+	$h = Net::SSLeay::get_servername($ssl_con);
 	if ($h) {
 		my $c = $ssl_contexts{$h} ||
 			$h =~ /^[^\.]+\.(.*)$/ && $ssl_contexts{"*.$1"};
@@ -4826,7 +4863,8 @@ if (defined(&Net::SSLeay::get_servername)) {
 			}
 		}
 	}
-return ($ssl_con, $ssl_ctx->{'certfile'}, $ssl_ctx->{'keyfile'});
+return ($ssl_con, $ssl_ctx->{'certfile'}, $ssl_ctx->{'keyfile'}, $h,
+	$ssl_ctx->{'hosts'});
 }
 
 # parse_websockets_config()
@@ -4873,8 +4911,7 @@ print DEBUG "in reload_config_file\n";
 &build_config_mappings();
 &read_webmin_crons();
 &precache_files();
-&setup_ssl_contexts()
-	if ($use_ssl);
+&setup_ssl_contexts() if ($use_ssl);
 &parse_websockets_config();
 if ($config{'session'}) {
 	dbmclose(%sessiondb);
@@ -5507,6 +5544,9 @@ foreach my $pe (split(/\t+/, $config{'expires_paths'})) {
 
 # Reset cache of sudo checks
 undef(%sudocache);
+
+# Reset cache of cert files
+undef(%cert_names_cache);
 }
 
 # is_group_member(&uinfo, groupname)
@@ -6994,4 +7034,76 @@ if (!$sig) {
 			$config{'server'} : "MiniServ";
 	}
 return $sig;
+}
+
+=head2 cert_names($file)
+
+Extract Common Name and Subject Alternative Names from an X.509 certificate
+file. Supports both PEM and DER certificates. Returns undef if file cannot be
+read or parsed. Cache results for speed.
+
+=cut
+sub cert_names
+{
+my ($file) = @_;
+return $cert_names_cache{$file} if ($cert_names_cache{$file});
+return undef if (!$file || !-r $file);
+my %rv;
+my $cert;
+
+# Try PEM first
+my $bio = Net::SSLeay::BIO_new_file($file, 'r');
+if ($bio) {
+	$cert = Net::SSLeay::PEM_read_bio_X509($bio);
+	Net::SSLeay::BIO_free($bio);
+	}
+
+# Try DER if PEM failed
+if (!$cert) {
+	my $bio = Net::SSLeay::BIO_new_file($file, 'rb');
+	if ($bio) {
+		$cert = Net::SSLeay::d2i_X509_bio($bio);
+		Net::SSLeay::BIO_free($bio);
+		}
+	}
+
+# Certificate not found
+return undef if !$cert;
+
+# Subject
+my $subject = Net::SSLeay::X509_get_subject_name($cert);
+if ($subject) {
+	# commonName
+	my $cn = Net::SSLeay::X509_NAME_get_text_by_NID($subject, 13);
+	$rv{cn} = $cn if defined $cn && $cn ne '' && $cn ne '-1';
+	}
+
+# subjectAltName
+my @alts = Net::SSLeay::X509_get_subjectAltNames($cert);
+if (@alts) {
+	my @dns;
+	while (my ($type, $val) = splice(@alts, 0, 2)) {
+		push @dns, $val if $type == 2;
+		}
+	$rv{alt} = \@dns if @dns;
+	}
+
+Net::SSLeay::X509_free($cert);
+$cert_names_cache{$file} = \%rv;
+return \%rv;
+}
+
+# ssl_hostname_match(hostname, &hosts-list)
+# Does a hostname match a list of hostnames for an SSL cert?
+sub ssl_hostname_match
+{
+my ($h, $hosts) = @_;
+$h =~ s/:\d+$//;
+foreach my $p (@$hosts) {
+	return 1 if (lc($p) eq lc($h));
+	return 1 if ($p =~ /^\*\.(\S+)$/ &&
+		     (lc($h) eq lc($1) || $h =~ /^([^\.]+)\.\Q$1\E$/i));
+	return 2 if ($p eq "*");
+	}
+return 0;
 }
