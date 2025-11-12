@@ -1,5 +1,4 @@
 // Theme options defaults
-
 var
     // General defaults
     settings_right_default_tab_usermin = 'webmail',
@@ -12,17 +11,14 @@ var
     settings_global_palette_unauthenticated = 'auto',
     settings_cm_editor_palette = 'monokai',
     settings_theme_config_admins_only_privileged = false,
-    settings_embed_product_splash_privileged = false,
 
     // Dashboard and real-time monitoring
     settings_sysinfo_easypie_charts = true,
-    settings_sysinfo_easypie_charts_size = 196,
-    settings_sysinfo_easypie_charts_width = 4,
-    settings_sysinfo_easypie_charts_scale = 10,
     settings_sysinfo_max_servers = 10,
     settings_sysinfo_real_time_status = 1,
 
     // Navigation menu options defaults
+    settings_roundish_menu = true,
     settings_navigation_color = 'blue',
     settings_navigation_auto_fold_category = true,
     settings_grayscale_level_navigation = '0',
@@ -33,8 +29,6 @@ var
     settings_brightness_level_navigation = '1',
     settings_contrast_level_navigation = '1',
     settings_navigation_always_collapse = false,
-    settings_leftmenu_width = 260,
-    settings_auto_open_panels_on_proximity = false,
     settings_switch_rdisplay = false,
     settings_leftmenu_section_hide_refresh_modules = false,
     settings_leftmenu_section_hide_unused_modules = false,
@@ -53,6 +47,7 @@ var
     settings_leftmenu_custom_links = '',
 
     // Side slider options
+    settings_roundish_slider = true,
     settings_side_slider_enabled = true,
     settings_side_slider_fixed = false,
     settings_side_slider_sysinfo_enabled = true,
@@ -60,11 +55,11 @@ var
     settings_side_slider_favorites_enabled = true,
 
     // Table options
+    settings_right_table_force_single_column = false,
     settings_right_table_links_type = 2,
+    settings_right_table_grayscaled_icons = true,
     settings_right_table_animate_icons = false,
     settings_right_table_links_sorted = false,
-    settings_right_table_grayscaled_icons = true,
-    settings_right_table_layout_control = false,
 
     // Hotkeys options defaults
     settings_hotkeys_active = true,
@@ -147,6 +142,9 @@ var
     // E.g. to change options below, you would need to open browser's console,
     // change an option value and call `theme.config.save()` function.
     //
+    settings_menu_width = 270,
+    settings_auto_open_panels_on_proximity = false,
+    settings_embed_product_splash_privileged = false,
     settings_table_auto_dt = true,
     settings_table_init_datatables = 20000,
     settings_right_page_hide_persistent_vscroll = true,
@@ -210,10 +208,8 @@ var
 
     // Tables related
     settings_right_table_wrap_inside_scrolled_container = false,
-    config_portable_table_rows_to_columns = true,
-    config_portable_table_rows_to_columns_number = 2,
-    config_portable_table_rows_to_columns_width = 340,
-    config_portable_table_rows_to_columns_break = true,
+    config_portable_table_row_to_column_number = 2,
+    config_portable_table_row_to_column_width = 340,  // max column width in pixels to break into single column [280, 340, 400, 460, 520, 580, 640]
 
     // This option can be set to any absolute or relative path
     settings_usermin_default_module = 'sysinfo.cgi',
@@ -281,5 +277,10 @@ var
         ]
     },
 
-    // Deprecated options
-    settings_embed_product_branding_privileged = settings_embed_product_splash_privileged;
+    // Deprecated options names
+    settings_embed_product_branding_privileged = settings_embed_product_splash_privileged,
+
+    // Deprecated features
+    config_portable_table_row_to_column_break = true,  // layout breaking is always on and should never be disabled
+    settings_right_table_layout_widget = false,        // deprecated layout control
+    config_portable_table_row_to_column = true;        // disable ancient deprecated layout

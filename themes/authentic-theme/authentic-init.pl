@@ -78,7 +78,7 @@ sub settings_filter
 sub get_theme_color
 {
     # Chrome application header color should be darker than the theme color
-    my %theme_colors = ('blue'   => '#003670', # '#033e86',
+    my %theme_colors = ('blue'   => '#003670', # '#003a83',
                         'teal'   => '#02474c', # '#034b53',
                         'green'  => '#234b2d', # '#2b5936',
                         'purple' => '#45345e', # '#4f3a6e',
@@ -116,7 +116,7 @@ sub embed_favicon
     }
 
     my $theme_config_dir = "$config_directory/$current_theme";
-    my $theme_user_color = get_theme_color() || "#033e86";
+    my $theme_user_color = get_theme_color() || "#003a83";
 
     my $favicon_path = $theme_webprefix . '/images/favicons/' . $product_name;
     my $ref_link     = 'data-link-ref';
@@ -329,6 +329,9 @@ sub embed_header
         }
 
         embed_css_night_rider();
+        embed_css_inline();
+        embed_rounded_menu();
+        embed_rounded_slider();
 
         embed_background();
         embed_styles();
@@ -355,11 +358,16 @@ sub embed_header
     } else {
         if ($args[2]) {
             foreach my $css (@theme_bundle_css) {
+                my $ext = '.src.css';
+                if ($css =~ /\[scss\]$/) {
+                    $ext = '.src.scss.css';
+                    $css =~ s/\[scss\]$//;
+                }
                 print ' <link type="text/css" href="' .
                   $theme_webprefix .
                   '/unauthenticated/css/' .
                   $css .
-                  '.src.css?' .
+                  "$ext?" .
                   theme_version('timestamped') .
                   '" rel="stylesheet">' . "\n";
             }
@@ -369,6 +377,9 @@ sub embed_header
         }
 
         embed_css_night_rider();
+        embed_css_inline();
+        embed_rounded_menu();
+        embed_rounded_slider();
 
         if ((length $theme_config{'settings_navigation_color'} && $theme_config{'settings_navigation_color'} ne 'blue') ||
             theme_night_mode())
@@ -619,6 +630,41 @@ sub embed_css_night_rider
           (theme_debug_mode() ? 'src' : 'min') . '.css?' .
           theme_version('timestamped') .
           '" rel="stylesheet" data-palette>' . "\n";
+    }
+}
+
+sub embed_css_inline
+{
+	print <<"EOF";
+<style>
+    :root {
+    --left-menu-width: $theme_config{'settings_menu_width'}px;
+    }
+</style>
+EOF
+}
+
+sub embed_rounded_menu
+{
+    if ($theme_config{'settings_roundish_menu'} eq 'true') {
+        print ' <link type="text/css" href="' .
+                  $theme_webprefix .
+                  '/unauthenticated/css/rounded-menu.' .
+                  (theme_debug_mode() ? 'src.scss' : 'min') . '.css?' .
+                  theme_version('timestamped') .
+                  '" rel="stylesheet" data-rounded-menu>' . "\n";
+    }
+}
+
+sub embed_rounded_slider
+{
+    if ($theme_config{'settings_roundish_slider'} eq 'true') {
+        print ' <link type="text/css" href="' .
+                  $theme_webprefix .
+                  '/unauthenticated/css/rounded-slider.' .
+                  (theme_debug_mode() ? 'src.scss' : 'min') . '.css?' .
+                  theme_version('timestamped') .
+                  '" rel="stylesheet" data-rounded-slider>' . "\n";
     }
 }
 
@@ -1096,7 +1142,8 @@ sub get_button_style
     {
         $class = "warning ";
         $icon  = "stop";
-    } elsif (string_contains($keys, "mail_delete")) {
+    } elsif (string_contains($keys, "mail_delete") ||
+             string_contains($keys, "mail_delall")) {
         $icon  = "times-circle";
         $class = "danger ";
     } elsif (string_contains($keys, "mail_forward") ||
@@ -1230,8 +1277,7 @@ sub get_button_style
               string_contains($keys, "recsok")      ||
               string_contains($keys, "scripts_iok") ||
               string_contains($keys, "cert_newok") ||
-              string_contains($keys, "missing_now") ||
-              string_contains($keys, "right_upok")
+              string_contains($keys, "missing_now")
              ) &&
              !string_contains($keys, "uninstall"))
     {
@@ -1475,7 +1521,9 @@ sub get_button_style
         $icon  = "plus-square-o";
     } elsif (
          (string_contains($keys, "add") &&
-          !string_contains($keys, "edit_addinc")) ||
+          !string_contains($keys, "edit_addinc") &&
+          !string_contains($keys, "index_madd") &&
+          !string_contains($keys, "index_zoneadd")) ||
          string_contains($keys, "create") ||
          string_contains($keys, "index_crnow") ||
          string_contains($keys, "view_new")    ||
@@ -1497,7 +1545,7 @@ sub get_button_style
         if (string_contains($keys, "restore_now2")) {
             $class = "success ";
         } elsif (string_contains($keys, "quick_restore")) {
-            $class = "info ";
+            $class = "default ";
         } elsif ($keys eq "feat_backuplog") {
             $class = "grey ";
         }
@@ -1586,6 +1634,7 @@ sub get_button_style
         $class = "success ";
         $icon  = "key";
     } elsif (string_contains($keys, "letsencrypt_title") ||
+             string_contains($keys, "cert_letsok") ||
              string_contains($keys, "ssl_copycert"))
     {
         $class = "success ";
@@ -1684,6 +1733,9 @@ sub embed_login_head
         if ($theme_night_mode_login_auto) {
             print $theme_night_mode_login_auto;
         }
+        embed_css_inline();
+        embed_rounded_menu();
+        embed_rounded_slider();
     }
 
     embed_background();

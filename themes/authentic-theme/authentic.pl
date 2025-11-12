@@ -193,8 +193,8 @@ sub theme_footer
             $url = "$theme_webprefix$url" if ($url =~ /^\//);
             $url = $url . "/"             if ($url =~ /[^\/]$/ && $url !~ /.cgi/ && $url !~ /javascript:history/ && $url !~ /[&?]/);
             print
-"&nbsp;<a style='margin-bottom: 15px;' class='btn btn-primary btn-lg page_footer_submit' href=\"$url\"><i class='fa fa-fw fa-arrow-left'>&nbsp;</i> <span>",
-              &text('main_return', $_[$i + 1]), "</span></a>\n";
+"<a style='margin-bottom: 10px;' class='btn btn-primary btn-lg page_footer_submit' href=\"$url\"><i class='fa fa-fw fa-arrow-left'>&nbsp;</i> <span>",
+              &text('main_return', $_[$i + 1]), "</span></a>&nbsp;&nbsp;\n";
         }
     }
 
@@ -551,7 +551,7 @@ sub theme_ui_help
 {
     my ($title) = @_;
     return (
-"<sup class=\"ui_help\" data-container=\"body\" data-placement=\"auto right\" data-title=\"$title\" data-toggle=\"tooltip\"><i class=\"fa fa-0_80x fa-question-circle cursor-help\"></i></sup>"
+"<sup class=\"ui_help\" data-container=\"body\" data-placement=\"auto right\" data-title=\"$title\" data-toggle=\"tooltip\"><i class=\"fa fa-question-circle cursor-help ui_help_icon\"></i></sup>"
     );
 }
 
@@ -698,7 +698,7 @@ sub theme_ui_textbox
     my $ids;
     $ids = "_i_$main::ui_textbox_tcalled" if ($main::ui_textbox_tcalled++);
     $class = $class ? " $class" : "";
-    my $style = ' style="display: inline; width: auto; max-width: 100%; height: 28px; padding-top: 0; padding-bottom: 2px; vertical-align: middle"';
+    my $style = ' style="display: inline; width: auto; max-width: 100%; height: 28px; padding-top: 0; padding-bottom: 1px; vertical-align: middle"';
     $style = '' if ($nostyle);
     $rv .=
 "<input$style class=\"form-control ui_textbox$class\" type=\"text\" ";
@@ -719,7 +719,7 @@ sub theme_ui_password
     my ($name, $value, $size, $dis, $max, $tags, $class, $nostyle) = @_;
     $class = $class ? " $class" : "";
     my $style = ' style="display: inline; width: auto; height: 28px;'.
-                ' padding-top: 0; padding-bottom: 2px; vertical-align:middle"';
+                ' padding-top: 0; padding-bottom: 1px; vertical-align:middle"';
     $style = '' if ($nostyle);
     my $rv .=
 "<input$style class=\"form-control ui_password$class\" type=\"password\" ";
@@ -1219,7 +1219,7 @@ sub theme_ui_opt_textbox
       "\n";
     my $min_width = $size ? '' : ' min-width: 15%;';
     $rv .=
-"<span><input class='ui_opt_textbox form-control' style='display: inline; width: auto; height: 28px; padding-top: 0; padding-bottom: 2px;$min_width' type='$type' name=\""
+"<span><input class='ui_opt_textbox form-control' style='display: inline; width: auto; height: 28px; padding-top: 0; padding-bottom: 1px;$min_width' type='$type' name=\""
       . &quote_escape($name)
       . "\" " . "size=$size value=\"" .
       &quote_escape($value) . "\"" . ($dis ? " disabled=true" : "") . ($max ? " maxlength=$max" : "") .
@@ -1308,6 +1308,7 @@ sub theme_ui_hidden_table_start
     my $defclass =
       $status ? 'opener_shown' :
       'opener_hidden';
+    my $trigger_class = $status == 1 ? 'opener_container_opened' : 'opener_container_closed';
     my $text =
       defined($tconfig{'cs_text'}) ? $tconfig{'cs_text'} :
       defined($gconfig{'cs_text'}) ? $gconfig{'cs_text'} :
@@ -1319,7 +1320,7 @@ sub theme_ui_hidden_table_start
         $rv .= "<tr" . ($tb ? " " . $tb : "") . "><td>";
         if (defined($heading)) {
             $rv .=
-"<a tabindex='-1' class='opener_trigger' href=\"javascript:hidden_opener('$divid', '$openerid')\" id='$openerid'></a> <a class='opener_trigger' href=\"javascript:hidden_opener('$divid', '$openerid')\">$heading</a></td>";
+"<a tabindex='-1' class='opener_trigger $trigger_class' href=\"javascript:hidden_opener('$divid', '$openerid')\" id='$openerid'></a> <a class='opener_trigger' href=\"javascript:hidden_opener('$divid', '$openerid')\">$heading</a></td>";
         }
         if (defined($rightheading)) {
             $rv .= "<td align=right>$rightheading</td>";
@@ -1329,7 +1330,7 @@ sub theme_ui_hidden_table_start
     }
     $rv .=
       "<tr" . ($cb ? " " . $cb : "") .
-      "><td class='opener_container' colspan=$colspan><div class='$defclass' id='$divid'><table width=100%>\n";
+      "><td class='opener_container panel-table-body' colspan=$colspan><div class='$defclass' id='$divid'><table width=100%>\n";
     $main::ui_table_cols        = $cols || 4;
     $main::ui_table_pos         = 0;
     $main::ui_table_default_tds = $tds;
