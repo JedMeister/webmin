@@ -1,7 +1,7 @@
 name=Heartbeat
 desc=Heartbeat Monitor
 category=cluster
-depends=init 2.520
+depends=init 2.600
 os_support=*-linux freebsd
 longdesc=Configure the Heartbeat package for automatic server failover in a cluster.
-version=2.520
+version=2.600

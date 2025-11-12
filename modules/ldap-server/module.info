@@ -1,6 +1,6 @@
 desc=LDAP Server
 longdesc=Manage the OpenLDAP server and objects in its database
 category=servers
-depends=ldap-client 2.520
+depends=ldap-client 2.600
 perldepends=Net::LDAP
-version=2.520
+version=2.600
