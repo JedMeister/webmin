@@ -26,8 +26,8 @@ $file = $files[0] if (!$file);
 ui_print_header(undef, $theme_text{'settings_right_theme_extensions_title'}, undef, undef, undef, 1);
 print '' . theme_text('settings_right_extensions_title') . '
             <p></p>';
-print "<form action=\"settings-editor_read.cgi\" method=\"get\" class=\"margined-bottom-3\">\n";
-print '<div class="pull-right" style="margin-top: 15px; margin-right: 24px;"><span class="badge label-default">'
+print "<form action=\"settings-editor_read.cgi\" method=\"get\" class=\"margined-bottom-5\">\n";
+print '<div class="pull-right settings-editor-read-badge"><span class="badge label-default">'
   .
   ( $file =~ /.css/    ? $theme_text{'theme_fileformat_css'} :
       $file =~ /.json/ ? $theme_text{'theme_fileformat_json'} :

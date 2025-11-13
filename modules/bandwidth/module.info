@@ -1,6 +1,6 @@
 desc=Bandwidth Monitoring
-depends=net cron 2.520
+depends=net cron 2.600
 category=net
 longdesc=View reports on bandwidth usage by host, port, protocol and time on a Linux system.
 os_support=!windows
-version=2.520
+version=2.600

@@ -764,12 +764,13 @@ and store it in the global %in hash. The optional parameters are :
 
 =item array-mode - If set to 1, values in %in are arrays. If set to 0, multiple values are joined with \0. If set to 2, only the first value is used.
 
-=item direct-write - If allowed write file directly to disk temp given directory
+=item direct-dir - If given write file directly to disk temp given directory
 
 =cut
 sub ReadParseMime
 {
-my ($max, $cbfunc, $cbargs, $arrays, $tmp) = @_;
+my ($max, $cbfunc, $cbargs, $arrays, $direct_dir) = @_;
+$cbargs ||= [ ];
 my ($boundary, $line, $name, $got, $file, $count_lines, $max_lines);
 my $err = &text('readparse_max', $max);
 $ENV{'CONTENT_TYPE'} =~ /boundary=(.*)$/ || &error($text{'readparse_enc'});
@@ -777,6 +778,7 @@ if ($ENV{'CONTENT_LENGTH'} && $max && $ENV{'CONTENT_LENGTH'} > $max) {
 	&error($err);
 	}
 &$cbfunc(0, $ENV{'CONTENT_LENGTH'}, $file, @$cbargs) if ($cbfunc);
+$got = 0;
 $boundary = $1;
 $count_lines = 0;
 $max_lines = 1000;
@@ -785,10 +787,12 @@ while(1) {
 	$name = "";
 	# Read section headers
 	my $lastheader;
+	my %header;
 	while(1) {
 		$line = <STDIN>;
 		$got += length($line);
-		&$cbfunc($got, $ENV{'CONTENT_LENGTH'}, @$cbargs) if ($cbfunc);
+		&$cbfunc($got, $ENV{'CONTENT_LENGTH'}, $file, @$cbargs)
+			if ($cbfunc);
 		if ($max && $got > $max) {
 			&error($err)
 			}
@@ -797,15 +801,16 @@ while(1) {
 		if ($line =~ /^(\S+):\s*(.*)$/) {
 			$header{$lastheader = lc($1)} = $2;
 			}
-		elsif ($line =~ /^\s+(.*)$/) {
-			$header{$lastheader} .= $line;
+		elsif ($lastheader && $line =~ /^\s+(.*)$/) {
+			$header{$lastheader} .= $1;
 			}
 		}
 
 	# Parse out filename and type
-	my $file;
-	if ($header{'content-disposition'} =~ /^form-data(.*)/) {
-		$rest = $1;
+	$file = undef;
+	if ($header{'content-disposition'} &&
+	    $header{'content-disposition'} =~ /^form-data(.*)/) {
+		my $rest = $1;
 		while ($rest =~ /([a-zA-Z]*)=\"([^\"]*)\"(.*)/) {
 			if ($1 eq 'name') {
 				$name = $2;
@@ -836,7 +841,8 @@ while(1) {
 		}
 
 	# Save content type separately
-	if ($header{'content-type'} =~ /^([^\s;]+)/) {
+	if ($header{'content-type'} &&
+	    $header{'content-type'} =~ /^([^\s;]+)/) {
 		my $foo = $name."_content_type";
 		if ($arrays == 1) {
 			$in{$foo} ||= [];
@@ -855,10 +861,13 @@ while(1) {
 	my $data = "";
 	my $dfile;
 	my $fh;
-	if ($tmp && $file) {
+	if ($direct_dir && $file) {
 		# Save directly to disk
-		my $uppath = "$tmp/$file";
-		open($fh, ">", $uppath) || next;
+		$file =~ s/.*[\\\/]//;
+		$file || &error($text{'readparse_nofile'});
+		my $uppath = "$direct_dir/$file";
+		open($fh, ">", $uppath) ||
+			&error(&text('readparse_cannotdir', $uppath, $!));
 		# Return file name, no data
 		$dfile = $file;
 		}
@@ -882,7 +891,7 @@ while(1) {
 			close($fh) if ($fh);
 			return;
 			}
-		if (index($line, $boundary) != -1) { last; }
+		last if (index($line, $boundary) != -1);
 		if ($fh) {
 			print($fh $line);  # Write directly to file
 			}
@@ -890,6 +899,8 @@ while(1) {
 			$data .= $line; # Store in memory
 			}
 		}
+
+	# Last two bytes are newlines
 	if ($fh) {
 		seek($fh, -2, 2);
 		truncate($fh, tell($fh));
@@ -898,6 +909,8 @@ while(1) {
 	else {
 		chop($data); chop($data);
 		}
+
+	# Add value to return hash
 	if ($arrays == 1) {
 		$in{$name} ||= [];
 		push(@{$in{$name}}, $dfile || $data);
@@ -1006,7 +1019,7 @@ if ($<) {
 	$vardir = "$uinfo[7]/.tmp";
 	}
 else {
-	$vardir = $ENV{'WEBMIN_VAR'};
+	$vardir = &tempname_dir();
 	}
 if (!-d $vardir) {
 	&make_dir($vardir, 0755);
@@ -7494,7 +7507,7 @@ Use a reference for composites to avoid list flattening.
 
 =item * Log file
 
-Prints by appending to the "/var/webmin/webmin.dump" file.
+Prints by appending to the "/tmp/webmin.dump" file.
 
 =item * Header
 
@@ -7525,8 +7538,9 @@ sub var_dump
 my @args = @_;
 
 # Output target
-my $dir = $main::var_dir || $main::var_directory || '/var/webmin';
-my $file = "$dir/webmin.dump";
+my $dir = $main::var_dump_dir || $config{'var_dump_dir'} || '/tmp';
+my $filename = $> == 0 ? "webmin.dump" : "webmin-$remote_user.dump";
+my $file = "$dir/$filename";
 
 # Create directory if missing
 mkdir $dir, 0750 if (!-d $dir);

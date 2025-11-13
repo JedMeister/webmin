@@ -3,5 +3,5 @@ longdesc=Fast and light File Manager written in Perl.
 name=File Manager
 usermin=1
 desc=File Manager
-version=2.520
-depends=2.520
+version=2.600
+depends=2.600

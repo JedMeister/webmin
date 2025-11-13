@@ -6,10 +6,15 @@ require './updown-lib.pl';
 &error_setup($text{'upload_err'});
 &ReadParse(\%getin, "GET");
 $upid = $getin{'id'};
-$direct_upload = $getin{'direct'};
-my $tmp;
-$tmp = $config{'tmp_upload_dir'} || &tempname_dir() if ($direct_upload);
-&ReadParseMime($upload_max, \&read_parse_mime_callback, [ $upid ], 1, $tmp);
+
+if ($getin{'direct'}) {
+	# Create a temp directory for the uploaded files for ReadParseMime
+	$direct_dir = &transname();
+	&make_dir($direct_dir, 0711);
+	}
+
+&ReadParseMime($upload_max, \&read_parse_mime_callback, [ $upid ], 1,
+	       $direct_dir);
 foreach my $k (keys %in) {
         $in{$k} = $in{$k}->[0] if ($k !~ /^upload\d+/);
         }
@@ -32,11 +37,9 @@ if ($can_mode != 3) {
 	$can_mode == 0 || $in{'group_def'} || &in_group(\@uinfo, \@ginfo) ||
 		&error($text{'upload_egcannot'});
 	}
-else {
-	# User is fixed
-	if (&supports_users()) {
-		@uinfo = getpwnam($remote_user);
-		}
+elsif (&supports_users()) {
+	# User to upload as is set in the ACL
+	@uinfo = getpwnam($remote_user);
 	}
 for($i=0; defined($in{"upload$i"}); $i++) {
 	for(my $j=0; $j<@{$in{"upload$i"}}; $j++) {
@@ -48,6 +51,13 @@ for($i=0; defined($in{"upload$i"}); $i++) {
 $found || &error($text{'upload_enone'});
 &can_write_file($in{'dir'}) ||
 	&error(&text('upload_eaccess', "<tt>$in{'dir'}</tt>", $!));
+
+# If in direct mode, the uploaded files need to be readable by the user we're
+# going to write files as
+if ($direct_dir) {
+	&set_ownership_permissions($uinfo[2], $uinfo[3], undef,
+		$direct_dir, glob("$direct_dir/*"));
+	}
 
 # Switch to the upload user
 &switch_uid_to($uinfo[2], scalar(@ginfo) ? $ginfo[2] : $uinfo[3]);
@@ -66,10 +76,18 @@ for($i=0; defined($in{"upload$i"}); $i++) {
 		$d = $in{"upload${i}"}->[$j];
 		$f = $in{"upload${i}_filename"}->[$j];
 		next if (!$f);
+
+		# Work out the short name of the uploaded file, and 
+		# where it is stored if in direct mode
+		$f =~ /([^\\\/]+)$/;
+		my $fname = $1;
 		my $mpath;
+		if ($direct_dir) {
+			$mpath = $direct_dir."/".$fname;
+			}
+
+		# Work out were the uploaded file is being written to
 		if (-d $in{'dir'}) {
-			$f =~ /([^\\\/]+)$/;
-			$mpath = "$tmp/$1" if ($tmp);
 			$path = "$in{'dir'}/$1";
 			}
 		else {
@@ -77,23 +95,17 @@ for($i=0; defined($in{"upload$i"}); $i++) {
 			}
 		print &text('upload_saving',
 			    "<tt>".&html_escape($path)."</tt>"),"<br>\n";
-		# Move file we already have it in disk
-		if ($mpath) {
-			if (-w $in{'dir'}) {
-				&switch_uid_back();
-				if (!rename($mpath, $path)) {
-					&error(&text('upload_emove',
-						"<tt>$mpath</tt>",
-						"<tt>$path</tt>", $!));
-					}
-				chown($uinfo[2], scalar(@ginfo) ?
-						$ginfo[2] : $uinfo[3], $path);
-				&switch_uid_to($uinfo[2], scalar(@ginfo) ?
-					$ginfo[2] : $uinfo[3]);
 
-				}
+		if ($mpath) {
+			# Move file as we  already have it in disk
+			rename($mpath, $path) ||
+			  &move_source_dest($mpath, $path) ||
+			    &error(&text('upload_emove',
+				   "<tt>".&html_escape($mpath)."</tt>",
+				   "<tt>".&html_escape($path)."</tt>", $!));
 			}
 		else {
+			# Write uploaded data to the destination file
 			if (!&open_tempfile(FILE, ">$path", 1)) {
 				&error(&text('upload_eopen', "<tt>$path</tt>",
 					$!));
@@ -115,7 +127,6 @@ for($i=0; defined($in{"upload$i"}); $i++) {
 			local $qdir = quotemeta($dir);
 			local $qpath = quotemeta($path);
 			local @files;
-			&switch_uid_back();
 			if ($path =~ /\.zip$/i) {
 				# ZIP file
 				if (!&has_command("unzip")) {
@@ -197,8 +208,6 @@ for($i=0; defined($in{"upload$i"}); $i++) {
 				# Doesn't look possible
 				$err = $text{'upload_notcomp'};
 				}
-			&switch_uid_to($uinfo[2],
-				       scalar(@ginfo) ? $ginfo[2] : $uinfo[3]);
 			if (!$err) {
 				my $jn = join("<br>",
 					      map { "&nbsp;&nbsp;<tt>$_</tt>" }
