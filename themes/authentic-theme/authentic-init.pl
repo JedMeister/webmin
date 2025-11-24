@@ -332,6 +332,7 @@ sub embed_header
         embed_css_inline();
         embed_rounded_menu();
         embed_rounded_slider();
+        embed_rounded_content();
 
         embed_background();
         embed_styles();
@@ -380,6 +381,7 @@ sub embed_header
         embed_css_inline();
         embed_rounded_menu();
         embed_rounded_slider();
+        embed_rounded_content();
 
         if ((length $theme_config{'settings_navigation_color'} && $theme_config{'settings_navigation_color'} ne 'blue') ||
             theme_night_mode())
@@ -602,9 +604,15 @@ sub embed_css_unbundled
 {
     load_devel_dependencies();
     foreach my $css (@theme_bundle_css) {
-        printf " <link type='text/css' href=\"%s/unauthenticated/css/%s.src.css?%s\" rel=\"stylesheet\">\n",
+        my $ext = '.src.css';
+        if ($css =~ /\[scss\]$/) {
+            $ext = '.src.scss.css';
+            $css =~ s/\[scss\]$//;
+        }
+        printf " <link type='text/css' href=\"%s/unauthenticated/css/%s%s?%s\" rel=\"stylesheet\">\n",
                $theme_webprefix,
                $css,
+               $ext,
                theme_version('timestamped');
     }
     embed_css_fonts();
@@ -639,6 +647,8 @@ sub embed_css_inline
 <style>
     :root {
     --left-menu-width: $theme_config{'settings_menu_width'}px;
+    --gap-content-top: $theme_config{'settings_content_margin_multiplier_top'};
+    --gap-content-side: $theme_config{'settings_content_margin_multiplier_side'};
     }
 </style>
 EOF
@@ -665,6 +675,18 @@ sub embed_rounded_slider
                   (theme_debug_mode() ? 'src.scss' : 'min') . '.css?' .
                   theme_version('timestamped') .
                   '" rel="stylesheet" data-rounded-slider>' . "\n";
+    }
+}
+
+sub embed_rounded_content
+{
+    if ($theme_config{'settings_roundish_content'} eq 'true') {
+        print ' <link type="text/css" href="' .
+                  $theme_webprefix .
+                  '/unauthenticated/css/rounded-content.' .
+                  (theme_debug_mode() ? 'src.scss' : 'min') . '.css?' .
+                  theme_version('timestamped') .
+                  '" rel="stylesheet" data-rounded-content>' . "\n";
     }
 }
 
@@ -1736,6 +1758,7 @@ sub embed_login_head
         embed_css_inline();
         embed_rounded_menu();
         embed_rounded_slider();
+        embed_rounded_content();
     }
 
     embed_background();
@@ -1766,7 +1789,7 @@ sub theme_night_mode_login_auto
 {
     if ($theme_config{'settings_global_palette_unauthenticated'} eq 'auto') {
         my $detect;
-        $detect = '<script type="application/javascript">console.log("Auto dark mode");';
+        $detect = '<script type="application/javascript">';
         $detect .= 'if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {';
         $detect .= 'document.querySelector("html").setAttribute("data-bgs", "nightRider")';
         $detect .= '} else {';
@@ -1934,7 +1957,11 @@ sub header_html_data
       ($skip ? '' : ' data-theme="' . (theme_night_mode() ? 'gunmetal' : $theme_config{'settings_navigation_color'}) . '"')
       . '' .
       ($skip ? '' : ' data-default-theme="' . $theme_config{'settings_navigation_color'} . '"') .
-      ' data-editor-palette="' .
+      ' data-content-top-margin="' .
+      $theme_config{'settings_content_margin_multiplier_top'} .
+      '" data-content-side-margin="' .
+      $theme_config{'settings_content_margin_multiplier_side'} .
+      '" data-editor-palette="' .
       $theme_config{'settings_cm_editor_palette'} .
       '" data-static-theme-version="' .
       theme_version('version') .

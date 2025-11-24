@@ -12,11 +12,16 @@ var
     settings_cm_editor_palette = 'monokai',
     settings_theme_config_admins_only_privileged = false,
 
-    // Dashboard and real-time monitoring
-    settings_sysinfo_easypie_charts = true,
-    settings_sysinfo_max_servers = 10,
-    settings_sysinfo_real_time_status = 1,
-
+    // Content page options
+    settings_roundish_content = false,
+    settings_content_margin_multiplier_top = 0,
+    settings_content_margin_multiplier_side = 1,
+    settings_right_table_force_single_column = false,
+    settings_right_table_links_type = 2,
+    settings_right_table_grayscaled_icons = true,
+    settings_right_table_animate_icons = false,
+    settings_right_table_links_sorted = false,
+    
     // Navigation menu options defaults
     settings_roundish_menu = true,
     settings_navigation_color = 'blue',
@@ -45,7 +50,7 @@ var
     settings_leftmenu_user_html = '',
     settings_leftmenu_user_html_privileged = false,
     settings_leftmenu_custom_links = '',
-
+    
     // Side slider options
     settings_roundish_slider = true,
     settings_side_slider_enabled = true,
@@ -54,12 +59,12 @@ var
     settings_side_slider_notifications_enabled = true,
     settings_side_slider_favorites_enabled = true,
 
-    // Table options
-    settings_right_table_force_single_column = false,
-    settings_right_table_links_type = 2,
-    settings_right_table_grayscaled_icons = true,
-    settings_right_table_animate_icons = false,
-    settings_right_table_links_sorted = false,
+    // Dashboard and real-time monitoring
+    settings_sysinfo_easypie_charts = true,
+    settings_sysinfo_easypie_size = 0,
+    settings_sysinfo_easypie_width = 4,
+    settings_sysinfo_max_servers = 10,
+    settings_sysinfo_real_time_status = 1,
 
     // Hotkeys options defaults
     settings_hotkeys_active = true,
@@ -150,10 +155,11 @@ var
     settings_right_page_hide_persistent_vscroll = true,
     settings_hide_top_loader = false,
     settings_theme_make_date = true,
-    settings_enable_container_offset = true,
+    settings_enable_container_offset = false,
     settings_contrast_mode = false,
     settings_sysinfo_remember_accordions = true,
     settings_sysinfo_expand_all_accordions = false,
+    settings_sysinfo_easypie_scale_length = 8,
     settings_mail_ui = true,
     settings_mailbox_slash_delimiter = true,
     settings_leftmenu_vm_cm_dropdown_icons = true,
