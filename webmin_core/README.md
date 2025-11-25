@@ -19,11 +19,11 @@
 **Webmin** is a web-based system administration tool for Unix-like servers, and services with about _1,000,000_ yearly installations worldwide. Using it, it is possible to configure operating system internals, such as users, disk quotas, services or configuration files, as well as modify, and control open-source apps, such as BIND DNS Server, Apache HTTP Server, PHP, MySQL, and many more.
 
 <p align="center">
-  <a href="https://webmin.com/screenshots/#gh-light-mode-only" target="_blank">
-    <img width="1440" alt="Dashboard screenshot" src="https://user-images.githubusercontent.com/4426533/218264253-c08fb45a-8d75-44bf-93b3-37a2ecae3d20.png">
+  <a href="https://webmin.com/screenshots/?theme=light#gh-light-mode-only" target="_blank">
+    <img width="1440" alt="Dashboard screenshot" src="https://github.com/user-attachments/assets/a01d0a78-4130-4665-9284-814955ae1c97">
   </a>
-  <a href="https://webmin.com/screenshots/#gh-dark-mode-only" target="_blank">
-    <img width="1440" alt="Dashboard screenshot" src="https://user-images.githubusercontent.com/4426533/218265232-31140aa6-ada1-4019-bd75-04240aeabc83.png">
+  <a href="https://webmin.com/screenshots/?theme=dark#gh-dark-mode-only" target="_blank">
+    <img width="1440" alt="Dashboard screenshot" src="https://github.com/user-attachments/assets/da4b90a0-c002-4e10-8b34-5acb251bbec9">
   </a>
 </p>
 

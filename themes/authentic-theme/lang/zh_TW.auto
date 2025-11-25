@@ -170,6 +170,7 @@ settings_right_cloudmin_default=Cloudmin的默認頁面
 
 settings_right_clear_local_cache=清除緩存
 settings_side_slider_fixed=始終保持可見
+settings_side_slider_fixed_description=此選項可將側邊滑桿固定在螢幕右側，使其始終可見。它需要至少 1366 像素的螢幕寬度才能正常運作。
 
 settings_roundish_slider=圓角滑塊
 settings_side_slider_enabled=啟用滑桿
@@ -1436,3 +1437,18 @@ session_pwdsucc=密碼更改成功您現在可以使用新密碼登入！
 # 24.10
 settings_palette_auto=自動調色板
 settings_palette_auto_description=根據作業系統或瀏覽器偏好自動選擇調色板
+
+#26.10
+settings_right_content_options=內容頁
+settings_roundish_content=圓角內容頁
+settings_content_margin_multiplier=內容頁邊距大小
+settings_content_margin_multiplier_side=邊
+settings_content_margin_multiplier_top=頂部
+settings_sysinfo_easypie_size=圓餅圖大小
+settings_sysinfo_easypie_size_smaller=超小號
+settings_sysinfo_easypie_size_small=小的
+settings_sysinfo_easypie_size_medium=中等的
+settings_sysinfo_easypie_size_auto=自動的
+settings_sysinfo_easypie_size_large=大的
+settings_sysinfo_easypie_size_extra_large=特大號
+settings_sysinfo_easypie_width=圓餅圖線寬

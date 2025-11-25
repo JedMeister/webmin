@@ -29,6 +29,8 @@ settings_hotkey_reload=刷新当前页面
 
 settings_roundish_menu=菜单边角圆润
 
+settings_side_slider_fixed_description=此选项可将侧边滑块固定在屏幕右侧，使其始终可见。它需要至少 1366 像素的屏幕宽度才能正常工作。
+
 settings_roundish_slider=圆角滑块
 
 # 17.40
@@ -682,3 +684,18 @@ session_pwdsucc=密码更改成功您现在可以使用新密码登录！
 # 24.10
 settings_palette_auto=自动调色板
 settings_palette_auto_description=根据操作系统或浏览器偏好自动选择调色板
+
+#26.10
+settings_right_content_options=内容页
+settings_roundish_content=圆角内容页
+settings_content_margin_multiplier=内容页边距大小
+settings_content_margin_multiplier_side=边
+settings_content_margin_multiplier_top=顶部
+settings_sysinfo_easypie_size=饼图大小
+settings_sysinfo_easypie_size_smaller=超小号
+settings_sysinfo_easypie_size_small=小的
+settings_sysinfo_easypie_size_medium=中等的
+settings_sysinfo_easypie_size_auto=自动的
+settings_sysinfo_easypie_size_large=大的
+settings_sysinfo_easypie_size_extra_large=特大号
+settings_sysinfo_easypie_width=饼图线宽

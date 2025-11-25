@@ -1,6 +1,6 @@
 desc=Backup Configuration Files
 category=webmin
 longdesc=Perform manual or scheduled backups and restores of configuration files managed by Webmin modules.
-depends=cron mailboxes 2.600
+depends=cron mailboxes 2.610
 readonly=1
-version=2.600
+version=2.610

@@ -42,12 +42,15 @@ sub theme_settings_raw
 
         [
          {  'id'    => 's2',
-            'title' => &theme_text('settings_right_sysinfo_page_options'),
+            'title' => &theme_text('settings_right_content_options'),
             'data'  => [
-                       'settings_sysinfo_easypie_charts',
-                       'settings_sysinfo_hidden_panels_user',
-                       'settings_sysinfo_max_servers',
-                       'settings_sysinfo_real_time_status',
+                       'settings_roundish_content',
+                       'settings_content_margin_multiplier',
+                       'settings_right_table_force_single_column',
+                       'settings_right_table_links_type',
+                       'settings_right_table_links_sorted',
+                       'settings_right_table_animate_icons',
+                       'settings_right_table_grayscaled_icons',
             ] }
         ],
 
@@ -101,13 +104,14 @@ sub theme_settings_raw
 
         [
          {  'id'    => 's5',
-            'title' => &theme_text('settings_right_table_options'),
+            'title' => &theme_text('settings_right_sysinfo_page_options'),
             'data'  => [
-                       'settings_right_table_force_single_column',
-                       'settings_right_table_links_type',
-                       'settings_right_table_links_sorted',
-                       'settings_right_table_animate_icons',
-                       'settings_right_table_grayscaled_icons',
+                       'settings_sysinfo_easypie_charts',
+                       'settings_sysinfo_easypie_size',
+                       'settings_sysinfo_easypie_width',
+                       'settings_sysinfo_hidden_panels_user',
+                       'settings_sysinfo_real_time_status',
+                       'settings_sysinfo_max_servers',
             ] }
         ],
 
@@ -152,6 +156,7 @@ sub theme_settings_raw
                        'settings_hotkey_custom_9_user',
             ] }
         ]);
+
     # Add upgrade settings if available
     if ($theme_config{'settings_upgrade_allowed'} eq 'true') {
         push(@theme_settings_raw,
@@ -255,6 +260,8 @@ sub theme_settings_filter
              'settings_hotkey_slider',
              'settings_global_palette_unauthenticated',
              'settings_sysinfo_easypie_charts',
+             'settings_sysinfo_easypie_size',
+             'settings_sysinfo_easypie_width',
              'settings_sysinfo_max_servers',
              'settings_sysinfo_real_time_status',
              'settings_sysinfo_real_time_stored_duration',
@@ -308,6 +315,25 @@ sub theme_settings_format
 
     if ($v eq 'true' || $v eq 'false') {
         $v = ui_yesno_radio($k, $v, 'true', 'false');
+
+    } elsif ($k eq 'settings_content_margin_multiplier') {
+        my %val = (
+          '_side' => $theme_config{"${k}_side"},
+          '_top'  => $theme_config{"${k}_top"},
+        );
+        my $common = {
+          class => 'form-control ui_textbox', type  => 'range',
+          max   => 8, step  => 0.5,
+        };        
+        $v = join "\n", map {
+          ui_tag('input', undef, {
+            %$common,
+            name         => "${k}$_",
+            value        => $val{$_},
+            min          => ($_ eq '_side' ? 1 : 0.5),
+            'data-label' => $theme_text{"${k}$_"},
+          });
+        } qw(_side _top);
 
     } elsif ($k =~ /settings_sysinfo_hidden_panels_user/ &&
              $theme_config{'settings_sysinfo_hidden_panels_user'})
@@ -556,6 +582,27 @@ sub theme_settings_format
         ]);
     } elsif ($k eq 'settings_document_title') {
         $v = settings_get_select_document_title($v, $k);
+    } elsif ($k eq 'settings_sysinfo_easypie_size') {
+        my $opts = [
+            [(146, $theme_text{'settings_sysinfo_easypie_size_smaller'})],
+            [(176, $theme_text{'settings_sysinfo_easypie_size_small'})],
+            [(186, $theme_text{'settings_sysinfo_easypie_size_medium'})],
+            [(0,   $theme_text{'settings_sysinfo_easypie_size_auto'})],
+            [(196, $theme_text{'settings_sysinfo_easypie_size_large'})],
+            [(206, $theme_text{'settings_sysinfo_easypie_size_extra_large'})]
+        ];
+        $v = &ui_select($k, $v, $opts);
+    } elsif ($k eq 'settings_sysinfo_easypie_width') {
+        my $common = {
+          class => 'form-control ui_textbox', type  => 'range',
+          max   => 7, step  => 1,
+        };        
+        $v = ui_tag('input', undef, {
+            %$common,
+            name         => $k,
+            value        => $v,
+            min          => 1,
+          });
     } elsif ($k eq 'settings_sysinfo_real_time_status') {
         my $realtime = 'settings_sysinfo_real_time_';
         my $realtime_pref = "${realtime}status_";
