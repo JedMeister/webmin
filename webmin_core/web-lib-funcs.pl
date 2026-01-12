@@ -7214,8 +7214,9 @@ if ($gconfig{'logclear'}) {
     # check if it is time to clear the log
     my @st = stat("$webmin_logfile.time");
     my $write_logtime = 0;
+    my $log_time = $gconfig{'logtime'} || 168;
     if (@st) {
-        if ($st[9]+$gconfig{'logtime'}*60*60 < time()) {
+        if ($st[9]+$log_time*60*60 < time()) {
             # clear logfile and all diff files
             &unlink_file("$ENV{'WEBMIN_VAR'}/diffs");
             &unlink_file("$ENV{'WEBMIN_VAR'}/files");
@@ -7778,6 +7779,7 @@ my $pid = &open_execute_command(OUT, "($realcmd) <".quotemeta($null_file), 1, $_
 my $start = time();
 my $timed_out = 0;
 my $linecount = 0;
+my $bufsize = $_[3] ? 80 : &get_buffer_size();
 while(1) {
 	my $elapsed = time() - $start;
 	last if ($elapsed > $_[1]);
@@ -7786,7 +7788,7 @@ while(1) {
 	my $sel = select($rmask, undef, undef, $_[1] - $elapsed);
 	last if (!$sel || $sel < 0);
 	my $line;
-	my $got = read(OUT, $line, 1);
+	my $got = read(OUT, $line, $bufsize);
 	last if (!$got);
 	$out .= $line;
 	$linecount += scalar(() = $out =~ /\n/g);
@@ -8605,13 +8607,13 @@ foreach my $sn (keys %remote_session) {
 	my $server = $remote_session_server{$sn};
 	&remote_rpc_call($server, { 'action' => 'quit',
 			            'session' => $remote_session{$sn} } );
-	delete($remote_session{$sn});
-	delete($remote_session_server{$sn});
 	}
+%remote_session = ( );
+%remote_session_server = ( );
 foreach my $fh (keys %fast_fh_cache) {
 	close($fh);
-	delete($fast_fh_cache{$fh});
 	}
+%fast_fh_cache = ( );
 }
 
 =head2 remote_error_setup(&function)
@@ -8810,7 +8812,7 @@ if ($serv->{'fast'} || !$sn) {
 	my $rstr = <$fh>;
 	if ($rstr eq '') {
 		return &$main::remote_error_handler(
-			"Error reading response length from fastrpc.cgi : $!")
+			"Error reading response length from fastrpc.cgi : $!");
 		}
 	my $rlen = int($rstr);
 	my ($fromstr, $got);
@@ -12626,8 +12628,7 @@ my @rv;
 my %miniserv;
 &get_miniserv_config(\%miniserv);
 if (!$miniserv{'userdb_nocache'} && $main::connect_userdb_cache{$str}) {
-	my $timeout = defined($miniserv{'userdb_cache_timeout'}) ?
-				$miniserv{'userdb_cache_timeout'} : 60;
+	my $timeout = $miniserv{'userdb_cache_timeout'} // 60;
 	@rv = @{$main::connect_userdb_cache{$str}};
 	if (time() - $main::connect_userdb_cache_time{$str} > $timeout) {
 		# Yes, but it's already timed out. Force close it, and make a new
