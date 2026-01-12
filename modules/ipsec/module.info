@@ -1,7 +1,7 @@
 name=IPsec
 desc=IPsec VPN Configuration
-depends=net syslog proc 2.610
+depends=net syslog proc 2.620
 os_support=*-linux
 category=net
 longdesc=Set up a client or server for an IPsec VPN using FreeSWAN.
-version=2.610
+version=2.620

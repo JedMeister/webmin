@@ -4,5 +4,5 @@ os_support=solaris coherent-linux redhat-linux mandrake-linux suse-linux united-
 desc=Software Packages
 longdesc=Manage software packages on your system, and install new packages.
 readonly=1
-version=2.610
-depends=2.610
+version=2.620
+depends=2.620
