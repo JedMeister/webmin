@@ -1473,6 +1473,7 @@ theme_xhred_hotkey_switch_theme=Switch theme
 # 21.20.2
 theme_xhred_filemanager_upload_status_ok=Upload successful
 theme_xhred_filemanager_upload_status_err=Upload failed:
+theme_xhred_filemanager_upload_status_unknown=Upload failed with no response from the server. This likely means the virtual server user has run out of disk quota or the system is out of space.
 theme_xhred_filemanager_download_status_err=Download failed:
 
 
@@ -1531,3 +1532,7 @@ settings_sysinfo_easypie_size_auto=Automatic
 settings_sysinfo_easypie_size_large=Large
 settings_sysinfo_easypie_size_extra_large=Extra Large
 settings_sysinfo_easypie_width=Pie charts line width
+
+
+#26.20
+theme_xhred_global_filter_and_search=Type to filter this page, or press Enter to search all pages

@@ -1,5 +1,35 @@
 ## Changelog
 
+#### Version 26.22 (January 25, 2026)
+* Fix the support for the cloned Terminal module
+* Fix error handling for file uploads when the user is out of quota or the system is out of disk space in the File Manager module
+* Fix to stop loading full file into memory for upload check to prevent memory leak on large uploads in the File Manager module
+* Fix to permanently save the state of the navigation menu and right-side slider when toggled
+
+#### Version 26.21 (January 23, 2026)
+* Add the ability to make the current page filter work with paginated search
+* Fix the `FilesMatch` block code highlighting for Apache config
+* Fix the custom hotkey to accept any valid link
+
+#### Version 26.20.2 (January 6, 2026)
+* Fix to correctly print the main header
+* Fix buttons margin when alert box is present in the form
+
+#### Version 26.20.1 (January 1, 2026)
+* Add support for multiple scrollable tabs in the File Manager
+* Fix displaying of the right-side toolbar in File Manager when using Safari
+* Fix issues with path popover in File Manager [#1726](https://github.com/webmin/authentic-theme/issues/1726)
+* Fix progressive page post complete adjustment
+* Fix to remove extra unnecessary horizontal rule from the error page
+* Fix to correctly handle the favorites button on unsupported, progressive pages
+* Fix to correctly display links in a colored text box
+* Fix to place theme config popup within container viewport
+* Fix background color for selected element on dropdowns in dark mode
+* Fix to print menu separator when no virtual servers are added yet in Virtualmin
+* Fix edit script page table bottom margin in Virtualmin
+* Fix exported file name in data tables
+* Fix bugs in white palette
+
 #### Version 26.20 (November 23, 2025)
 * Add a range slider to adjust content page margins more precisely
 * Add an option to enable rounded corners for content page
