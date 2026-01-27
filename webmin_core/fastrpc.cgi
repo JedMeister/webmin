@@ -10,6 +10,10 @@ use POSIX;
 use Socket;
 $force_lang = $default_lang;
 &init_config();
+
+my $DEFAULT_RPC_TIMEOUT = 60;
+my $DEFAULT_RPC_IDLE_FACTOR = 6;
+
 print "Content-type: text/plain\n\n";
 
 # Can this user make remote calls?
@@ -34,7 +38,7 @@ if ($aerr) {
 	exit;
 	}
 if (open(RANDOM, "/dev/urandom")) {
-	local $tmpsid;
+	my $tmpsid;
 	read(RANDOM, $tmpsid, 16);
 	$sid = lc(unpack('h*', $tmpsid));
 	close RANDOM;
@@ -44,6 +48,16 @@ else {
 	}
 $version = &get_webmin_version();
 print "1 $port $sid $version\n";
+
+# Timeout
+my $rpc_idle_factor = $gconfig{'rpc_idle_factor'} || $DEFAULT_RPC_IDLE_FACTOR;
+if ($rpc_idle_factor !~ /^\d+$/ || $rpc_idle_factor < 1) {
+	$rpc_idle_factor = $DEFAULT_RPC_IDLE_FACTOR;
+	}
+my $config_rpc_timeout = $gconfig{'rpc_timeout'} || $DEFAULT_RPC_TIMEOUT;
+if ($config_rpc_timeout !~ /^\d+$/ || $config_rpc_timeout < 1) {
+	$config_rpc_timeout = $DEFAULT_RPC_TIMEOUT;
+	}
 
 # Fork and listen for calls ..
 $pid = fork();
@@ -57,14 +71,14 @@ untie(*STDIN);
 untie(*STDOUT);
 
 # Accept the TCP connection
-local $rmask;
+my $rmask;
 vec($rmask, fileno(MAIN), 1) = 1;
 if ($use_ipv6) {
 	vec($rmask, fileno(MAIN6), 1) = 1;
 	}
-$sel = select($rmask, undef, undef, 60);
+$sel = select($rmask, undef, undef, $config_rpc_timeout);
 if ($sel <= 0) {
-	print STDERR "fastrpc: accept timed out\n"
+	print STDERR "fastrpc[$$]: accept timed out\n"
 		if ($gconfig{'rpcdebug'});
 	exit;
 	}
@@ -78,63 +92,83 @@ else {
 	die "No connection on any socket!";
 	}
 die "accept failed : $!" if (!$acptaddr);
-$oldsel = select(SOCK);
+my $oldsel = select(SOCK);
 $| = 1;
 select($oldsel);
 
-$rcount = 0;
+my $rcount = 0;
+my %xfer_kids;
 while(1) {
+	# Clean up the list of waiting sub-processes
+	foreach my $p (keys %xfer_kids) {
+		my $waited_pid = waitpid($p, POSIX::WNOHANG());
+		delete($xfer_kids{$p}) if ($waited_pid > 0 || $waited_pid == -1);
+		}
+
 	# Wait for the request. Wait longer if this isn't the first one
-	local $rmask;
+	my $rmask;
 	vec($rmask, fileno(SOCK), 1) = 1;
-	local $sel = select($rmask, undef, undef, $rcount ? 360 : 60);
+	my $timeout = $rcount
+			? $config_rpc_timeout * $rpc_idle_factor
+			: $config_rpc_timeout;
+	my $sel = select($rmask, undef, undef, $timeout);
 	if ($sel <= 0) {
-		print STDERR "fastrpc: session timed out\n"
+		# Don't kill the control session while a tcpwrite/tcpread is
+		# running
+		my $nk = scalar(keys %xfer_kids);
+		if ($nk) {
+			print STDERR "fastrpc[$$]: idle timeout, but $nk ".
+				     "transfer(s) active: ".
+				     join(",", sort keys %xfer_kids)."\n"
+				if ($gconfig{'rpcdebug'});
+			next;
+			}
+		print STDERR "fastrpc[$$]: session timed out\n"
 			if ($gconfig{'rpcdebug'});
 		last;
 		}
 
-	local $line = <SOCK>;
+	my $line = <SOCK>;
 	last if (!$line);
-	local ($len, $auth) = split(/\s+/, $line);
+	my ($len, $auth) = split(/\s+/, $line);
 	die "Invalid session ID" if ($auth ne $sid);
-	local $rawarg;
+	my $rawarg;
 	while(length($rawarg) < $len) {
-		local $got;
-		local $rv = read(SOCK, $got, $len - length($rawarg));
+		my $got;
+		my $rv = read(SOCK, $got, $len - length($rawarg));
 		exit if ($rv <= 0);
 		$rawarg .= $got;
 		}
-	print STDERR "fastrpc: raw $rawarg\n" if ($gconfig{'rpcdebug'});
-	local $dumper = substr($rawarg, 0, 5) eq '$VAR1' ? 1 : 0;
-	local $arg = &unserialise_variable($rawarg);
+	print STDERR "fastrpc[$$]: raw $rawarg\n" if ($gconfig{'rpcdebug'});
+	my $dumper = substr($rawarg, 0, 5) eq '$VAR1' ? 1 : 0;
+	my $arg = &unserialise_variable($rawarg);
 
 	# Process it
-	local $rv;
+	my $rv;
 	if ($arg->{'action'} eq 'ping') {
 		# Just respond with an OK
-		print STDERR "fastrpc: ping\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: ping\n" if ($gconfig{'rpcdebug'});
 		$rv = { 'status' => 1 };
 		}
 	elsif ($arg->{'action'} eq 'check') {
 		# Check if some module is supported
-		print STDERR "fastrpc: check $arg->{'module'}\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: check $arg->{'module'}\n" if ($gconfig{'rpcdebug'});
 		$rv = { 'status' => 1,
 			'rv' => &foreign_check($arg->{'module'}, undef, undef,
 					       $arg->{'api'}) };
 		}
 	elsif ($arg->{'action'} eq 'config') {
 		# Get the config for some module
-		print STDERR "fastrpc: config $arg->{'module'}\n" if ($gconfig{'rpcdebug'});
-		local %config = &foreign_config($arg->{'module'});
+		print STDERR "fastrpc[$$]: config $arg->{'module'}\n" if ($gconfig{'rpcdebug'});
+		my %config = &foreign_config($arg->{'module'});
 		$rv = { 'status' => 1, 'rv' => \%config };
 		}
 	elsif ($arg->{'action'} eq 'write') {
-		# Transfer data to a local temp file
-		local $file = $arg->{'file'} ? $arg->{'file'} :
+		# Transfer data to a my temp file
+		my $file = $arg->{'file'} ? $arg->{'file'} :
 			      $arg->{'name'} ? &tempname($arg->{'name'}) :
 					       &tempname();
-		print STDERR "fastrpc: write $file\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: write $file\n" if ($gconfig{'rpcdebug'});
 		open(FILE, ">$file");
 		binmode(FILE);
 		print FILE $arg->{'data'};
@@ -142,24 +176,32 @@ while(1) {
 		$rv = { 'status' => 1, 'rv' => $file };
 		}
 	elsif ($arg->{'action'} eq 'tcpwrite') {
-		# Transfer data to a local temp file over TCP connection
-		local $file = $arg->{'file'} ? $arg->{'file'} :
+		# Transfer data to a my temp file over TCP connection
+		my $file = $arg->{'file'} ? $arg->{'file'} :
 			      $arg->{'name'} ? &tempname($arg->{'name'}) :
 					       &tempname();
-		print STDERR "fastrpc: tcpwrite $file\n" if ($gconfig{'rpcdebug'});
-		local $tsock = time().$$;
-		local $tsock6 = $use_ipv6 ? time().$$."v6" : undef;
-		local $tport = $port + 1;
+		print STDERR "fastrpc[$$]: tcpwrite $file\n" if ($gconfig{'rpcdebug'});
+		my $tsock = time().$$;
+		my $tsock6 = $use_ipv6 ? time().$$."v6" : undef;
+		my $tport = $port + 1;
 		&allocate_socket($tsock, $tsock6, \$tport);
-		if (!fork()) {
+		my $cpid = fork();
+		if (!defined($cpid)) {
+			$rv = { 'status' => 0, 'rv' => "fork() failed : $!" };
+			}
+		elsif ($cpid == 0) {
+			close(SOCK);
+			close(MAIN);
+			close(MAIN6) if ($use_ipv6);
 			# Accept connection in separate process
-			print STDERR "fastrpc: tcpwrite $file port $tport\n" if ($gconfig{'rpcdebug'});
-			local $rmask;
+			print STDERR "fastrpc[$$]: tcpwrite $file port $tport\n"
+				if ($gconfig{'rpcdebug'});
+			my $rmask;
 			vec($rmask, fileno($tsock), 1) = 1;
 			if ($use_ipv6) {
 				vec($rmask, fileno($tsock6), 1) = 1;
 				}
-			local $sel = select($rmask, undef, undef, 30);
+			my $sel = select($rmask, undef, undef, 30);
 			exit if ($sel <= 0);
 			if (vec($rmask, fileno($tsock), 1)) {
 				accept(TRANS, $tsock) || exit;
@@ -167,40 +209,44 @@ while(1) {
 			elsif ($use_ipv6 && vec($rmask, fileno($tsock6), 1)) {
 				accept(TRANS, $tsock6) || exit;
 				}
-			print STDERR "fastrpc: tcpwrite $file accepted\n" if ($gconfig{'rpcdebug'});
-			local $buf;
-			local $err;
+			print STDERR "fastrpc[$$]: tcpwrite $file accepted\n" if ($gconfig{'rpcdebug'});
+			my $buf;
+			my $err;
 			if (open(FILE, ">$file")) {
 				binmode(FILE);
-				print STDERR "fastrpc: tcpwrite $file writing\n" if ($gconfig{'rpcdebug'});
+				print STDERR "fastrpc[$$]: tcpwrite $file writing\n" if ($gconfig{'rpcdebug'});
 				my $bs = &get_buffer_size();
 				while(read(TRANS, $buf, $bs) > 0) {
-					local $ok = (print FILE $buf);
+					my $ok = (print FILE $buf);
 					if (!$ok) {
 						$err = "Write to $file failed : $!";
 						last;
 						}
 					}
 				close(FILE);
-				print STDERR "fastrpc: tcpwrite $file written\n" if ($gconfig{'rpcdebug'});
+				print STDERR "fastrpc[$$]: tcpwrite $file written\n" if ($gconfig{'rpcdebug'});
 				}
 			else {
-				print STDERR "fastrpc: tcpwrite $file open failed $!\n" if ($gconfig{'rpcdebug'});
+				print STDERR "fastrpc[$$]: tcpwrite $file open failed $!\n" if ($gconfig{'rpcdebug'});
 				$err = "Failed to open $file : $!";
 				}
 			print TRANS $err ? "$err\n" : "OK\n";
 			close(TRANS);
 			exit;
 			}
+		else {
+			$xfer_kids{$cpid} = 1;
+			print STDERR "fastrpc[$$]: tcpwrite $file started\n"
+				if ($gconfig{'rpcdebug'});
+			$rv = { 'status' => 1, 'rv' => [ $file, $tport ] };
+			}
 		close($tsock);
-		close($tsock6);
-		print STDERR "fastrpc: tcpwrite $file done\n" if ($gconfig{'rpcdebug'});
-		$rv = { 'status' => 1, 'rv' => [ $file, $tport ] };
+		close($tsock6) if ($use_ipv6);
 		}
 	elsif ($arg->{'action'} eq 'read') {
 		# Transfer data from a file
-		print STDERR "fastrpc: read $arg->{'file'}\n" if ($gconfig{'rpcdebug'});
-		local ($data, $got);
+		print STDERR "fastrpc[$$]: read $arg->{'file'}\n" if ($gconfig{'rpcdebug'});
+		my ($data, $got);
 		open(FILE, "<$arg->{'file'}");
 		binmode(FILE);
 		my $bs = &get_buffer_size();
@@ -212,7 +258,7 @@ while(1) {
 		}
 	elsif ($arg->{'action'} eq 'tcpread') {
 		# Transfer data from a file over TCP connection
-		print STDERR "fastrpc: tcpread $arg->{'file'}\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: tcpread $arg->{'file'}\n" if ($gconfig{'rpcdebug'});
 		if (-d $arg->{'file'}) {
 			$rv = { 'status' => 1, 'rv' => [ undef, "$arg->{'file'} is a directory" ] };
 			}
@@ -221,18 +267,25 @@ while(1) {
 			}
 		else {
 			binmode(FILE);
-			local $tsock = time().$$;
-			local $tsock6 = $use_ipv6 ? time().$$."v6" : undef;
-			local $tport = $port + 1;
+			my $tsock = time().$$;
+			my $tsock6 = $use_ipv6 ? time().$$."v6" : undef;
+			my $tport = $port + 1;
 			&allocate_socket($tsock, $tsock6, \$tport);
-			if (!fork()) {
+			my $cpid = fork();
+			if (!defined($cpid)) {
+				$rv = { 'status' => 0, 'rv' => "fork() failed : $!" };
+				}
+			elsif ($cpid == 0) {
+				close(SOCK);
+				close(MAIN);
+				close(MAIN6) if ($use_ipv6);
 				# Accept connection in separate process
-				local $rmask;
+				my $rmask;
 				vec($rmask, fileno($tsock), 1) = 1;
 				if ($use_ipv6) {
 					vec($rmask, fileno($tsock6), 1) = 1;
 					}
-				local $sel = select($rmask, undef, undef, 30);
+				my $sel = select($rmask, undef, undef, 30);
 				exit if ($sel <= 0);
 				if (vec($rmask, fileno($tsock), 1)) {
 					accept(TRANS, $tsock) || exit;
@@ -240,7 +293,7 @@ while(1) {
 				elsif (vec($rmask, fileno($tsock6), 1)) {
 					accept(TRANS, $tsock6) || exit;
 					}
-				local $buf;
+				my $buf;
 				while(read(FILE, $buf, 1024) > 0) {
 					print TRANS $buf;
 					}
@@ -248,33 +301,39 @@ while(1) {
 				close(TRANS);
 				exit;
 				}
+			else {
+				$xfer_kids{$cpid} = 1;
+				print STDERR "fastrpc[$$]: tcpread $arg->{'file'} ".
+					     "started\n"
+					     	if ($gconfig{'rpcdebug'});
+				$rv = { 'status' => 1,
+					'rv' => [ $arg->{'file'}, $tport ] };
+				}
 			close(FILE);
 			close($tsock);
-			close($tsock6);
-			print STDERR "fastrpc: tcpread $arg->{'file'} done\n" if ($gconfig{'rpcdebug'});
-			$rv = { 'status' => 1, 'rv' => [ $arg->{'file'}, $tport ] };
+			close($tsock6) if ($use_ipv6);
 			}
 		}
 	elsif ($arg->{'action'} eq 'require') {
 		# require a library
-		print STDERR "fastrpc: require $arg->{'module'}/$arg->{'file'}\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: require $arg->{'module'}/$arg->{'file'}\n" if ($gconfig{'rpcdebug'});
 		eval {
 			&foreign_require($arg->{'module'},
 					 $arg->{'file'});
 			};
 		if ($@) {
-			print STDERR "fastrpc: require error $@\n" if ($gconfig{'rpcdebug'});
+			print STDERR "fastrpc[$$]: require error $@\n" if ($gconfig{'rpcdebug'});
 			$rv = { 'status' => 0, 'rv' => $@ };
 			}
 		else {
-			print STDERR "fastrpc: require done\n" if ($gconfig{'rpcdebug'});
+			print STDERR "fastrpc[$$]: require done\n" if ($gconfig{'rpcdebug'});
 			$rv = { 'status' => 1 };
 			}
 		}
 	elsif ($arg->{'action'} eq 'call') {
 		# execute a function
-		print STDERR "fastrpc: call $arg->{'module'}::$arg->{'func'}(",join(",", @{$arg->{'args'}}),")\n" if ($gconfig{'rpcdebug'});
-		local @rv;
+		print STDERR "fastrpc[$$]: call $arg->{'module'}::$arg->{'func'}(",join(",", @{$arg->{'args'}}),")\n" if ($gconfig{'rpcdebug'});
+		my @rv;
 		eval {
 			local $main::error_must_die = 1;
 			@rv = &foreign_call($arg->{'module'},
@@ -282,7 +341,7 @@ while(1) {
 					    @{$arg->{'args'}});
 			};
 		if ($@) {
-			print STDERR "fastrpc: call error $@\n" if ($gconfig{'rpcdebug'});
+			print STDERR "fastrpc[$$]: call error $@\n" if ($gconfig{'rpcdebug'});
 			$rv = { 'status' => 0, 'rv' => $@ };
 			}
 		elsif (@rv == 1) {
@@ -291,14 +350,14 @@ while(1) {
 		else {
 			$rv = { 'status' => 1, 'arv' => \@rv };
 			}
-		print STDERR "fastrpc: call $arg->{'module'}::$arg->{'func'} done = ",join(",", @rv),"\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: call $arg->{'module'}::$arg->{'func'} done = ",join(",", @rv),"\n" if ($gconfig{'rpcdebug'});
 		}
 	elsif ($arg->{'action'} eq 'eval') {
 		# eval some perl code
-		print STDERR "fastrpc: eval $arg->{'module'} $arg->{'code'}\n" if ($gconfig{'rpcdebug'});
-		local $erv;
+		print STDERR "fastrpc[$$]: eval $arg->{'module'} $arg->{'code'}\n" if ($gconfig{'rpcdebug'});
+		my $erv;
 		if ($arg->{'module'}) {
-			local $pkg = $arg->{'module'};
+			my $pkg = $arg->{'module'};
 			$pkg =~ s/[^A-Za-z0-9]/_/g;
 			$erv = eval "package $pkg;\n".
 				   $arg->{'code'}."\n";
@@ -306,7 +365,7 @@ while(1) {
 		else {
 			$erv = eval $arg->{'code'};
 			}
-		print STDERR "fastrpc: eval $arg->{'module'} $arg->{'code'} done = $rv error = $@\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: eval $arg->{'module'} $arg->{'code'} done = $rv error = $@\n" if ($gconfig{'rpcdebug'});
 		if ($@) {
 			$rv = { 'status' => 0, 'rv' => $@ };
 			}
@@ -315,11 +374,11 @@ while(1) {
 			}
 		}
 	elsif ($arg->{'action'} eq 'quit') {
-		print STDERR "fastrpc: quit\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: quit\n" if ($gconfig{'rpcdebug'});
 		$rv = { 'status' => 1 };
 		}
 	else {
-		print STDERR "fastrpc: unknown $arg->{'action'}\n" if ($gconfig{'rpcdebug'});
+		print STDERR "fastrpc[$$]: unknown $arg->{'action'}\n" if ($gconfig{'rpcdebug'});
 		$rv = { 'status' => 0 };
 		}
 	$rawrv = &serialise_variable($rv, $dumper);
@@ -334,8 +393,8 @@ while(1) {
 # allocate_socket(handle, ipv6-handle, &port)
 sub allocate_socket
 {
-local ($fh, $fh6, $port) = @_;
-local $proto = getprotobyname('tcp');
+my ($fh, $fh6, $port) = @_;
+my $proto = getprotobyname('tcp');
 if (!socket($fh, PF_INET, SOCK_STREAM, $proto)) {
 	return "socket failed : $!";
 	}

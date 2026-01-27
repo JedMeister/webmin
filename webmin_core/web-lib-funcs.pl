@@ -388,6 +388,58 @@ $str =~ s/["'<>&\\]/sprintf('\x%02x', ord $&)/ge;
 return $str;
 }
 
+=head2 tempname_dir_sys()
+
+Returns a shared base directory for system-wide temporary files. This directory
+does not depend on the current user. The directory is chosen once per process
+and verified by creating a temporary probe file.
+
+The result is cached for the lifetime of the current Perl process.
+
+=cut
+sub tempname_dir_sys
+{
+# Cache per module
+state %base;
+my @can_dirs;
+
+# Return cached value if already determined
+my $mod = &get_module_name() || '';
+return $base{$mod} if (defined $base{$mod});
+
+# Check configured system temp dirs (module override first)
+my $modk = $mod ? "tempdir_sys_$mod" : undef;
+push(@can_dirs, $gconfig{$modk}) if ($modk && $gconfig{$modk});
+push(@can_dirs, $gconfig{'tempdir_sys'}) if ($gconfig{'tempdir_sys'});
+
+# Common fallbacks
+push(@can_dirs, "/dev/shm", "/tmp", "/var/tmp", "/usr/tmp");
+
+# Remove duplicate entries, which can happen when both configured
+# dirs are set to the same path, or when a configured path matches one of
+# the built-in defaults
+@can_dirs = &unique(@can_dirs);
+
+# Test each candidate in turn
+for my $dir (@can_dirs) {
+	next if (!-d $dir);
+	next if (!-w $dir);
+
+	# Confirm we can actually create a file
+	my $tmp = "$dir/.webmin_${$}_".int(rand(1e16));
+	if (open(my $fh, ">", $tmp)) {
+		close($fh);
+		unlink($tmp);
+		$base{$mod} = $dir;	# Success, cache and return
+		return $base{$mod};
+		}
+	}
+
+my $keys = ($modk && $gconfig{$modk}) ? "$modk or tempdir_sys" : "tempdir_sys";
+&error("No usable system temp directory found. Set $keys to a writable ".
+       "directory in $config_directory/config and try again.");
+}
+
 =head2 tempname_dir()
 
 Returns the base directory under which temp files can be created.
@@ -1019,10 +1071,10 @@ if ($<) {
 	$vardir = "$uinfo[7]/.tmp";
 	}
 else {
-	$vardir = &tempname_dir();
+	$vardir = "$ENV{'WEBMIN_VAR'}/uploads";
 	}
 if (!-d $vardir) {
-	&make_dir($vardir, 0755);
+	&make_dir($vardir, 0750);
 	}
 
 # Remove any upload.* files more than 1 hour old
@@ -7214,8 +7266,9 @@ if ($gconfig{'logclear'}) {
     # check if it is time to clear the log
     my @st = stat("$webmin_logfile.time");
     my $write_logtime = 0;
+    my $log_time = $gconfig{'logtime'} || 168;
     if (@st) {
-        if ($st[9]+$gconfig{'logtime'}*60*60 < time()) {
+        if ($st[9]+$log_time*60*60 < time()) {
             # clear logfile and all diff files
             &unlink_file("$ENV{'WEBMIN_VAR'}/diffs");
             &unlink_file("$ENV{'WEBMIN_VAR'}/files");
@@ -7778,6 +7831,7 @@ my $pid = &open_execute_command(OUT, "($realcmd) <".quotemeta($null_file), 1, $_
 my $start = time();
 my $timed_out = 0;
 my $linecount = 0;
+my $bufsize = $_[3] ? 80 : &get_buffer_size();
 while(1) {
 	my $elapsed = time() - $start;
 	last if ($elapsed > $_[1]);
@@ -7786,7 +7840,7 @@ while(1) {
 	my $sel = select($rmask, undef, undef, $_[1] - $elapsed);
 	last if (!$sel || $sel < 0);
 	my $line;
-	my $got = read(OUT, $line, 1);
+	my $got = read(OUT, $line, $bufsize);
 	last if (!$got);
 	$out .= $line;
 	$linecount += scalar(() = $out =~ /\n/g);
@@ -8540,8 +8594,19 @@ else {
 	open(FILE, "<".$localfile) ||
 		return &$main::remote_error_handler("Failed to open $localfile : $!");
 	my $bs = &get_buffer_size();
+	my $last_ping = time();
+	my $ping_every = int(($gconfig{'rpc_timeout'} || 60) / 2);
+	$ping_every = 30 if ($ping_every < 30);
 	while(read(FILE, $got, $bs) > 0) {
 		print TWRITE $got;
+		if (time() - $last_ping >= $ping_every) {
+			eval {
+				local $main::remote_error_handler =
+					sub { return undef; };
+				&remote_rpc_call($host, { 'action' => 'ping' });
+				};
+			$last_ping = time();
+			}
 		}
 	close(FILE);
 	shutdown(TWRITE, 1);
@@ -8585,8 +8650,19 @@ else {
 	open(FILE, ">$localfile") ||
 		return &$main::remote_error_handler("Failed to open $localfile : $!");
 	my $bs = &get_buffer_size();
+	my $last_ping = time();
+	my $ping_every = int(($gconfig{'rpc_timeout'} || 60) / 2);
+	$ping_every = 30 if ($ping_every < 30);
 	while(read(TREAD, $got, $bs) > 0) {
 		print FILE $got;
+		if (time() - $last_ping >= $ping_every) {
+			eval {
+				local $main::remote_error_handler =
+					sub { return undef; };
+				&remote_rpc_call($host, { 'action' => 'ping' });
+				};
+			$last_ping = time();
+			}
 		}
 	close(FILE);
 	close(TREAD);
@@ -8605,13 +8681,13 @@ foreach my $sn (keys %remote_session) {
 	my $server = $remote_session_server{$sn};
 	&remote_rpc_call($server, { 'action' => 'quit',
 			            'session' => $remote_session{$sn} } );
-	delete($remote_session{$sn});
-	delete($remote_session_server{$sn});
 	}
+%remote_session = ( );
+%remote_session_server = ( );
 foreach my $fh (keys %fast_fh_cache) {
 	close($fh);
-	delete($fast_fh_cache{$fh});
 	}
+%fast_fh_cache = ( );
 }
 
 =head2 remote_error_setup(&function)
@@ -8705,7 +8781,9 @@ if ($serv->{'fast'} || !$sn) {
 		my $line = &read_http_connection($con);
 		$line =~ tr/\r\n//d;
 		if ($line =~ /^HTTP\/1\..\s+40[13]\s+/) {
-			return &$main::remote_error_handler("Login to RPC server as $user rejected");
+			my $username = $user;
+			$username ||= 'unknown';
+			return &$main::remote_error_handler("Login to RPC server as user \"$username\" rejected");
 			}
 		$line || return &$main::remote_error_handler("HTTP error : No status line");
 		$line =~ /^HTTP\/1\..\s+200\s+/ ||
@@ -8810,7 +8888,7 @@ if ($serv->{'fast'} || !$sn) {
 	my $rstr = <$fh>;
 	if ($rstr eq '') {
 		return &$main::remote_error_handler(
-			"Error reading response length from fastrpc.cgi : $!")
+			"Error reading response length from fastrpc.cgi : $!");
 		}
 	my $rlen = int($rstr);
 	my ($fromstr, $got);
@@ -10843,7 +10921,7 @@ else {
 		&webmin_debug_log($1 eq ">" ? "WRITE" :
 			  $1 eq ">>" ? "APPEND" : "READ", "nul") if ($db);
 		}
-	elsif ($file =~ /^(>|>>)(\/dev\/.*)/ || lc($file) eq "nul") {
+	elsif ($file =~ /^(>|>>)(\/dev\/(?!shm\/).*)/ || lc($file) eq "nul") {
 		# Writes to /dev/null or TTYs don't need to be handled
 		&webmin_debug_log($1 eq ">" ? "WRITE" : "APPEND", $2) if ($db);
 		return open($fh, "<".$file);
@@ -12626,8 +12704,7 @@ my @rv;
 my %miniserv;
 &get_miniserv_config(\%miniserv);
 if (!$miniserv{'userdb_nocache'} && $main::connect_userdb_cache{$str}) {
-	my $timeout = defined($miniserv{'userdb_cache_timeout'}) ?
-				$miniserv{'userdb_cache_timeout'} : 60;
+	my $timeout = $miniserv{'userdb_cache_timeout'} // 60;
 	@rv = @{$main::connect_userdb_cache{$str}};
 	if (time() - $main::connect_userdb_cache_time{$str} > $timeout) {
 		# Yes, but it's already timed out. Force close it, and make a new
@@ -13994,8 +14071,7 @@ return $dir;
 }
 
 # allocate_miniserv_websocket([module], [base-remote-user])
-# Allocate a new websocket and
-# stores it miniserv.conf file
+# Allocate a new websocket and stores it miniserv.conf file
 sub allocate_miniserv_websocket
 {
 my ($module, $buser) = @_;
