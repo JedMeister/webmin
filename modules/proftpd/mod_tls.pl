@@ -2,11 +2,13 @@
 sub mod_tls_directives
 {
 local $rv = [
-	[ 'TLSEngine', 0, 7, 'virtual global', 1.27, 10 ],
-	[ 'TLSRequired', 0, 7, 'virtual global', 1.27, 1 ],
-	[ 'TLSRSACertificateFile', 0, 7, 'virtual global', 1.27, 8 ],
-	[ 'TLSRSACertificateKeyFile', 0, 7, 'virtual global', 1.27, 7 ],
-	[ 'TLSCACertificateFile', 0, 7, 'virtual global', 1.27, 6 ],
+	[ 'TLSEngine', 0, 7, 'virtual root', 1.27, 10 ],
+	[ 'TLSRequired', 0, 7, 'virtual root', 1.27, 9 ],
+	[ 'TLSRSACertificateFile', 0, 7, 'virtual root', 1.27, 8 ],
+	[ 'TLSRSACertificateKeyFile', 0, 7, 'virtual root', 1.27, 7 ],
+	[ 'TLSCACertificateFile', 0, 7, 'virtual root', 1.27, 5 ],
+	[ 'TLSECCertificateFile', 0, 7, 'virtual root', 1.35, 4 ],
+	[ 'TLSECCertificateKeyFile', 0, 7, 'virtual root', 1.35, 3 ],
 	];
 return &make_directives($rv, $_[0], "mod_tls");
 }
@@ -40,7 +42,7 @@ return &parse_choice("TLSRequired", "");
 
 sub edit_TLSRSACertificateFile
 {
-my $n = $_[0]->{'name'};
+my $n = $_[1]->{'name'};
 return (2, $text{'mod_tls_file'},
 	&ui_opt_textbox($n, $_[0]->{'value'}, 60, $text{'mod_tls_none'})." ".
 	&file_chooser_button($n));
@@ -59,7 +61,7 @@ else {
 
 sub edit_TLSRSACertificateKeyFile
 {
-my $n = $_[0]->{'name'};
+my $n = $_[1]->{'name'};
 return (2, $text{'mod_tls_key'},
 	&ui_opt_textbox($n, $_[0]->{'value'}, 60, $text{'mod_tls_none'})." ".
 	&file_chooser_button($n));
@@ -78,7 +80,7 @@ else {
 
 sub edit_TLSCACertificateFile
 {
-my $n = $_[0]->{'name'};
+my $n = $_[1]->{'name'};
 return (2, $text{'mod_tls_ca'},
 	&ui_opt_textbox($n, $_[0]->{'value'}, 60, $text{'mod_tls_none'})." ".
 	&file_chooser_button($n));
@@ -91,6 +93,44 @@ if ($in{$n."_def"}) {
 	}
 else {
 	-r $in{$n} || &error($text{'mod_tls_eca'});
+	return ( [ $in{$n} ] );
+	}
+}
+
+sub edit_TLSECCertificateFile
+{
+my $n = $_[1]->{'name'};
+return (2, $text{'mod_tls_ecfile'},
+	&ui_opt_textbox($n, $_[0]->{'value'}, 60, $text{'mod_tls_none'})." ".
+	&file_chooser_button($n));
+}
+sub save_TLSECCertificateFile
+{
+my $n = $_[0]->{'name'};
+if ($in{$n."_def"}) {
+	return ( [ ] );
+	}
+else {
+	-r $in{$n} || &error($text{'mod_tls_eecfile'});
+	return ( [ $in{$n} ] );
+	}
+}
+
+sub edit_TLSECCertificateKeyFile
+{
+my $n = $_[1]->{'name'};
+return (2, $text{'mod_tls_eckey'},
+	&ui_opt_textbox($n, $_[0]->{'value'}, 60, $text{'mod_tls_none'})." ".
+	&file_chooser_button($n));
+}
+sub save_TLSECCertificateKeyFile
+{
+my $n = $_[0]->{'name'};
+if ($in{$n."_def"}) {
+	return ( [ ] );
+	}
+else {
+	-r $in{$n} || &error($text{'mod_tls_eeckey'});
 	return ( [ $in{$n} ] );
 	}
 }
