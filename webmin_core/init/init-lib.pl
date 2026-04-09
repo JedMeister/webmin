@@ -1175,6 +1175,47 @@ elsif ($init_mode eq "launchd") {
 	}
 }
 
+=head2 activate_action(name)
+
+Unmasks some action, enables it at boot time, and starts it if not running.
+Returns 1 if the action exists, 0 if not.
+
+=cut
+sub activate_action
+{
+my ($name) = @_;
+my $st = &action_status($name);
+return 0 if (!$st);
+&unmask_action($name);
+&enable_at_boot($name);
+my $running = &status_action($name);
+if ($running != 1) {  # unknown or stopped
+	&start_action($name);
+	}
+return 1;
+}
+
+=head2 deactivate_action(name, [mask])
+
+Stops some action if currently running, disables it at boot time, and masks it
+on systemd systems. The optional mask flag can be set to 0 to skip masking.
+Returns 1 if the action exists, 0 if not.
+
+=cut
+sub deactivate_action
+{
+my ($name, $mask) = @_;
+my $st = &action_status($name);
+return 0 if (!$st);
+my $running = &status_action($name);
+if ($running != 0) {  # unknown or running
+	&stop_action($name);
+	}
+&disable_at_boot($name);
+&mask_action($name) if (!defined($mask) || $mask);
+return 1;
+}
+
 =head2 delete_at_boot(name)
 
 Delete the init script, RC script or whatever with some name
@@ -2816,14 +2857,15 @@ foreach my $a (@rv) {
 return @rv;
 }
 
-=head2 create_launchd_agent(name, start-script, boot-flag)
+=head2 create_launchd_agent(name, start-script, boot-flag, [load-now])
 
 Creates a new my launchd agent
 
 =cut
 sub create_launchd_agent
 {
-my ($name, $start, $boot) = @_;
+my ($name, $start, $boot, $load) = @_;
+$load = 1 if (!defined($load));
 my $file = "/Library/LaunchDaemons/".$name.".plist";
 my $plist = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".
 	    "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n".
@@ -2846,8 +2888,10 @@ $plist .= "</plist>\n";
 &open_lock_tempfile(PLIST, ">$file");
 &print_tempfile(PLIST, $plist);
 &close_tempfile(PLIST);
-my $out = &backquote_logged("launchctl load ".quotemeta($file)." 2>&1");
-&error("Failed to load plist : $out") if ($?);
+if ($load) {
+	my $out = &backquote_logged("launchctl load ".quotemeta($file)." 2>&1");
+	&error("Failed to load plist : $out") if ($?);
+	}
 }
 
 =head2 delete_launchd_agent(name)

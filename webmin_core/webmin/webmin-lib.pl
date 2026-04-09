@@ -1628,7 +1628,10 @@ my @io = &check_ip6address($_[0]) ? split(/:/, $_[0])
 # Resolve to hostname and check that it forward resolves again
 my $hn = &to_hostname($_[0]);
 if (&check_ip6address($_[0])) {
-	$hn = "" if (&to_ip6address($hn) ne $_[0]);
+	my $ip6 = &to_ip6address($hn);
+	$hn = "" if (!$ip6 ||
+		     &canonicalize_ip6($ip6) ne
+		     	&canonicalize_ip6($_[0]));
 	}
 else {
 	$hn = "" if (&to_ipaddress($hn) ne $_[0]);
@@ -1703,7 +1706,15 @@ for(my $i=1; $i<@_; $i++) {
 		}
 	elsif ($_[$i] !~ /^[0-9\.]+$/) {
 		# Compare with hostname
-		$mismatch = 1 if ($_[0] ne &to_ipaddress($_[$i]));
+		if (&check_ip6address($_[0])) {
+			my $ip6 = &to_ip6address($_[$i]);
+			$mismatch = 1 if (!$ip6 ||
+					  &canonicalize_ip6($ip6) ne
+					  	&canonicalize_ip6($_[0]));
+			}
+		else {
+			$mismatch = 1 if ($_[0] ne &to_ipaddress($_[$i]));
+			}
 		}
 	return 1 if (!$mismatch);
 	}
@@ -1943,12 +1954,14 @@ Output a page with header and footer about Webmin needing to restart.
 =cut
 sub show_restart_page
 {
+my ($title, $msg) = @_;
 if (!$gconfig{'restart_async'}) {
 	&restart_miniserv();
-	&redirect("");
+	my $msg_redir = "";
+	$msg_redir = "?title=".&urlize($title)."&message=".&urlize($msg) if $msg;
+	&redirect($msg_redir);
 	return;
 	}
-my ($title, $msg) = @_;
 $title ||= $text{'restart_title'};
 $msg ||= $text{'restart_done'};
 &ui_print_header(undef, $title, "");
