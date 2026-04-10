@@ -1,5 +1,5 @@
 desc=PHP Configuration
 longdesc=Configure PHP settings for the whole system or individual Apache virtual servers.
 os_support=!windows
-depends=time 2.621
-version=2.621
+depends=time 2.630
+version=2.630

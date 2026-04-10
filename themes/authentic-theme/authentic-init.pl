@@ -1113,6 +1113,24 @@ sub get_button_style
         $class = "warning ";
     } elsif (string_contains($keys, "feat_backup_refresh")) {
         $icon  = "refresh-mdi fa-1_25x margined-left--3";
+    } elsif (string_contains($keys, "edit_bottom_logs")) {
+        $class = "info ";
+        $icon  = "file-text";
+    } elsif (string_contains($keys, "edit_bottom_terminal")) {
+        $class = "grey ";
+        $icon  = " fa2 fa2-terminal fa-1_05x";
+    } elsif (string_contains($keys, "edit_bottom_stop") ||
+             string_contains($keys, "create_health_on_failure_stop")) {
+        $class = "danger ";
+        $icon  = "stop";
+    } elsif (string_contains($keys, "list_images_button")) {
+        $class = "info ";
+        $icon  = "download-cloud fa-1_10x margined-left--2";
+    } elsif (string_contains($keys, "index_install_pod") ||
+             string_contains($keys, "index_install_new") ||
+             string_contains($keys, "pods_submit")) {
+        $class = "success ";
+        $icon  = "plus-circle";
     } elsif (string_ends_with($keys, "_gnupg") ||
              string_contains($keys, 'secret_setup') ||
              string_contains($keys, 'ssl_gen')      ||
@@ -1467,6 +1485,8 @@ sub get_button_style
     {
         $class = "danger ";
         $icon  = "stop";
+        $class = "warning "
+            if (string_contains($keys, "index_stop_sel"));
     } elsif (string_contains($keys, "ok_ok")) {
         $icon  = "check-square-o";
         $class = "success ";
@@ -1512,6 +1532,9 @@ sub get_button_style
         $icon  = "pencil-square-o";
     } elsif (string_contains($keys, "clone")) {
         $icon = "clone";
+        if (string_contains($keys, "pods_clone_button")) {
+            $class = "success ";
+        }
     } elsif (string_contains($keys, "index_tmpls")) {
         $icon = "table-edit fa-1_25x";
     } elsif (string_contains($keys, "index_sched") ||
@@ -1552,6 +1575,7 @@ sub get_button_style
           !string_contains($keys, "index_madd") &&
           !string_contains($keys, "index_zoneadd")) ||
          string_contains($keys, "create") ||
+         string_contains($keys, "pods_ptitle") ||
          string_contains($keys, "index_crnow") ||
          string_contains($keys, "view_new")    ||
          string_contains($keys, "mass_ok")     ||

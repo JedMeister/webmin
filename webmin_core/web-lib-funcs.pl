@@ -376,6 +376,33 @@ $tmp =~ s/\'/&#39;/g if (!$only || $only eq "'");
 return $tmp;
 }
 
+=head2 quote_literal_escape(string, [quote-char])
+
+Escapes a string for safe inclusion in a Perl string literal. By default,
+escapes for single-quoted strings. If quote-char is C<">, escapes for
+double-quoted strings too.
+
+=cut
+sub quote_literal_escape
+{
+my ($str, $quote) = @_;
+return '' if (!defined($str));
+$quote ||= "'";
+
+# Backslashes are escape leaders in both literal types
+$str =~ s/\\/\\\\/g;
+if ($quote eq '"') {
+	# Double-quoted Perl strings also interpolate sigils
+	$str =~ s/"/\\"/g;
+	$str =~ s/\$/\\\$/g;
+	$str =~ s/\@/\\\@/g;
+	}
+else {
+	$str =~ s/'/\\'/g;
+	}
+return $str;
+}
+
 =head2 quote_javascript(string)
 
 Quote all characters that are unsafe for inclusion in javascript strings in HTML
@@ -415,9 +442,9 @@ push(@can_dirs, $gconfig{'tempdir_sys'}) if ($gconfig{'tempdir_sys'});
 # Common fallbacks
 push(@can_dirs, "/dev/shm", "/tmp", "/var/tmp", "/usr/tmp");
 
-# Remove duplicate entries, which can happen when both configured
-# dirs are set to the same path, or when a configured path matches one of
-# the built-in defaults
+# Remove duplicate entries, which can happen when both configured dirs are set
+# to the same path, or when a configured path matches one of the built-in
+# defaults
 @can_dirs = &unique(@can_dirs);
 
 # Test each candidate in turn
@@ -440,6 +467,17 @@ my $keys = ($modk && $gconfig{$modk}) ? "$modk or tempdir_sys" : "tempdir_sys";
        "directory in $config_directory/config and try again.");
 }
 
+=head2 default_webmin_temp_dir()
+
+Returns the built-in Webmin temporary directory path used when no tempdir
+configuration or environment override is set.
+
+=cut
+sub default_webmin_temp_dir
+{
+return -d "c:/temp" ? "c:/temp" : "/tmp/.webmin";
+}
+
 =head2 tempname_dir()
 
 Returns the base directory under which temp files can be created.
@@ -452,7 +490,7 @@ my $tmp_base = $gconfig{'tempdir_'.&get_module_name()} ?
 		  $gconfig{'tempdir'} ? $gconfig{'tempdir'} :
 		  $ENV{'TEMP'} && $ENV{'TEMP'} ne "/tmp" ? $ENV{'TEMP'} :
 		  $ENV{'TMP'} && $ENV{'TMP'} ne "/tmp" ? $ENV{'TMP'} :
-		  -d "c:/temp" ? "c:/temp" : "/tmp/.webmin";
+		  &default_webmin_temp_dir();
 my $tmp_dir;
 if (@remote_user_info && -d $remote_user_info[7] &&
     -w $remote_user_info[7] && !$gconfig{'nohometemp'}) {
@@ -478,9 +516,9 @@ return $tmp_dir;
 
 =head2 tempname([filename])
 
-Returns a mostly random temporary file name, typically under the /tmp/.webmin
-directory. If filename is given, this will be the base name used. Otherwise
-a unique name is selected randomly.
+Returns a mostly random temporary file name, typically under Webmin's default
+temp directory. If filename is given, this will be the base name used.
+Otherwise a unique name is selected randomly.
 
 =cut
 sub tempname
@@ -688,7 +726,35 @@ return 0 if ($empty > 1 && !($_[0] =~ /^::/ && $empty == 2));
 return 1;
 }
 
+=head2 is_non_public_ipaddress(ip)
 
+Returns 1 if an IP is non-public (private, local, link-local, reserved,
+multicast), otherwise 0.
+
+=cut
+sub is_non_public_ipaddress
+{
+my ($ip) = @_;
+if (&check_ipaddress($ip)) {
+	my @o = split(/\./, $ip);
+	return 1 if ($o[0] == 0 || $o[0] == 10 || $o[0] == 127);
+	return 1 if ($o[0] == 169 && $o[1] == 254);
+	return 1 if ($o[0] == 172 && $o[1] >= 16 && $o[1] <= 31);
+	return 1 if ($o[0] == 192 && $o[1] == 168);
+	return 1 if ($o[0] == 100 && $o[1] >= 64 && $o[1] <= 127);
+	return 1 if ($o[0] >= 224);
+	}
+elsif (&check_ip6address($ip)) {
+	my $l = lc($ip);
+	return 1 if ($l eq "::1" || $l eq "::");
+	return 1 if ($l =~ /^fe[89ab]/);
+	return 1 if ($l =~ /^f[cd]/);
+	if ($l =~ /^::ffff:(\d+\.\d+\.\d+\.\d+)$/) {
+		return &is_non_public_ipaddress($1);
+		}
+	}
+return 0;
+}
 
 =head2 generate_icon(image, title, link, [href], [width], [height], [before-title], [after-title])
 
@@ -4175,23 +4241,20 @@ help page. The parameters are :
 
 =item height - Height of the help popup window. Defaults to 400 pixels.
 
-=item tmpl - Hash ref of template variables to substitute in the help page.
-
 The actual help pages are in each module's help sub-directory, in files with
 .html extensions.
 
 =cut
 sub hlink
 {
-my ($txt, $page, $mod, $width, $height, $tmpl) = @_;
+my ($txt, $page, $mod, $width, $height) = @_;
 $mod ||= &get_module_name();
 if (defined(&theme_hlink)) {
 	return &theme_hlink(@_);
 	}
 $width ||= $tconfig{'help_width'} || $gconfig{'help_width'} || 600;
 $height ||= $tconfig{'help_height'} || $gconfig{'help_height'} || 400;
-my $params = $tmpl ? "?".join("&", map { "tmpl_".&urlize($_)."=".&urlize($tmpl->{$_}) } keys %$tmpl) : "";
-return "<a onClick='window.open(\"@{[&get_webprefix()]}/help.cgi/$mod/$page$params\", \"help\", \"toolbar=no,menubar=no,scrollbars=yes,width=$width,height=$height,resizable=yes\"); return false' href=\"@{[&get_webprefix()]}/help.cgi/$mod/$page$params\">$txt</a>";
+return "<a onClick='window.open(\"@{[&get_webprefix()]}/help.cgi/$mod/$page\", \"help\", \"toolbar=no,menubar=no,scrollbars=yes,width=$width,height=$height,resizable=yes\"); return false' href=\"@{[&get_webprefix()]}/help.cgi/$mod/$page\">$txt</a>";
 }
 
 =head2 user_chooser_button(field, multiple, [form])
@@ -10392,22 +10455,29 @@ $dir =~ s/\/*$/\//;
 return substr($file, 0, length($dir)) eq $dir;
 }
 
-=head2 parse_http_url(url, [basehost, baseport, basepage, basessl])
+=head2 parse_http_url(url, [basehost], [baseport], [basepage],
+                     [basessl], [baseuser], [basepass], [no-default-port])
 
 Given an absolute URL, returns the host, port, page and ssl flag components.
 If a username and password are given before the hostname, return those too.
 Relative URLs can also be parsed, if the base information is provided.
+If C<no-default-port> is set, omitted ports in absolute URLs are returned as
+undef instead of being normalized to 80/443/21.
 SSL mode 0 = HTTP, 1 = HTTPS, 2 = FTP.
 
 =cut
 sub parse_http_url
 {
-if ($_[0] =~ /^(http|https|ftp):\/\/([^\@\/]+\@)?\[([^\]]+)\](:(\d+))?(\/\S*)?$/ ||
-    $_[0] =~ /^(http|https|ftp):\/\/([^\@\/]+\@)?([^:\/]+)(:(\d+))?(\/\S*)?$/) {
+my ($url, $basehost, $baseport, $basepage, $basessl, $baseuser, $basepass,
+    $no_default_port) = @_;
+if ($url =~ /^(http|https|ftp):\/\/([^\@\/]+\@)?\[([^\]]+)\](:(\d+))?(\/\S*)?$/ ||
+    $url =~ /^(http|https|ftp):\/\/([^\@\/]+\@)?([^:\/]+)(:(\d+))?(\/\S*)?$/) {
 	# An absolute URL
 	my $ssl = $1 eq 'https' ? 1 : $1 eq 'ftp' ? 2 : 0;
+	my $port = $4 ? $5 : $no_default_port ? undef :
+		   $ssl == 1 ? 443 : $ssl == 2 ? 21 : 80;
 	my @rv = ($3,
-		  $4 ? $5 : $ssl == 1 ? 443 : $ssl == 2 ? 21 : 80,
+		  $port,
 		  $6 || "/",
 		  $ssl,
 		 );
@@ -10416,19 +10486,20 @@ if ($_[0] =~ /^(http|https|ftp):\/\/([^\@\/]+\@)?\[([^\]]+)\](:(\d+))?(\/\S*)?$/
 		}
 	return @rv;
 	}
-elsif (!$_[1]) {
+elsif (!$basehost) {
 	# Could not parse
 	return undef;
 	}
-elsif ($_[0] =~ /^\/\S*$/) {
+elsif ($url =~ /^\/\S*$/) {
 	# A relative to the server URL
-	return ($_[1], $_[2], $_[0], $_[4], $_[5], $_[6]);
+	return ($basehost, $baseport, $url, $basessl, $baseuser, $basepass);
 	}
 else {
 	# A relative to the directory URL
-	my $page = $_[3];
+	my $page = $basepage;
 	$page =~ s/[^\/]+$//;
-	return ($_[1], $_[2], $page.$_[0], $_[4], $_[5], $_[6]);
+	return ($basehost, $baseport, $page.$url, $basessl,
+		$baseuser, $basepass);
 	}
 }
 

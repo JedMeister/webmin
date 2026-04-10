@@ -430,8 +430,8 @@ if (!$main::ui_hidden_start_donejs++) {
   }
 
 # Build list of tab titles and names
-my $tabnames = "[".join(",", map { "\"".&quote_escape($_->[0])."\"" } @$tabs)."]";
-my $tabtitles = "[".join(",", map { "\"".&quote_escape($_->[1])."\"" } @$tabs)."]";
+my $tabnames = &convert_to_json([map { $_->[0] } @$tabs]);
+my $tabtitles = &convert_to_json([map { $_->[1] } @$tabs]);
 $rv .= "<script>\n";
 $rv .= "document.${name}_tabnames = $tabnames;\n";
 $rv .= "document.${name}_tabtitles = $tabtitles;\n";
@@ -649,7 +649,7 @@ if (!$main::WRAPPER_OPEN) { # If we're not already inside of a wrapper, wrap it
 	}
 $main::WRAPPER_OPEN++;
 my $colspan = 1;
-$rv .= "<details class='ui_hidden_table_start'$opened>";
+$rv .= "<details data-name='$name' class='ui_hidden_table_start'$opened $tabletags>";
 $rv .= "<summary>$header $rheader</summary>\n";
 $rv .= "<table width=100%>\n";
 $main::ui_table_cols = $cols || 4;

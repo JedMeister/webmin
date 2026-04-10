@@ -1,5 +1,13 @@
 ## Changelog
 
+#### Version 26.30 (March 24, 2026)
+* Add a new airy button style to the light palette to match the dark one  
+* Fix to optimize stats server to reduce WebSocket memory usage  
+* Fix the real-time follow indicator when viewing the journal  
+* Fix regex-based match highlighting when viewing the journal  
+* Fix mail compose panel sizing in HTML mode on low-DPR screens  
+* Fix display of the 2FA QR code in the dark palette
+
 #### Version 26.22 (January 25, 2026)
 * Fix the support for the cloned Terminal module
 * Fix error handling for file uploads when the user is out of quota or the system is out of disk space in the File Manager module

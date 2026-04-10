@@ -36,13 +36,19 @@ $log->{'cmd'} .= " --follow";
 
 # Add filter to the command if present
 my $filter = $in{'filter'} ? quotemeta($in{'filter'}) : "";
+my $use_regex = $in{'regex'} ? 1 : 0;
+my $readcmd = $log->{'cmd'};
 if ($filter) {
-	$log->{'cmd'} .= " --grep $filter";
+	my $grep_flag = $use_regex ? "-E" : "-F";
+	$readcmd .= " | grep --line-buffered -a $grep_flag -- $filter";
 	}
 
 # Open a pipe to the journalctl command
-my $pid = open(my $fh, '-|', $log->{'cmd'}) ||
-	print &text('save_ecannot4', $log->{'cmd'}).": $!";
+my $pid = open(my $fh, '-|', $readcmd);
+if (!defined($pid)) {
+	print &text('save_ecannot4', $readcmd).": $!";
+	exit;
+	}
 
 # Read and output the log
 while (my $line = <$fh>) {

@@ -55,7 +55,7 @@ if ($in{'enable'}) {
 		my $mfunc = "webmin::message_twofactor_".
 			    $miniserv{'twofactor_provider'};
 		if (defined(&{\&{$mfunc}})) {
-			print &{\&{$mfunc}}($user);
+			print "<p></p>".&{\&{$mfunc}}($user);
 			}
 
 		# Save user
@@ -65,6 +65,19 @@ if ($in{'enable'}) {
 		&webmin_log("twofactor", "user", $user->{'name'},
 			    { 'provider' => $user->{'twofactor_provider'},
 			      'id' => $user->{'twofactor_id'} });
+
+		# Show a test form only when enrolling for yourself
+		if ($user->{'name'} eq $base_remote_user) {
+			print &ui_form_start("test_twofactor.cgi");
+			print &ui_tag('p', $text{'twofactor_testdesc'});
+			print &ui_tag('p', "$text{'twofactor_testfield'}".
+					   "&nbsp;&nbsp;".
+					   &ui_textbox("test", undef, 12));
+			print &ui_hidden("user", $in{'user'}) if ($in{'user'});
+			print &ui_tag('p');
+			print &ui_form_end([ [ undef,
+				$text{'twofactor_test'} ] ]);
+			}
 		}
 
 	&ui_print_footer("", $text{'index_return'});

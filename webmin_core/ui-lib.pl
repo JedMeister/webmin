@@ -823,7 +823,7 @@ return "<input class='ui_textbox$cls' type='text' ".
        "name=\"".&html_escape($name)."\" ".
        "id=\"".&html_escape($name)."\" ".
        "value=\"".&html_escape($value)."\" ".
-       "size=$size".($dis ? " disabled='true'" : "").
+       "size='$size'".($dis ? " disabled='true'" : "").
        ($max ? " maxlength='$max'" : "").
        ($tags ? " ".$tags : "").">";
 }
@@ -2114,8 +2114,8 @@ if (!$main::ui_hidden_start_donejs++) {
 	}
 
 # Build list of tab titles and names
-my $tabnames = "[".join(",", map { "\"".&quote_escape($_->[0])."\"" } @$tabs)."]";
-my $tabtitles = "[".join(",", map { "\"".&quote_escape($_->[1])."\"" } @$tabs)."]";
+my $tabnames = &convert_to_json([map { $_->[0] } @$tabs]);
+my $tabtitles = &convert_to_json([map { $_->[1] } @$tabs]);
 $rv .= "<script type='text/javascript'>\n";
 $rv .= "document.${name}_tabnames = $tabnames;\n";
 $rv .= "document.${name}_tabtitles = $tabtitles;\n";
@@ -3355,8 +3355,9 @@ return &theme_ui_note(@_) if (defined(&theme_ui_note));
 my ($text, $whitespace) = @_;
 $whitespace //= 2;
 my $whitespace_str = "&nbsp;" x $whitespace;
-return "<font style='font-size:92%;opacity:0.66'>${whitespace_str}ⓘ&nbsp;&nbsp;".
-	"$text</font>";
+return "<font class='ui_note' style='font-size:92%;opacity:0.66'>".
+	"${whitespace_str}ⓘ&nbsp;&nbsp;$text".
+	"</font>";
 }
 
 =head2 ui_brh()

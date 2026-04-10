@@ -1160,7 +1160,7 @@ sub theme_ui_table_end
 
 sub theme_ui_table_row
 {
-    my ($label, $value, $cols, $tds, $trs) = @_;
+    my ($label, $value, $cols, $tds, $trs, $force_full_width) = @_;
     $cols ||= 1;
     $tds  ||= $main::ui_table_default_tds;
     my $rv;
@@ -1178,7 +1178,7 @@ sub theme_ui_table_row
     my $trtags_attrs = ref($trs) eq 'ARRAY' && $trs->[0] ? " $trs->[0]" : "";
     $trtags_attrs .= " data-row-type='ui-table' data-cell-colspan='$cols'";
     $trtags_attrs .= ' data-column-span="all" data-column-locked="1"'
-      if ($cols == 2 && !length($label));
+      if (($cols == 2 && !length($label)) || $force_full_width);
     my $trtags_class = ref($trs) eq 'ARRAY' && $trs->[1] ? " class='$trs->[1]'" : "";
     $rv .= "<tr$trtags_class$trtags_attrs>\n"
       if ($main::ui_table_pos % $main::ui_table_cols == 0);
