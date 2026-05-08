@@ -1631,8 +1631,8 @@ if (!$mysqld) {
 		$mysqld =~ s/bin/libexec/g;
 		if (!-x $mysqld) {
 			# Look in Webmin path
-			&error($mysqld);
-			$mysqld = &has_command("mysqld");
+			$mysqld = &has_command("mysqld") ||
+				  &has_command("mariadbd");
 			}
 		}
 	}
@@ -2096,9 +2096,11 @@ my ($user, $pass) = @_;
 &foreign_require("proc");
 
 # Find the mysqld_safe command
-my $safe = &has_command("mysqld_safe");
+my $safe = &has_command("mysqld_safe") ||
+	   &has_command("mariadbd-safe");
 if (!$safe) {
-	&error(&text('mysqlpass_esafecmd', "<tt>mysqld_safe</tt>"));
+	&error(&text('mysqlpass_esafecmd',
+		     "<tt>mysqld_safe</tt> or <tt>mariadbd-safe</tt>"));
 	}
 
 # Shut down server if running

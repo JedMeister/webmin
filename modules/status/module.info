@@ -1,5 +1,5 @@
 desc=System and Server Status
 name=Status
-depends=servers cron mailboxes 2.630
+depends=servers cron mailboxes 2.640
 longdesc=View the status of services on your system and on remote systems.
-version=2.630
+version=2.640

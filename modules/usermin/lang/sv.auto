@@ -57,9 +57,9 @@ lang_title2=Användarmin språk och språk
 lang_intro=På denna sida kan du välja vilket språk Usermin ska använda för att visa titlar, instruktioner och meddelanden
 
 session_title=autentisering
+session_header=Autentiserings- och sessionsalternativ
 session_desc1=När det är aktiverat skyddar lösenordsgränser din Usermin-server från brute-force lösenordskrackningsattacker genom att lägga till en kontinuerligt expanderande fördröjning mellan varje misslyckad inloggningsförsök för samma användare.
-session_desc2=När sessionautentisering är aktiverad spåras varje inloggad användarsession av Usermin, vilket gör det möjligt för inaktiva användare att automatiskt loggas ut. Var medveten om att aktivering eller inaktivering av sessionens autentisering kan tvinga alla användare att logga in igen.
-session_remember=Erbjuder du att komma ihåg inloggning permanent?
+session_remember=Erbjuda ett kom ihåg-mig-alternativ för permanenta inloggningar?
 session_hostname=Visa värdnamn på inloggningsskärmen?
 session_realname=Visa riktigt värdnamn istället för namn från URL?
 session_authmode=Autentiseringsmetod
@@ -79,6 +79,7 @@ session_blank=Fråga användare med tomt lösenord att välja ett vid första in
 session_homedir=Skapa saknade hemkataloger efter inloggning?
 session_homedir_perms=Behörigheter för ny katalog
 session_ehomedir_perms=Saknade eller ogiltiga behörigheter för octala hemkataloger
+session_forgot=Tillåt återställning av glömt lösenord?
 
 themes_title=Usermin-teman
 themes_desc=Teman styr utseendet på Usermin användargränssnitt, inklusive ikoner, färger, bakgrunder och eventuellt sidens layout. Markeringsrutan nedan kan användas för att välja ett av teman installerade på ditt system som kommer att vara standard för Usermin-användare.
@@ -130,7 +131,6 @@ acl_desc=Använd den här sidan för att välja vilka installerade Usermin-modul
 
 ssl_title=SSL-kryptering
 ssl_desc1=Värden som Usermin kör på verkar ha SSLeay Perl-modulen installerad. Med detta stöder Usermin SSL-krypterad kommunikation mellan din webbläsare och servern. Om användare har åtkomst till din Usermin-server via Internet, bör du definitivt överväga att använda SSL för att förhindra att en angripare fångar sina lösenord.
-ssl_desc2=Varning - slå bara på SSL-stöd om du har en webbläsare som stöder SSL och det inte finns någon brandvägg som blockerar <tt>https</tt> förfrågningar mellan din webbläsare och Usermin-värden.
 ssl_newkey=Det här formuläret kan användas för att skapa en ny SSL-nyckel för din Usermin-server.
 ssl_hole=Eftersom du för närvarande använder standard Usermin SSL-nyckeln som alla har tillgång till bör du generera en ny nyckel omedelbart. Annars är din SSL-anslutning inte säker!
 ssl_savekey=Detta formulär låter dig ladda upp en befintlig privat nyckel och certifikat för PEM-format SSL för din Usermin-server att använda.
@@ -259,18 +259,18 @@ ui_show_time=Tid på systemet
 
 upgrade_title=Uppgradera Usermin
 upgrade_title2=Installera Usermin
-upgrade_desc=Detta formulär låter dig uppgradera hela Usermin-installationen till en ny version. Du kan installera från en lokal fil, en uppladdad fil eller från den senaste versionen på <a href=http://www.usermin.com/>www.usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
-upgrade_descrpm=Detta formulär låter dig uppgradera hela Usermin-installationen till en ny version med RPM: s uppgraderingsalternativ. Du kan installera från en lokal RPM-fil, en uppladdad fil eller från den senaste versionen på <a href=http://www.usermin.com/>www.usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
-upgrade_descdeb=Det här formuläret låter dig uppgradera hela Usermin-installationen till en ny version genom att uppgradera Debian-paketet. Du kan installera från en lokal.deb-fil, en uppladdad fil eller från den senaste versionen på <a href=http://www.usermin.com/>www.usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
+upgrade_desc=Detta formulär låter dig uppgradera hela Usermin-installationen till en ny version. Du kan installera från en lokal fil, en uppladdad fil eller från den senaste versionen på <a href=https://usermin.com>usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
+upgrade_descrpm=Detta formulär låter dig uppgradera hela Usermin-installationen till en ny version med RPM: s uppgraderingsalternativ. Du kan installera från en lokal RPM-fil, en uppladdad fil eller från den senaste versionen på <a href=https://usermin.com>usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
+upgrade_descdeb=Det här formuläret låter dig uppgradera hela Usermin-installationen till en ny version genom att uppgradera Debian-paketet. Du kan installera från en lokal.deb-fil, en uppladdad fil eller från den senaste versionen på <a href=https://usermin.com>usermin.com</a>. Precis som med en manuell uppgradering kommer alla dina konfigurationsinställningar och tredjepartsmoduler att behållas.
 upgrade_local=Från lokal fil
 upgrade_uploaded=Från uppladdad fil
 upgrade_url=Från ftp eller http URL
-upgrade_ftp=Senaste versionen från www.usermin.com
+upgrade_ftp=Senaste versionen från usermin.com
 upgrade_delete=Radera den gamla versionens katalog efter uppgradering?
 upgrade_ok=Uppgradera Usermin
 upgrade_err1=Det gick inte att uppgradera från $1
 upgrade_err2=Det gick inte att uppgradera från den överförda filen
-upgrade_err3=Det gick inte att uppgradera från www.usermin.com
+upgrade_err3=Det gick inte att uppgradera från usermin.com
 upgrade_err5=Det gick inte att uppgradera från URL $1
 upgrade_eurl=Saknad eller ogiltig URL
 upgrade_efile=Fil existerar inte
@@ -291,10 +291,10 @@ upgrade_failed=.. uppgradering misslyckades!
 upgrade_updates=Det finns $1 uppdateringar för den här nya versionen av Usermin. <a href='$2'>Klicka här</a> för att automatiskt ladda ner och installera dem nu.
 upgrade_eupdates=Det gick inte att ladda ner lista med uppdateringar : $1
 
-update_desc1=Detta formulär låter dig uppgradera Usermin-moduler som har visat sig innehålla buggar eller säkerhetshål från sidan <a href=http://www.usermin.com/uupdates.html>Usermin Updates</a> eller från en annan källa. Detta kommer att jämföra de för närvarande installerade modulerna med de som är tillgängliga för uppdatering och automatiskt ladda ner och installera alla moduler som är föråldrade.
+update_desc1=Detta formulär låter dig uppgradera Usermin-moduler som har visat sig innehålla buggar eller säkerhetshål från sidan <a href=https://usermin.com/uupdates.html>Usermin Updates</a> eller från en annan källa. Detta kommer att jämföra de för närvarande installerade modulerna med de som är tillgängliga för uppdatering och automatiskt ladda ner och installera alla moduler som är föråldrade.
 update_header1=Uppdatera moduler nu
 update_header2=Uppdatera moduler enligt schema
-update_webmin=Uppdatering från www.usermin.com
+update_webmin=Uppdatering från usermin.com
 update_other=Uppdatering från en annan källa
 update_show=Visa bara vilka moduler som skulle uppdateras
 update_missing=Installera moduler som för närvarande inte är installerade
@@ -306,7 +306,7 @@ update_apply=Spara och applicera
 update_sched=Uppdatera moduler med $1 : 00 varje $2 dagar
 update_none=Inga Usermin-uppdateringar för denna version.
 update_failed=Det gick inte att installera modulen : $1
-update_desc2=Detta formulär är för att schemalägga den automatiska uppdateringen av Usermin-moduler som innehåller buggar eller säkerhetshål från sidan <a href=http://www.usermin.com/uupdates.html>Usermin Updates</a> eller från en annan källa. Även om den här tjänsten är användbar bör du vara försiktig med att använda den eftersom den kan göra det möjligt för angripare att ta över ditt system om uppdateringsservern någonsin kompromitterades.
+update_desc2=Detta formulär är för att schemalägga den automatiska uppdateringen av Usermin-moduler som innehåller buggar eller säkerhetshål från sidan <a href=https://usermin.com/uupdates.html>Usermin Updates</a> eller från en annan källa. Även om den här tjänsten är användbar bör du vara försiktig med att använda den eftersom den kan göra det möjligt för angripare att ta över ditt system om uppdateringsservern någonsin kompromitterades.
 
 assignment_title=Tilldela om moduler
 assignment_header=Modulkategoriuppdrag

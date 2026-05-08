@@ -1,8 +1,8 @@
-desc=Linux IPv6 Firewall
+desc=Linux Firewall (ip6tables)
 category=net
 longdesc=Configure a Linux firewall using ip6tables. Allows the editing of all tables, chains, rules and options.
 name=Firewall6
 os_support=*-linux
 library=firewall-lib.pl
-version=2.630
-depends=2.630
+version=2.640
+depends=2.640

@@ -15,8 +15,8 @@ elsif ($type eq "template") {
 	return &text("log_tmpl_${action}",
 		     "<i>".&html_escape($p->{'desc'})."</i>");
 	}
-elsif ($action eq "deletes") {
-	return &text("log_deletes", $object);
+elsif ($action eq "deletes" || $action eq "disables" || $action eq "enables") {
+	return &text("log_".$action, $object);
 	}
 else {
 	return &text("log_${action}", "<i>".&html_escape($p->{'desc'})."</i>");
