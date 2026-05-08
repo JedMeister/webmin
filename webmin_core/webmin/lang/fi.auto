@@ -340,7 +340,6 @@ ssl_essl=Net::SSLeay perl -moduulia ei näytä olevan asennettuna järjestelmä�
 ssl_cpan=Voit vaihtoehtoisesti antaa Webmin <a href='$1'>ladata ja asentaa</a> vaaditun Net::SSLeay Perl -moduulin.
 ssl_emessage=Perlin virheviesti : $1
 ssl_desc1=Isäntänä, jolla Webmin toimii, näyttää olevan asennettu SSLeay Perl -moduuli. Tätä käyttämällä Webmin tukee SSL-salattua tiedonsiirtoa selaimesi ja palvelimen välillä. Jos käytät Webmin-palvelinta Internetin kautta, sinun kannattaa ehdottomasti harkita SSL: n käyttöä estämään hyökkääjää sieppaamasta Webmin-salasanaasi.
-ssl_desc2=Varoitus - ota SSL-tuki käyttöön vain, jos sinulla on SSL: tä tukeva selain, ja selaimesi ja Webmin-palvelimen välillä ei ole palomuurin estäviä <b>https</b> -pyyntöjä.
 ssl_header=SSL-tuki
 ssl_on=Ota SSL käyttöön?
 ssl_key=Yksityinen avaintiedosto
@@ -351,6 +350,7 @@ ssl_deny=Hylättävät SSL-protokollaversiot
 ssl_compression=Sallitaanko pakatut SSL-yhteydet?
 ssl_honorcipherorder=Pakota palvelimen määrittämä salausjärjestys?
 ssl_extracas=Lisäsertifikaattitiedostot <br> (ketjutettuihin varmenteisiin)
+ssl_enforce=Pakota SSL-suojaus
 ssl_hsts=Pakota SSL HSTS-otsikolla
 ssl_redirect=Ohjaavatko muut kuin SSL-pyynnöt SSL-tilaan?
 ssl_extracasdef=Sama kuin globaalit SSL-asetukset
@@ -410,7 +410,7 @@ ssl_tabcreate=Itse allekirjoitettu todistus
 ssl_tabcsr=Varmenteen allekirjoituspyyntö
 ssl_tabupload=Lataa varmenne
 ssl_tabcurrent=Nykyinen varmenne
-ssl_tablets=Salatkoon
+ssl_tablets=SSL-palveluntarjoaja
 ssl_cheader=Tiedot nykyisestä varmenteesta
 ssl_typeself=Itse allekirjoitetun
 ssl_typereal=CA: n allekirjoittama
@@ -422,27 +422,36 @@ ssl_edownload=PEM-tietojen nouto sertifikaatista epäonnistui
 ssl_csralready=Näytä viimeisin avain ja CSR ..
 ssl_already1=Aiemmin luotu yksityinen avain :
 ssl_already2=Aikaisemmin luotu varmenteen allekirjoituspyyntö :
-ssl_letsdesc=Let's Encrypt on ilmainen, automatisoitu ja avoin varmenteen myöntäjä, jota voidaan käyttää luomaan SSL-varmenne Webminin käyttöön.
-ssl_letserr=Valitettavasti Let's Encrypt -sovellusta ei voi käyttää järjestelmässäsi: $1.
-ssl_letserr2=Tarkista vaihtoehtoisesti <a href='$1'>moduulin kokoonpano</a> -sivu varmistaaksesi, että käytät oikeaa polkua <tt>letsencrypt</tt> -komentoon.
-ssl_letsdesc2=Tätä sivua voidaan käyttää uuden varmenteen pyytämiseen, joka korvaa kaikki muut, jotka Webminissä on tällä hetkellä määritetty. Let's Encrypt -palvelu edellyttää kuitenkin, että omistajasi varmennealueelle vahvistetaan tarkistamalla, että tämä järjestelmä isännöi verkkotunnuksen verkkosivustoa. Tämä tehdään sijoittamalla pieni väliaikainen tiedosto verkkosivuston asiakirjahakemistoon.
+ssl_letsdesc=Tämän lomakkeen avulla voit pyytää luotettavaa SSL-varmennetta Webminille ACME-yhteensopivalta tarjoajalta, kuten Let's Encryptiltä.
+ssl_letserr=Valitettavasti tämä järjestelmä ei voi pyytää varmenteita SSL-palveluntarjoajalta: $1.
+ssl_letserr2=Vaihtoehtoisesti voit tarkistaa <a href='$1'>moduulin määrityssivulta</a>, että käytät oikeaa polkua määritettyyn ACME-asiakaskomentoon.
+ssl_letsdesc2=Uusi varmenne korvaa Webminissä tällä hetkellä määritetyn varmenteen. Ennen kuin se voidaan myöntää, ACME-tarjoajan on vahvistettava jokaisen isäntänimen hallinta joko verkkosivuston dokumenttihakemistossa olevan väliaikaisen tiedoston tai väliaikaisen DNS TXT -tietueen avulla.
 ssl_letsheader=Uuden SSL-varmenteen vaihtoehdot
 ssl_letsdoms=Varmenteen isäntänimet
 ssl_subset=Ohitetaanko varmentamattomat isäntänimet?
-ssl_letsmode=Salataan vahvistusmenetelmä
+ssl_letsmode=Verkkotunnuksen validointimenetelmä
 ssl_letsmode0=Apache-virtuaaliisäntä, joka vastaa isäntänimeä
 ssl_letsmode1=Valittu Apache-virtuaaliisäntä
 ssl_letsmode2=Muu verkkopalvelimen asiakirjahakemisto
 ssl_letsmode3=DNS-vahvistus käyttämällä BINDiä
 ssl_letsmode4=Certbot sisäänrakennettu verkkopalvelin
+ssl_certbotprehook=Tämä varoitus voidaan kuitenkin jättää huomiotta, jos esipyyntökomento pysäyttää palvelun portin 80 kautta ennen Certbotin suorittamista.
 ssl_letsok=Pyydä varmennetta
 ssl_letsonly=Päivitä vain uusinta
 ssl_usewebmin=Kopioidaanko uusi avain ja varmenne Webminiin?
 ssl_letsrenew=Kuukaudet automaattisen uusimisen välillä
 ssl_letsnotrenew=Uusi vain manuaalisesti
-ssl_staging=Salatkoon palvelin
-ssl_staging0=Todellinen
-ssl_staging1=Vaihe (vain testi)
+ssl_staging=Palveluntarjoajapalvelin
+ssl_staging0=Tuotanto
+ssl_staging1=Vaiheistus (vain testi)
+ssl_acmeopts=Palveluntarjoajan asetukset
+ssl_acmeextra=Näytä lisäasetukset
+ssl_acmedir=Mukautettu ACME-hakemiston URL-osoite
+ssl_acmedirdesc=Jos tämä on asetettu, tämä ohittaa yllä olevan oletusarvoisen palvelinpalvelimen.
+ssl_acmekid=Ulkoisen tilin sidonta-avaimen tunnus
+ssl_acmekiddesc=Valinnainen. Jotkin ACME-palveluntarjoajat vaativat tätä hakemiston URL-osoitteen lisäksi.
+ssl_acmehmac=Ulkoisen tilin sitova HMAC-avain
+ssl_acmehmacdesc=Valinnainen. Vaatii Certbotin alkuperäisen asiakasohjelman käytettäessä.
 
 newkey_err=SSL-avaimen luominen epäonnistui
 newkey_ecn=Puuttuva tai virheellinen palvelimen nimi
@@ -478,16 +487,16 @@ startpage_webminup=Näytä Webmin-päivitykset Järjestelmätiedot-sivulla?
 startpage_moduleup=Näytä moduulipäivitykset Järjestelmätiedot-sivulla?
 
 upgrade_title=Päivitä Webmin
-upgrade_desc=Tämän lomakkeen avulla voit päivittää koko Webmin-asennuksen uuteen versioon. Voit asentaa paikallisesta tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=http://www.webmin.com/>www.webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
-upgrade_descrpm=Tämän lomakkeen avulla voit päivittää koko webmin-asennuksen uuteen versioon RPM: n päivitysvaihtoehdon avulla. Voit asentaa paikallisesta RPM-tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=http://www.webmin.com/>www.webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
-upgrade_descdeb=Tämä lomake antaa sinun päivittää koko Webmin-asennuksen uuteen versioon päivittämällä sen Debian-paketin. Voit asentaa paikallisesta.deb-tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=http://www.webmin.com/>www.webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
-upgrade_descsolaris-pkg=Tämä lomake antaa sinun päivittää koko Webmin-asennuksen uuteen versioon poistamalla nykyisen Solaris-paketin ja asentamalla uuden. Voit asentaa paikallisesta Solaris-paketitiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=http://www.webmin.com/>www.webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
+upgrade_desc=Tämän lomakkeen avulla voit päivittää koko Webmin-asennuksen uuteen versioon. Voit asentaa paikallisesta tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=https://webmin.com>webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
+upgrade_descrpm=Tämän lomakkeen avulla voit päivittää koko webmin-asennuksen uuteen versioon RPM: n päivitysvaihtoehdon avulla. Voit asentaa paikallisesta RPM-tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=https://webmin.com>webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
+upgrade_descdeb=Tämä lomake antaa sinun päivittää koko Webmin-asennuksen uuteen versioon päivittämällä sen Debian-paketin. Voit asentaa paikallisesta.deb-tiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=https://webmin.com>webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
+upgrade_descsolaris-pkg=Tämä lomake antaa sinun päivittää koko Webmin-asennuksen uuteen versioon poistamalla nykyisen Solaris-paketin ja asentamalla uuden. Voit asentaa paikallisesta Solaris-paketitiedostosta, ladatusta tiedostosta tai uusimmasta versiosta osoitteessa <a href=https://webmin.com>webmin.com</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
 upgrade_descsun-pkg=Tämän lomakkeen avulla voit päivittää koko Webmin-asennuksen uuteen versioon Sunin toimittamasta Solaris-paketista. Voit asentaa paikallisesta Solaris-paketitiedostosta tai ladatusta tiedostosta. Uusimmat paketit löytyvät osoitteesta <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
 upgrade_descgentoo=Tämän lomakkeen avulla voit päivittää koko Webmin-asennuksen uuteen versioon poistamalla nykyisen Gentoo Emerge -paketin ja asentamalla uuden. Voit asentaa paikallisesta Gentoo-paketitiedostosta, ladatusta tiedostosta tai viimeisimmästä Emerge-arkiston versiosta. Aivan kuten manuaalisen päivityksen kanssa, kaikki konfigurointiasetuksesi ja kolmannen osapuolen moduulit säilytetään.
 upgrade_local=Paikallisesta tiedostosta
 upgrade_uploaded=Lähetetystä tiedostosta
 upgrade_url=FTP- tai HTTP-URL-osoitteesta
-upgrade_ftp=Uusin versio osoitteesta www.webmin.com
+upgrade_ftp=Uusin versio osoitteesta webmin.com
 upgrade_cup=Uusin versio Calderan <tt>cupdate</tt> -työkalusta
 upgrade_emerge=Uusin versio Emergen arkistosta
 upgrade_delete=Poistetaanko vanhan version hakemisto päivityksen jälkeen?
@@ -495,7 +504,7 @@ upgrade_repo=Viimeisin versio arkistosta $1
 upgrade_ok=Päivitä Webmin
 upgrade_err1=Päivitys $1 -kohtaan epäonnistui
 upgrade_err2=Päivitys epäonnistui ladatusta tiedostosta
-upgrade_err3=Päivitys epäonnistui sivustolta www.webmin.com
+upgrade_err3=Päivitys epäonnistui sivustolta webmin.com
 upgrade_err4=Päivitys Emergen arkistosta epäonnistui
 upgrade_err5=Päivitys URL-osoitteesta $1 epäonnistui
 upgrade_eurl=Puuttuva tai virheellinen URL-osoite
@@ -524,7 +533,7 @@ upgrade_ewpackage=Ei kelvollinen Solaris-paketti Webminille
 upgrade_egentoo=Ei kelvollinen Gentoo-paketti Webministä
 upgrade_eupdates=Päivitysluettelon lataus epäonnistui : $1
 upgrade_echecksig=RPM-allekirjoituksen todentaminen epäonnistui : $1
-upgrade_nosig=Paketin allekirjoituksen varmennusta ei suoritettu - tar.gz-pakettien tarkistaminen on mahdollista vain päivitettäessä osoitteesta www.webmin.com.
+upgrade_nosig=Paketin allekirjoituksen varmennusta ei suoritettu - tar.gz-pakettien tarkistaminen on mahdollista vain päivitettäessä osoitteesta webmin.com.
 upgrade_sig=Tarkistetaanko GnuPG-allekirjoitus paketissa?
 upgrade_force=Päivitä, vaikka uusi versio olisi sama tai vanhempi?
 upgrade_disc=Poistetaanko kaikki muut käyttäjät?
@@ -548,10 +557,10 @@ newmod_header=Uudet moduulituki
 newmod_def=Oletuskäyttäytyminen - anna uusia moduuleja <tt>root</tt> tai <tt>admin</tt>
 newmod_users=Myönnä uusia moduuleja :
 
-update_desc1=Tämä lomake antaa sinun päivittää Webmin-moduuleja, joiden on havaittu sisältävän virheitä tai <a href=http://www.webmin.com/updates.html>Webmin-päivitykset</a> -sivulta tai muusta lähteestä. Tämä vertaa nykyisin asennettuja moduuleja päivitettävissä oleviin moduuleihin ja lataa ja asentaa valinnaisesti kaikki vanhentuneet moduulit.
+update_desc1=Tämä lomake antaa sinun päivittää Webmin-moduuleja, joiden on havaittu sisältävän virheitä tai <a href=https://webmin.com/updates.html>Webmin-päivitykset</a> -sivulta tai muusta lähteestä. Tämä vertaa nykyisin asennettuja moduuleja päivitettävissä oleviin moduuleihin ja lataa ja asentaa valinnaisesti kaikki vanhentuneet moduulit.
 update_header1=Päivitä moduulit nyt
 update_header2=Päivitä moduulit aikataulussa
-update_webmin=Päivitys osoitteesta www.webmin.com
+update_webmin=Päivitys osoitteesta webmin.com
 update_other=Päivitys muista lähteistä ..
 update_show=Näytä vain mitkä moduulit päivitetään
 update_missing=Asenna moduulit, joita ei ole tällä hetkellä asennettu
@@ -567,7 +576,7 @@ update_apply=Tallenna ja käytä
 update_sched2=Päivitä moduulit $1:$2 jokainen $3 päivä
 update_none=Tätä versiota ei Webmin-päivityksiä.
 update_failed=Moduulin asentaminen epäonnistui : $1
-update_desc2=Tämä lomake on tarkoitettu vikoja tai tietoturvareikiä sisältävien Webmin-moduulien automaattisen päivityksen ajoittamiseen <a href=http://www.webmin.com/updates.html>Webmin-päivitykset</a> -sivulta tai muusta lähteestä. Vaikka tämä palvelu on hyödyllinen, sinun tulee olla varovainen sen käyttämisessä, koska se saattaa antaa hyökkääjien ottaa järjestelmän haltuunsa, jos päivityspalvelin on koskaan vaarantunut.
+update_desc2=Tämä lomake on tarkoitettu vikoja tai tietoturvareikiä sisältävien Webmin-moduulien automaattisen päivityksen ajoittamiseen <a href=https://webmin.com/updates.html>Webmin-päivitykset</a> -sivulta tai muusta lähteestä. Vaikka tämä palvelu on hyödyllinen, sinun tulee olla varovainen sen käyttämisessä, koska se saattaa antaa hyökkääjien ottaa järjestelmän haltuunsa, jos päivityspalvelin on koskaan vaarantunut.
 update_enosig=Allekirjoitustiedostoa ei voitu ladata päivityksiä varten : $1
 update_ebadsig=Päivitys allekirjoitusten tarkistuksessa epäonnistui : $1
 update_enomodsig=Moduulin allekirjoitustiedostoa ei voitu ladata : $1
@@ -634,7 +643,7 @@ session_eblockuser_time=Puuttuva tai virheellinen käyttäjän estoaika
 session_eblockuser_failures=Puuttuvat tai virheelliset käyttäjän estävät kirjautumistiedot
 session_ecookie=Selaimesi ei tue evästeitä, joita tarvitaan istunnon todennukseen
 session_elsof=Paikallinen todennus vaatii <tt>lsof</tt> -ohjelman
-session_remember=Tarjoaako muistaa kirjautumisen pysyvästi?
+session_remember=Tarjoatko muista minut -vaihtoehtoa pysyville kirjautumisille?
 session_ip=Rajoitetaanko istunnot samaan asiakkaan IP-osoitteeseen?
 session_hostname=Näytä isäntänimi kirjautumisnäytössä?
 session_utmp=Tallennetaan kirjautumiset ja uloskirjautumiset <tt>utmp</tt>-tiedostoon?
@@ -664,13 +673,14 @@ session_pmode0=Kieltää käyttäjät aina vanhentuneet salasanat
 session_pmode1=Salli aina käyttäjät, joilla on vanhentuneet salasanat
 session_pmode2=Pyydä käyttäjiä, joiden salasanat ovat vanhentuneet, antamaan uusi
 session_md5=Webmin-salasanan hajautusmuoto
+session_rpc_timeout=RPC-istunnon aikakatkaisu
+session_erpc_timeout=RPC-istunnon aikakatkaisu puuttuu tai sen on oltava suurempi kuin 0
 session_md5off=Määritä automaattisesti
 session_md5on=Käytä <tt>MD5</tt>-tiivistemuotoa
 session_sha512=Käytä <tt>SHA512</tt>-tiivistemuotoa
 session_yescrypt=Käytä <tt>yescrypt</tt>-tiivistemuotoa
 session_emd5mod=MD5-tiivistysmuotoa ei voi käyttää, koska Perl $1 -moduulia ei ole asennettu
-session_esha512mod=SHA512-tiivistysmuotoa ei voi käyttää, koska Perl $1 -moduulia ei ole asennettu
-session_eyescrypt=yescrypt-hajautusmuotoa ei voi käyttää, koska Perl $1 -moduulia ei ole asennettu
+session_edigestcrypt=$1-hajautusmuotoa ei voida käyttää, koska järjestelmän <tt>crypt</tt>-funktio ei tue sitä
 session_blocklock=Lukitse myös käyttäjät, joilla epäonnistuneet kirjautumiset
 session_passapi=Otetaanko salasanan etäkäyttöliittymä käyttöön?
 session_passapi0=API poistettu käytöstä
@@ -746,13 +756,14 @@ log_delete_webmincron=Poistetut $1 ajoitetut toiminnot
 log_run_webmincron=Suoritti $1 ajoitettuja toimintoja
 log_save_webmincron=Päivitetty ajoitettu toiminto moduulissa $1
 log_onedelete_webmincron=Poistettu ajoitettu toiminto moduulista $1
-log_letsencrypt=Pyysi uutta SSL-varmennetta Let's Encryptiltä
-log_letsencryptdns=Luotu salattiin DNS-tietue $1
-log_letsencryptcleanup=Poistettiin salaamaan $1 DNS-tietue
+log_letsencrypt=Pyysin uutta SSL-varmennetta ACME-palveluntarjoajalta
+log_letsencryptdns=Luotu ACME DNS -tietue kohteelle $1
+log_letsencryptcleanup=ACME DNS -tietue poistettiin kohteelle $1
 
 themes_title=Webmin-teemat
 themes_desc=Teemat ohjaavat Webmin-käyttöliittymän ulkonäköä, mukaan lukien kuvakkeet, värit, taustat ja sivujen asettelu. Alla olevaa valintaruutua voidaan käyttää valitsemalla yksi järjestelmään asennetuista teemoista.
 themes_sel=Nykyinen teema :
+themes_configure=Avaa teeman määrityssivu
 themes_default=Vanha Webmin-teema
 themes_none=Ei mitään - anna teema päättää
 themes_change=Muuttaa
@@ -1104,6 +1115,7 @@ sendmail_authdef=Oletus (tällä hetkellä Cram-MD5)
 sendmail_from=Webminin sähköpostiosoitteesta
 sendmail_fromdef=Oletus ($1)
 sendmail_fromaddr=Osoite
+sendmail_name=Näyttönimi
 sendmail_toaddr=Ilmoitusten oletuskohdeosoite
 sendmail_to_def=Ei asetettu
 sendmail_etoaddr=Puuttuva tai väärin muotoiltu kohdeosoite
@@ -1205,6 +1217,7 @@ twofactor_enrolllink=Voit nyt ilmoittautua kaksifaktoriseen todennukseen <a href
 twofactor_url=Lisätietoja $1 on verkkosivustolla osoitteessa <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=Kaksitekijäiseen todennukseen tarvittavaa Perl-moduulia <tt>$1</tt> ei ole asennettu. Asenna se Webminin <a href='$2'>Perl-moduulit</a> -sivulla.
 twofactor_qrcode=Kirjoita salainen koodi $1 TOTP-sovellukseen tai skannaa alla oleva QR-koodi.
+twofactor_qrcode_manual=Syötä salainen koodi $1 TOTP-sovellukseen ja määritä se manuaalisesti, koska QR-koodien luontia ei tueta tässä järjestelmässä.
 twofactor_etotpid=Virheellinen TOTP base32-koodattu salaisuus
 twofactor_etotptoken=TOTP-tunnuksen on oltava numero
 twofactor_etotpmatch=Väärä OTP-koodi
@@ -1214,9 +1227,9 @@ twofactor_secret0=Käytä 16-merkkistä näppäintä
 twofactor_esecret=Salaisen avaimen tulee olla tarkalleen 16 merkkiä pitkä ja sisältää vain kirjaimia ja numeroita
 twofactor_esession=Kaksikerroista todennusta ei voida käyttää, ellei istuntopohjainen todennus ole aktiivinen
 
-letsencrypt_title=Salatkaamme varmennepyyntö
+letsencrypt_title=SSL-palveluntarjoajan varmennepyyntö
 letsencrypt_err=Varmenteen pyytäminen epäonnistui
-letsencrypt_ecmds=Järjestelmästä ei löytynyt Let's Encrypt client -komentoa <tt>certbot</tt> tai <tt>python</tt> -komentoa.
+letsencrypt_ecmds=Järjestelmästäsi ei löytynyt ACME-asiakasohjelman natiivia certbot <tt>certbot</tt> komentoa eikä <tt>python</tt> -komentoa
 letsencrypt_epythonmod=Sisäänrakennetun Let's Encrypt -asiakkaan tarvitsemaa Python-moduulia $1 ei ole asennettu
 letsencrypt_epythonver=Python-version hankkiminen epäonnistui : $1
 letsencrypt_epythonver2=Python-versio $1 tai uudempi vaaditaan, mutta sinulla on vain versio $2.
@@ -1224,6 +1237,12 @@ letsencrypt_certbot=Certbot
 letsencrypt_edroot=Apache-virtuaalikoneella $1 ei ole asiakirjahakemistoa!
 letsencrypt_edom=Puuttuva tai virheellinen verkkotunnus
 letsencrypt_erenew=Puuttuva tai ei-numeerinen uusimisväli
+letsencrypt_eacmedir=Puuttuva tai virheellinen ACME-hakemiston URL-osoite
+letsencrypt_eeabdir=ACME-hakemiston URL-osoite on annettava, kun käytetään ulkoista tilin sidontaa
+letsencrypt_eeabpair=Sekä ulkoisen tilin sidonta-avaimen tunnus että HMAC-avain on annettava
+letsencrypt_eeabnative=Ulkoista tilien sidontaa voidaan käyttää vain, kun natiivi ACME-asiakasohjelma on asennettu
+letsencrypt_ecertbotport=Certbot-vahvistus edellyttää, että TCP-portti 80 on vapaana, mutta se on jo toisen palvelun käytössä. Pysäytä kyseinen palvelu väliaikaisesti tai käytä sen sijaan webroot- tai DNS-vahvistusta.
+letsencrypt_ecertbotwebmin=Certbot-validointia ei voi käyttää, kun Webmin kuuntelee TCP-porttia 80. Käytä sen sijaan webroot- tai DNS-validointia tai siirrä Webmin toiseen porttiin.
 letsencrypt_ewebroot=Verkkosivun asiakirjahakemistoa ei ole
 letsencrypt_evhost=Virtuaalista isäntää, joka vastasi $1, ei löytynyt
 letsencrypt_efull=Odotettua täydellistä varmennetiedostoa $1 ei löytynyt
@@ -1246,9 +1265,9 @@ letsencrypt_echain=Ketjutun varmenteen lataus epäonnistui : $1
 letsencrypt_echain2=Ketjutettu sertifikaatti, joka on ladattu osoitteesta $1, on tyhjä
 letsencrypt_ecsr=CSR: n luominen epäonnistui : $1
 letsencrypt_ekeygen=Yksityisen avaimen luonti epäonnistui : $1
-letsencrypt_enative=Alkuperäistä Let's Encrypt -asiakasta (certbot) käytettiin aiemmin tässä järjestelmässä, ja sitä on käytettävä kaikkiin tuleviin varmennepyyntöihin
-letsencrypt_eacmedns=Vain virallinen Let's Encrypt -asiakas tukee DNS-pohjaista validointia
-letsencrypt_eacmecertbot=Vain virallinen Let's Encrypt -asiakas tukee Certbotin validointia
+letsencrypt_enative=Tässä järjestelmässä on aiemmin käytetty alkuperäistä ACME-asiakasohjelmaa (certbot), ja sitä on käytettävä kaikissa tulevissa varmennepyynnöissä
+letsencrypt_eacmedns=Vain natiivi ACME-asiakasohjelma tukee DNS-pohjaista validointia
+letsencrypt_eacmecertbot=Vain ACME:n natiivi asiakasohjelma tukee Certbot-validointia
 
 announce_hide=Piilota tämä ilmoitus
 alert_hide=Piilota hälytys

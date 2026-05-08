@@ -3179,7 +3179,11 @@ if ($user) {
 	push(@headers, [ "Authorization", "Basic $auth" ]);
 	}
 foreach my $hname (keys %$headers) {
-	push(@headers, [ $hname, $headers->{$hname} ]);
+	my $hv = $headers->{$hname};
+	$hv = [ $hv ] if (!ref($hv));
+	foreach my $v (@$hv) {
+		push(@headers, [ $hname, $v ]);
+		}
 	}
 
 # Actually download it
@@ -3196,14 +3200,15 @@ if (!ref($h)) {
 	else { &error(&html_escape($h)); }
 	}
 &complete_http_download($h, $dest, $error, $cbfunc, $osdn, $host, $port,
-			$headers, $ssl, $nocache, $timeout,
-			defined($response_headers) ? $response_headers : undef);
+			$headers, $ssl, $nocache, $timeout, $response_headers);
 if ((!$error || !$$error) && !$nocache) {
 	&write_to_http_cache($url, $dest);
 	}
 }
 
-=head2 complete_http_download(handle, destfile, [&error], [&callback], [osdn], [oldhost], [oldport], [&send-headers], [old-ssl], [no-cache], [timeout], [response-header])
+=head2 complete_http_download(handle, destfile, [&error], [&callback], [osdn],
+			      [oldhost], [oldport], [&send-headers], [old-ssl],
+			      [no-cache], [timeout], [response-header])
 
 Do a HTTP download, after the headers have been sent. For internal use only,
 typically called by http_download.
@@ -3263,11 +3268,11 @@ if ($rcode >= 300 && $rcode < 400) {
 		$port = $ssl ? 443 : 80;
 		$page = $3 || "/";
 		}
-	elsif ($header{'location'} =~ /^\// && $_[5]) {
+	elsif ($header{'location'} =~ /^\// && $oldhost) {
 		# Relative to same server
-		$host = $_[5];
-		$port = $_[6];
-		$ssl = $_[8];
+		$host = $oldhost;
+		$port = $oldport;
+		$ssl = $oldssl;
 		$page = $header{'location'};
 		}
 	elsif ($header{'location'}) {
@@ -3287,7 +3292,7 @@ if ($rcode >= 300 && $rcode < 400) {
 	$page =~ s/ /%20/g;
 	$page .= "?".$params if (defined($params));
 	&http_download($host, $port, $page, $destfile, $error, $cbfunc, $ssl,
-		       undef, undef, undef, $_[4], $_[9], $_[7]);
+		       undef, undef, undef, $osdn, $nocache, $headers);
 	}
 else {
 	# read data
@@ -3326,7 +3331,9 @@ else {
 }
 
 
-=head2 http_post(host, port, page, content, destfile, [&error], [&callback], [sslmode], [user, pass], [timeout], [osdn-convert], [no-cache], [&headers])
+=head2 http_post(host, port, page, content, destfile, [&error], [&callback], [sslmode],
+		 [user, pass], [timeout], [osdn-convert], [no-cache], [&headers],
+		 [&response_headers])
 
 Posts data to an HTTP url and downloads the response to a local file or string. The parameters are :
 
@@ -3358,11 +3365,13 @@ Posts data to an HTTP url and downloads the response to a local file or string. 
 
 =item headers - If set to a hash ref of additional HTTP headers, they will be added to the request.
 
+=item response_headers - If set returns a hash ref of response HTTP headers.
+
 =cut
 sub http_post
 {
 my ($host, $port, $page, $content, $dest, $error, $cbfunc, $ssl, $user, $pass,
-    $timeout, $osdn, $nocache, $headers) = @_;
+    $timeout, $osdn, $nocache, $headers, $response_headers) = @_;
 if ($gconfig{'debug_what_net'}) {
 	&webmin_debug_log('HTTP', "host=$host port=$port page=$page ssl=$ssl".
 				  ($user ? " user=$user pass=$pass" : "").
@@ -3393,7 +3402,11 @@ if ($user) {
 	}
 @headers = grep { !$headers->{$_->[0]} } @headers;
 foreach my $hname (keys %$headers) {
-	push(@headers, [ $hname, $headers->{$hname} ]);
+	my $hv = $headers->{$hname};
+	$hv = [ $hv ] if (!ref($hv));
+	foreach my $v (@$hv) {
+		push(@headers, [ $hname, $v ]);
+		}
 	}
 
 # Actually download it
@@ -3410,7 +3423,7 @@ if (!ref($h)) {
 	}
 &write_http_connection($h, $content."\r\n");
 &complete_http_download($h, $dest, $error, $cbfunc, $osdn, $host, $port,
-			$headers, $ssl, $nocache, $timeout);
+			$headers, $ssl, $nocache, $timeout, $response_headers);
 }
 
 =head2 ftp_download(host, file, destfile, [&error], [&callback], [user, pass], [port], [no-cache])
@@ -8765,6 +8778,25 @@ my ($func) = @_;
 $main::remote_error_handler = $func || \&error;
 }
 
+=head2 remote_rpc_login_error(&connection, username)
+
+Reads the headers from a failed remote RPC login attempt and
+returns a more helpful error message when the server provides one.
+
+=cut
+sub remote_rpc_login_error
+{
+my ($con, $user) = @_;
+my ($headers, undef, $bad_header) = &read_http_headers($con);
+&close_http_connection($con);
+my $msg = ".. login to RPC server as ".($user || 'unknown')." rejected";
+my $reason = !$bad_header ? &get_http_auth_reason($headers) : undef;
+if ($reason) {
+	$reason = &html_escape($reason);
+	}
+return $reason ? "$msg : @{[lcfirst $reason]}" : $msg;
+}
+
 =head2 remote_rpc_call(server, &structure)
 
 Calls rpc.cgi on some server and passes it a perl structure (hash,array,etc)
@@ -8844,9 +8876,8 @@ if ($serv->{'fast'} || !$sn) {
 		my $line = &read_http_connection($con);
 		$line =~ tr/\r\n//d;
 		if ($line =~ /^HTTP\/1\..\s+40[13]\s+/) {
-			my $username = $user;
-			$username ||= 'unknown';
-			return &$main::remote_error_handler("Login to RPC server as user \"$username\" rejected");
+			return &$main::remote_error_handler(
+				&remote_rpc_login_error($con, $user));
 			}
 		$line || return &$main::remote_error_handler("HTTP error : No status line");
 		$line =~ /^HTTP\/1\..\s+200\s+/ ||
@@ -9015,8 +9046,9 @@ else {
 	my $line = &read_http_connection($con);
 	$line =~ tr/\r\n//d;
 	if ($line =~ /^HTTP\/1\..\s+401\s+/) {
-		return &$main::remote_error_handler("Login to RPC server as $user rejected");
-		}
+		return &$main::remote_error_handler(
+			&remote_rpc_login_error($con, $user));
+			}
 	$line || return &$main::remote_error_handler("HTTP error : No status line");
 	$line =~ /^HTTP\/1\..\s+200\s+/ || return &$main::remote_error_handler("RPC HTTP error : $line");
 	do {
@@ -9448,6 +9480,21 @@ else {
 	}
 }
 
+=head2 can_use_http_ssl()
+
+Returns 1 if this Webmin process can make outbound HTTPS connections, or 0
+if the required Net::SSLeay Perl module is not available.
+
+=cut
+my $can_use_http_ssl_cache;
+sub can_use_http_ssl
+{
+return $can_use_http_ssl_cache if (defined($can_use_http_ssl_cache));
+eval "use Net::SSLeay";
+$can_use_http_ssl_cache = $@ ? 0 : 1;
+return $can_use_http_ssl_cache;
+}
+
 =head2 make_http_connection(host, port, ssl, method, page, [&headers],
 			    [&certreqs])
 
@@ -9466,7 +9513,8 @@ The parameters are :
 
 =item page - Page to request on the webserver, like /foo/index.html
 
-=item headers - Array ref of additional HTTP headers, each of which is a 2-element array ref.
+=item headers - Array ref of additional HTTP headers, each of which is a 2-element array ref,
+		or a hash ref of header names to values.
 
 =item bindip - IP address to bind to for outgoing HTTP connection
 
@@ -9477,9 +9525,17 @@ sub make_http_connection
 {
 my ($host, $port, $ssl, $method, $page, $headers, $bindip, $certreqs) = @_;
 my $htxt;
-if ($headers) {
+if (ref($headers) eq 'ARRAY') {
+	# Headers are name-value pairs
 	foreach my $h (@$headers) {
 		$htxt .= $h->[0].": ".$h->[1]."\r\n";
+		}
+	$htxt .= "\r\n";
+	}
+elsif (ref($headers) eq 'HASH') {
+	# Headers are a hash ref
+	foreach my $h (keys %$headers) {
+		$htxt .= $h.": ".$headers->{$h}."\r\n";
 		}
 	$htxt .= "\r\n";
 	}
@@ -9489,8 +9545,7 @@ if (&is_readonly_mode()) {
 my $rv = { 'fh' => time().$$ };
 if ($ssl) {
 	# Connect using SSL
-	eval "use Net::SSLeay";
-	$@ && return $text{'link_essl'};
+	&can_use_http_ssl() || return $text{'link_essl'};
 	eval "Net::SSLeay::SSLeay_add_ssl_algorithms()";
 	eval "Net::SSLeay::OpenSSL_add_all_algorithms()";
 	eval "Net::SSLeay::load_error_strings()";
@@ -9791,6 +9846,51 @@ sub close_http_connection
 {
 my ($h) = @_;
 return close($h->{'fh'});
+}
+
+=head2 read_http_headers(&handle)
+
+Reads HTTP response headers from the connection until the blank line after
+them. In list context returns a hashref of lower-cased header names, the raw
+header text, and an optional offending header line. If an invalid header line
+is encountered, the headers and raw text are undef and the third return value
+contains the offending line.
+
+=cut
+sub read_http_headers
+{
+my ($h) = @_;
+my (%headers, $raw);
+while(defined(my $line = &read_http_connection($h))) {
+	$line =~ tr/\r\n//d;
+	last if ($line eq '');
+	if ($line =~ /^(\S+):\s*(.*)$/) {
+		$headers{lc($1)} = $2;
+		$raw .= $line."\n";
+		}
+	else {
+		return wantarray ? (undef, undef, $line) : undef;
+		}
+	}
+return wantarray ? (\%headers, $raw, undef) : \%headers;
+}
+
+=head2 get_http_auth_reason(&headers)
+
+Returns the Webmin-specific authentication reason from a parsed HTTP headers
+hash, if present.
+
+=cut
+sub get_http_auth_reason
+{
+my ($headers) = @_;
+my $reason = $headers->{'x-webmin-auth-reason'} ||
+	     $headers->{'x-webmin-auth-error'};
+if ($reason) {
+	$reason =~ s/\s+/ /g;
+	$reason =~ s/^\s+|\s+$//g;
+	}
+return $reason;
 }
 
 =head2 clean_environment
@@ -13460,25 +13560,75 @@ return $url;
 =head2 get_webmin_browser_url([module], [cgi])
 
 Returns the URL for accessing this Webmin system, based on the current browser
-connection.
+connection. Honors X-Forwarded-Proto, X-Forwarded-Host and X-Forwarded-Port
+when Webmin is behind a reverse proxy and proxy headers are trusted, so the
+returned URL is the one the user's browser actually used.
 
 =cut
 sub get_webmin_browser_url
 {
 my ($mod, $cgi) = @_;
 
-# Work out the base URL`
-my $host = $ENV{'HTTP_HOST'};
+# Pick the first comma-separated value from a (possibly proxy-chained) header
+my $first = sub {
+	my ($v) = @_;
+	return undef if (!defined($v) || $v eq '');
+	$v =~ s/\r|\n//g;
+	$v = (split(/\s*,\s*/, $v))[0];
+	$v =~ s/^\s+//; $v =~ s/\s+$//;
+	return $v ne '' ? $v : undef;
+	};
+
+my %miniserv;
+&get_miniserv_config(\%miniserv);
+my $trust_proxy = $miniserv{'trust_real_ip'};
+
+# Pull proto/host/port from X-Forwarded-* (set by reverse proxies), with
+# RFC 7239 Forwarded as a secondary fallback, then plain request env
+my $fwd = $trust_proxy ? $ENV{'HTTP_FORWARDED'} : undef;
+my ($fwd_proto, $fwd_host);
+if ($fwd) {
+	# RFC 7239 lists outermost proxy first; only inspect the first element
+	my $first_el = (split(/\s*,\s*/, $fwd))[0];
+	if ($first_el) {
+		$fwd_proto = $1 if ($first_el =~ /(?:^|;)\s*proto="?([^";]+)"?/i);
+		$fwd_host  = $1 if ($first_el =~ /(?:^|;)\s*host="?([^";]+)"?/i);
+		}
+	}
+
+my $proto = ($trust_proxy ? $first->($ENV{'HTTP_X_FORWARDED_PROTO'}) : undef) ||
+	    $fwd_proto ||
+	    (lc($ENV{'HTTPS'}) eq 'on' ? 'https' : 'http');
+$proto = lc($proto);
+$proto = 'https' if ($proto eq 'wss');
+$proto = 'http'  if ($proto eq 'ws');
+
+my $host = ($trust_proxy ? $first->($ENV{'HTTP_X_FORWARDED_HOST'}) : undef) ||
+	   $fwd_host ||
+	   $ENV{'HTTP_HOST'};
 if (!$host) {
-	# Fall back to non-browser mode
+	# No request context at all - fall back to non-browser mode
 	return &get_webmin_email_url(@_);
 	}
-my $port = $ENV{'SERVER_PORT'} || 80;
+
+my $defport = $proto eq 'https' ? 443 : 80;
+my $port;
 if ($host =~ s/:(\d+)$//) {
+	# Host carried its own port
 	$port = $1;
 	}
-my $proto = lc($ENV{'HTTPS'}) eq 'on' ? "https" : "http";
-my $defport = $proto eq 'https' ? 443 : 80;
+else {
+	# Trust X-Forwarded-Port if the host didn't carry one; otherwise the
+	# request env port (which is the internal port behind a proxy and so
+	# only meaningful when there's no proxy in front)
+	$port = $trust_proxy ? $first->($ENV{'HTTP_X_FORWARDED_PORT'}) : undef;
+	if (!$port && !($trust_proxy && $ENV{'HTTP_X_FORWARDED_HOST'}) &&
+	    !$fwd_host) {
+		$port = $ENV{'SERVER_PORT'};
+		}
+	$port ||= $defport;
+	}
+
 my $url = $proto."://".$host.($port == $defport ? "" : ":".$port);
 $url .= $gconfig{'webprefix'} if ($gconfig{'webprefix'});
 
@@ -14141,6 +14291,25 @@ my $dir = $var_directory."/locks/".$$;
 return $dir;
 }
 
+# generate_miniserv_websocket_token()
+# Returns an unguessable token for websocket URLs proxied by miniserv
+sub generate_miniserv_websocket_token
+{
+my $token;
+if (open(RANDOM, "</dev/urandom")) {
+	my $buf;
+	if (read(RANDOM, $buf, 16) == 16) {
+		$token = lc(unpack('h*', $buf));
+		}
+	close(RANDOM);
+	}
+if (!$token) {
+	&seed_random();
+	$token = &substitute_pattern('[a-f0-9]{32}');
+	}
+return $token;
+}
+
 # allocate_miniserv_websocket([module], [base-remote-user])
 # Allocate a new websocket and stores it miniserv.conf file
 sub allocate_miniserv_websocket
@@ -14170,10 +14339,11 @@ while(1) {
     }
 my $wspath = "/$module/ws-".$port;
 my $now = time();
+my $token = &generate_miniserv_websocket_token();
 my $opt_buser = "";
 $opt_buser = " buser=$buser" if (defined($buser) && $buser eq $base_remote_user);
 $miniserv{"websockets_$wspath"} = "host=127.0.0.1 port=$port wspath=/ ".
-	  "user=$remote_user$opt_buser time=$now";
+	  "user=$remote_user$opt_buser token=$token time=$now";
 &put_miniserv_config(\%miniserv);
 &unlock_file(&get_miniserv_config_file());
 &reload_miniserv();
@@ -14190,6 +14360,13 @@ my $ws_proto = lc($ENV{'HTTPS'}) eq 'on' ? 'wss' : 'ws';
 my %miniserv;
 my $webprefix = &get_webprefix();
 &get_miniserv_config(\%miniserv);
+my $trust_proxy = $miniserv{'trust_real_ip'};
+my $wspath = "/$module/ws-".$port;
+my $wstoken;
+if ($miniserv{'websockets_'.$wspath} &&
+    $miniserv{'websockets_'.$wspath} =~ /\btoken=(\S+)/) {
+	$wstoken = $1;
+	}
 my $http_host_conf = &trim($miniserv{'websocket_host'} || $host);
 # Pass as defined
 if ($http_host_conf) {
@@ -14199,7 +14376,7 @@ if ($http_host_conf) {
 	$http_host_conf =~ s/[\/]+$//g;
 	}
 # Try to rely on the proxy
-if (!defined($http_host_conf)) {
+if ($trust_proxy && !defined($http_host_conf)) {
 	my $forwarded_host = $ENV{'HTTP_X_FORWARDED_HOST'};
 	if ($forwarded_host) {
 		$http_host_conf = "$ws_proto://$forwarded_host";
@@ -14208,7 +14385,9 @@ if (!defined($http_host_conf)) {
 	}
 my $http_host = $http_host_conf || "$ws_proto://$ENV{'HTTP_HOST'}";
 $http_host .= $webprefix if ($webprefix);
-return "$http_host/$module/ws-$port";
+my $url = "$http_host$wspath";
+$url .= "?token=".&urlize($wstoken) if ($wstoken);
+return $url;
 }
 
 # remove_miniserv_websocket(port, [module])

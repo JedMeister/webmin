@@ -340,7 +340,6 @@ ssl_essl=Das Perl-Modul Net::SSLeay scheint auf Ihrem System nicht installiert z
 ssl_cpan=Alternativ kann Webmin <a href='$1'>das erforderliche Perl-Modul Net::SSLeay herunterladen und installieren</a>.
 ssl_emessage=Die Fehlermeldung von Perl lautete: $1
 ssl_desc1=Auf dem System, auf dem Webmin ausgeführt wird, scheint das Perl-Modul SSLeay installiert zu sein. Damit kann Webmin SSL-verschlüsselte Kommunikation zwischen Ihrem Browser und dem Server ermöglichen. Wenn Sie auf Webmin über das Internet zugreifen, sollten Sie unbedingt SSL aktivieren, um zu verhindern, dass Angreifer Ihr Webmin-Passwort abfangen.
-ssl_desc2=Warnung – aktivieren Sie SSL nur, wenn Ihr Browser es unterstützt und keine Firewall <b>https</b>-Verbindungen zwischen Browser und Webmin-Host blockiert.
 ssl_header=SSL-Unterstützung
 ssl_on=SSL aktivieren?
 ssl_key=Private Schlüsseldatei
@@ -410,7 +409,6 @@ ssl_tabcreate=Selbstsigniertes Zertifikat
 ssl_tabcsr=Zertifikatsanfrage
 ssl_tabupload=Zertifikat hochladen
 ssl_tabcurrent=Aktuelles Zertifikat
-ssl_tablets=Let's Encrypt
 ssl_cheader=Details des aktuellen Zertifikats
 ssl_typeself=Selbstsigniert
 ssl_typereal=Von CA signiert
@@ -422,14 +420,9 @@ ssl_edownload=Extraktion der PEM-Daten aus dem Zertifikat fehlgeschlagen
 ssl_csralready=Zuletzt erstellten Schlüssel und CSR anzeigen ..
 ssl_already1=Zuvor erstellter privater Schlüssel:
 ssl_already2=Zuvor erstellte Zertifikatsanfrage:
-ssl_letsdesc=Let's Encrypt ist eine kostenlose, automatisierte und offene Zertifizierungsstelle, mit der ein SSL-Zertifikat für Webmin generiert werden kann.
-ssl_letserr=Leider kann Let's Encrypt auf Ihrem System nicht verwendet werden: $1.
-ssl_letserr2=Alternativ überprüfen Sie die Seite <a href='$1'>Modulkonfiguration</a>, um sicherzustellen, dass der Pfad zum Befehl <tt>letsencrypt</tt> korrekt ist.
-ssl_letsdesc2=Auf dieser Seite kann ein neues Zertifikat angefordert werden, das alle aktuell in Webmin konfigurierten ersetzt. Der Dienst Let's Encrypt erfordert jedoch die Validierung der Inhaberschaft der Domain durch Nachweis, dass dieses System die Website für die Domain hostet. Dies erfolgt durch Platzierung einer kleinen temporären Datei im Dokumentenverzeichnis der Website.
 ssl_letsheader=Optionen für neues SSL-Zertifikat
 ssl_letsdoms=Hostnamen für das Zertifikat
 ssl_subset=Nicht verifizierbare Hostnamen überspringen?
-ssl_letsmode=Validierungsmethode von Let's Encrypt
 ssl_letsmode0=Apache-virtueller Host, passend zum Hostnamen
 ssl_letsmode1=Ausgewählter Apache-virtueller Host
 ssl_letsmode2=Dokumentenverzeichnis eines anderen Webservers
@@ -440,9 +433,6 @@ ssl_letsonly=Nur Erneuerung aktualisieren
 ssl_usewebmin=Neuen Schlüssel und Zertifikat nach Webmin kopieren?
 ssl_letsrenew=Monate zwischen automatischer Erneuerung
 ssl_letsnotrenew=Nur manuell erneuern
-ssl_staging=Let's-Encrypt-Server
-ssl_staging0=Echt
-ssl_staging1=Staging (nur Test)
 
 newkey_err=Erstellen des SSL-Schlüssels fehlgeschlagen
 newkey_ecn=Fehlender oder ungültiger Servername
@@ -478,16 +468,16 @@ startpage_webminup=Webmin-Updates auf der Seite Systeminformationen anzeigen?
 startpage_moduleup=Modul-Updates auf der Seite Systeminformationen anzeigen?
 
 upgrade_title=Webmin aktualisieren
-upgrade_desc=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren. Sie können eine lokale Datei, eine hochgeladene Datei oder die neueste Version von <a href=http://www.webmin.com/>www.webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
-upgrade_descrpm=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version mit der Upgrade-Option von RPM aktualisieren. Sie können eine lokale RPM-Datei, eine hochgeladene Datei oder die neueste Version von <a href=http://www.webmin.com/>www.webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
-upgrade_descdeb=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version durch Aktualisierung des Debian-Pakets upgraden. Sie können eine lokale .deb-Datei, eine hochgeladene Datei oder die neueste Version von <a href=http://www.webmin.com/>www.webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
-upgrade_descsolaris-pkg=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren, indem das aktuelle Solaris-Paket entfernt und ein neues installiert wird. Sie können eine lokale Solaris-Paketdatei, eine hochgeladene Datei oder die neueste Version von <a href=http://www.webmin.com/>www.webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
+upgrade_desc=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren. Sie können eine lokale Datei, eine hochgeladene Datei oder die neueste Version von <a href=https://webmin.com>webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
+upgrade_descrpm=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version mit der Upgrade-Option von RPM aktualisieren. Sie können eine lokale RPM-Datei, eine hochgeladene Datei oder die neueste Version von <a href=https://webmin.com>webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
+upgrade_descdeb=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version durch Aktualisierung des Debian-Pakets upgraden. Sie können eine lokale .deb-Datei, eine hochgeladene Datei oder die neueste Version von <a href=https://webmin.com>webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
+upgrade_descsolaris-pkg=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren, indem das aktuelle Solaris-Paket entfernt und ein neues installiert wird. Sie können eine lokale Solaris-Paketdatei, eine hochgeladene Datei oder die neueste Version von <a href=https://webmin.com>webmin.com</a> installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
 upgrade_descsun-pkg=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren, basierend auf dem von Sun bereitgestellten Solaris-Paket. Sie können eine lokale Solaris-Paketdatei oder eine hochgeladene Datei installieren. Die neuesten Pakete finden Sie unter <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
 upgrade_descgentoo=Mit diesem Formular können Sie Ihre gesamte Webmin-Installation auf eine neue Version aktualisieren, indem das aktuelle Gentoo-Emerge-Paket entfernt und ein neues installiert wird. Sie können eine lokale Gentoo-Paketdatei, eine hochgeladene Datei oder die neueste Version aus dem Emerge-Repository installieren. Genau wie bei einem manuellen Upgrade bleiben alle Ihre Konfigurationseinstellungen und Drittanbieter-Module erhalten.
 upgrade_local=Aus lokaler Datei
 upgrade_uploaded=Aus hochgeladener Datei
 upgrade_url=Aus FTP- oder HTTP-URL
-upgrade_ftp=Neueste Version von www.webmin.com
+upgrade_ftp=Neueste Version von webmin.com
 upgrade_cup=Neueste Version über Caldera's <tt>cupdate</tt>-Tool
 upgrade_emerge=Neueste Version aus dem Emerge-Repository
 upgrade_delete=Verzeichnis der alten Version nach dem Upgrade löschen?
@@ -495,7 +485,7 @@ upgrade_repo=Neueste Version aus dem $1-Repository
 upgrade_ok=Webmin aktualisieren
 upgrade_err1=Upgrade von $1 fehlgeschlagen
 upgrade_err2=Upgrade aus hochgeladener Datei fehlgeschlagen
-upgrade_err3=Upgrade von www.webmin.com fehlgeschlagen
+upgrade_err3=Upgrade von webmin.com fehlgeschlagen
 upgrade_err4=Upgrade aus dem Emerge-Repository fehlgeschlagen
 upgrade_err5=Upgrade von URL $1 fehlgeschlagen
 upgrade_eurl=Fehlende oder ungültige URL
@@ -524,7 +514,7 @@ upgrade_ewpackage=Kein gültiges Solaris-Paket für Webmin
 upgrade_egentoo=Kein gültiges Gentoo-Paket für Webmin
 upgrade_eupdates=Fehler beim Herunterladen der Update-Liste : $1
 upgrade_echecksig=Überprüfung der RPM-Signatur fehlgeschlagen : $1
-upgrade_nosig=Keine Signaturprüfung durchgeführt – Überprüfung von tar.gz-Paketen ist nur bei Upgrade von www.webmin.com möglich.
+upgrade_nosig=Keine Signaturprüfung durchgeführt – Überprüfung von tar.gz-Paketen ist nur bei Upgrade von webmin.com möglich.
 upgrade_sig=GnuPG-Signatur des Pakets überprüfen?
 upgrade_force=Upgrade erzwingen, auch wenn Version gleich oder älter ist?
 upgrade_disc=Alle anderen Benutzer trennen?
@@ -548,10 +538,10 @@ newmod_header=Zuweisung neuer Module
 newmod_def=Standardverhalten – neue Module an <tt>root</tt> oder <tt>admin</tt> zuweisen
 newmod_users=Neue Module zuweisen an:
 
-update_desc1=Mit diesem Formular können Sie Webmin-Module aktualisieren, die Fehler oder Sicherheitslücken enthalten, basierend auf der Seite <a href=http://www.webmin.com/updates.html>Webmin-Updates</a> oder aus einer anderen Quelle. Es vergleicht die aktuell installierten Module mit den verfügbaren Updates und kann veraltete Module optional automatisch herunterladen und installieren.
+update_desc1=Mit diesem Formular können Sie Webmin-Module aktualisieren, die Fehler oder Sicherheitslücken enthalten, basierend auf der Seite <a href=https://webmin.com/updates.html>Webmin-Updates</a> oder aus einer anderen Quelle. Es vergleicht die aktuell installierten Module mit den verfügbaren Updates und kann veraltete Module optional automatisch herunterladen und installieren.
 update_header1=Module jetzt aktualisieren
 update_header2=Module nach Zeitplan aktualisieren
-update_webmin=Update von www.webmin.com
+update_webmin=Update von webmin.com
 update_other=Update aus anderen Quellen ..
 update_show=Nur anzeigen, welche Module aktualisiert würden
 update_missing=Module installieren, die derzeit nicht installiert sind
@@ -567,7 +557,7 @@ update_apply=Speichern und anwenden
 update_sched2=Module um $1:$2 Uhr alle $3 Tage aktualisieren
 update_none=Keine Webmin-Updates für diese Version verfügbar.
 update_failed=Installation des Moduls fehlgeschlagen : $1
-update_desc2=Mit diesem Formular können Sie die automatische Aktualisierung von Webmin-Modulen planen, die Fehler oder Sicherheitslücken enthalten, basierend auf der Seite <a href=http://www.webmin.com/updates.html>Webmin-Updates</a> oder aus einer anderen Quelle. Dieser Dienst ist nützlich, sollte jedoch mit Vorsicht verwendet werden, da bei einer Kompromittierung des Update-Servers potenziell Angreifer Zugriff auf Ihr System erlangen könnten.
+update_desc2=Mit diesem Formular können Sie die automatische Aktualisierung von Webmin-Modulen planen, die Fehler oder Sicherheitslücken enthalten, basierend auf der Seite <a href=https://webmin.com/updates.html>Webmin-Updates</a> oder aus einer anderen Quelle. Dieser Dienst ist nützlich, sollte jedoch mit Vorsicht verwendet werden, da bei einer Kompromittierung des Update-Servers potenziell Angreifer Zugriff auf Ihr System erlangen könnten.
 update_enosig=Signaturdatei für Updates konnte nicht heruntergeladen werden : $1
 update_ebadsig=Signaturprüfung der Updates fehlgeschlagen : $1
 update_enomodsig=Signaturdatei für Modul konnte nicht heruntergeladen werden : $1
@@ -634,7 +624,6 @@ session_eblockuser_time=Fehlende oder ungültige Blockierungsdauer für Benutzer
 session_eblockuser_failures=Fehlende oder ungültige Anzahl fehlgeschlagener Anmeldungen für Benutzer
 session_ecookie=Ihr Browser unterstützt keine Cookies, die für die Sitzungs-Authentifizierung erforderlich sind
 session_elsof=Für lokale Authentifizierung wird das Programm <tt>lsof</tt> benötigt
-session_remember=Dauerhafte Anmeldung anbieten?
 session_ip=Sitzungen auf gleiche Client-IP-Adresse beschränken?
 session_hostname=Hostname auf Anmeldeseite anzeigen?
 session_utmp=An- und Abmeldungen in <tt>utmp</tt> aufzeichnen?
@@ -669,8 +658,6 @@ session_md5on=<tt>MD5</tt>-Hash-Format verwenden
 session_sha512=<tt>SHA512</tt>-Hash-Format verwenden
 session_yescrypt=<tt>yescrypt</tt>-Hash-Format verwenden
 session_emd5mod=MD5-Hash-Format kann nicht verwendet werden, da Perl-Modul $1 nicht installiert ist
-session_esha512mod=SHA512-Hash-Format kann nicht verwendet werden, da Perl-Modul $1 nicht installiert ist
-session_eyescrypt=yescrypt-Hash-Format kann nicht verwendet werden, da Perl-Modul $1 nicht installiert ist
 session_blocklock=Auch Benutzer mit fehlgeschlagenen Anmeldungen sperren
 session_passapi=Remote-Passwortänderungs-API aktivieren?
 session_passapi0=API deaktiviert
@@ -746,9 +733,6 @@ log_delete_webmincron=$1 geplante Funktionen gelöscht
 log_run_webmincron=$1 geplante Funktionen ausgeführt
 log_save_webmincron=Geplante Funktion im Modul $1 aktualisiert
 log_onedelete_webmincron=Geplante Funktion im Modul $1 gelöscht
-log_letsencrypt=Neues SSL-Zertifikat von Let's Encrypt angefordert
-log_letsencryptdns=Let's-Encrypt-DNS-Eintrag für $1 erstellt
-log_letsencryptcleanup=Let's-Encrypt-DNS-Eintrag für $1 entfernt
 
 themes_title=Webmin-Designs
 themes_desc=Designs steuern das Erscheinungsbild der Webmin-Oberfläche, einschließlich Symbole, Farben, Hintergründe und Seitenlayout. Mit dem Auswahlfeld unten können Sie eines der auf Ihrem System installierten Designs auswählen.
@@ -1214,9 +1198,6 @@ twofactor_secret0=16-stelligen Schlüssel verwenden
 twofactor_esecret=Der geheime Schlüssel muss genau 16 Zeichen lang sein und darf nur Buchstaben und Zahlen enthalten
 twofactor_esession=Zwei-Faktor-Authentifizierung kann nur verwendet werden, wenn die sitzungsbasierte Authentifizierung aktiv ist
 
-letsencrypt_title=Let's Encrypt-Zertifikatsanforderung
-letsencrypt_err=Zertifikatsanforderung fehlgeschlagen
-letsencrypt_ecmds=Weder der Let's Encrypt-Befehl <tt>certbot</tt> noch der Befehl <tt>python</tt> wurde auf Ihrem System gefunden
 letsencrypt_epythonmod=Das vom integrierten Let's Encrypt-Client benötigte Python-Modul $1 ist nicht installiert
 letsencrypt_epythonver=Abfrage der Python-Version fehlgeschlagen: $1
 letsencrypt_epythonver2=Python-Version $1 oder neuer wird benötigt, aber auf Ihrem System ist nur Version $2 vorhanden.
@@ -1246,9 +1227,6 @@ letsencrypt_echain=Herunterladen des verketteten Zertifikats fehlgeschlagen: $1
 letsencrypt_echain2=Verkettetes Zertifikat von $1 ist leer
 letsencrypt_ecsr=Erzeugen der CSR fehlgeschlagen: $1
 letsencrypt_ekeygen=Erzeugen des privaten Schlüssels fehlgeschlagen: $1
-letsencrypt_enative=Der native Let's Encrypt-Client (certbot) wurde zuvor auf diesem System verwendet und muss für alle zukünftigen Anfragen genutzt werden
-letsencrypt_eacmedns=Nur der offizielle Let's Encrypt-Client unterstützt DNS-basierte Validierung
-letsencrypt_eacmecertbot=Nur der offizielle Let's Encrypt-Client unterstützt Certbot-Validierung
 
 announce_hide=Diese Ankündigung ausblenden
 alert_hide=Benachrichtigung ausblenden

@@ -340,7 +340,6 @@ ssl_essl=Net::SSLeay perl-modulet ser ikke ud til at være installeret på dit s
 ssl_cpan=Alternativt kan du få Webmin <a href='$1'>til at downloade og installere</a> det krævede Net::SSLeay Perl-modul til dig.
 ssl_emessage=Fejlmeddelelsen fra Perl var : $1
 ssl_desc1=Værten, som Webmin kører på, ser ud til at have SSLeay Perl-modulet installeret. Ved hjælp af dette understøtter Webmin SSL-krypteret kommunikation mellem din browser og serveren. Hvis du får adgang til din Webmin-server over internettet, skal du bestemt overveje at bruge SSL til at forhindre, at en angriber fanger din Webmin-adgangskode.
-ssl_desc2=Advarsel - tænd kun for SSL-support, hvis du har en browser, der understøtter SSL, og der ikke er nogen firewall, der blokerer <b>https</b> anmodninger mellem din browser og Webmin-værten.
 ssl_header=SSL support
 ssl_on=Aktivér SSL?
 ssl_key=Privat nøglefil
@@ -351,6 +350,7 @@ ssl_deny=SSL-protokollversioner, der skal afvises
 ssl_compression=Tillad komprimerede SSL-forbindelser?
 ssl_honorcipherorder=Tvinge brug af serverdefineret chifferordre?
 ssl_extracas=Yderligere certifikatfiler <br> (for kædede certifikater)
+ssl_enforce=Håndhæv SSL
 ssl_hsts=Håndhæv SSL med HSTS-header
 ssl_redirect=Viderestille ikke-SSL-anmodninger til SSL-tilstand?
 ssl_extracasdef=Samme som globale SSL-indstillinger
@@ -410,7 +410,7 @@ ssl_tabcreate=Selvunderskrevet certifikat
 ssl_tabcsr=Anmodning om certifikatsignering
 ssl_tabupload=Upload certifikat
 ssl_tabcurrent=Aktuelt certifikat
-ssl_tablets=Lad os kryptere
+ssl_tablets=SSL-udbyder
 ssl_cheader=Detaljer om det aktuelle certifikat
 ssl_typeself=Selvsigneret
 ssl_typereal=Signeret af CA
@@ -422,27 +422,36 @@ ssl_edownload=Kunne ikke udtrække PEM-data fra certifikatet
 ssl_csralready=Se den nyeste nøgle og CSR ..
 ssl_already1=Tidligere genereret privat nøgle :
 ssl_already2=Tidligere genereret certifikatsigneringsanmodning :
-ssl_letsdesc=Let's Encrypt er en gratis, automatiseret og åben certifikatmyndighed, der kan bruges til at generere et SSL-certifikat til brug af Webmin.
-ssl_letserr=Desværre kan Let's Encrypt ikke bruges på dit system: $1.
-ssl_letserr2=Kontroller alternativt siden <a href='$1'>modulkonfiguration</a> for at sikre, at du bruger den rigtige sti til kommandoen <tt>letsencrypt</tt>.
-ssl_letsdesc2=Denne side kan bruges til at anmode om et nyt certifikat, som vil overskrive alle andre aktuelt konfigurerede i Webmin. Let's Encrypt-tjenesten kræver dog, at dit ejerskab af certifikatdomænet valideres ved at kontrollere, at dette system er vært for webstedet for domænet. Dette gøres ved at placere en lille midlertidig fil i webstedets dokumentmappe.
+ssl_letsdesc=Denne formular giver dig mulighed for at anmode om et betroet SSL-certifikat til Webmin fra en ACME-kompatibel udbyder, såsom Let's Encrypt.
+ssl_letserr=Desværre kan dette system ikke anmode om certifikater fra en SSL-udbyder: $1.
+ssl_letserr2=Alternativt kan du tjekke siden <a href='$1'>modulkonfiguration</a> for at sikre, at du bruger den korrekte sti til den konfigurerede ACME-klientkommando.
+ssl_letsdesc2=Det nye certifikat erstatter det, der i øjeblikket er konfigureret i Webmin. Før det kan udstedes, skal ACME-udbyderen verificere kontrollen over hvert værtsnavn ved hjælp af enten en midlertidig fil i webstedets dokumentmappe eller en midlertidig DNS TXT-post.
 ssl_letsheader=Indstillinger for nyt SSL-certifikat
 ssl_letsdoms=Værtsnavne til certifikat
 ssl_subset=Vil du springe ikke-verificerbare værtsnavne over?
-ssl_letsmode=Lad os kryptere valideringsmetoden
+ssl_letsmode=Domænevalideringsmetode
 ssl_letsmode0=Apache virtuel vært, der matcher værtsnavn
 ssl_letsmode1=Valgt virtuel Apache-vært
 ssl_letsmode2=Anden webserver dokumentmappe
 ssl_letsmode3=DNS-validering ved hjælp af BIND
 ssl_letsmode4=Certbot indbygget webserver
+ssl_certbotprehook=Ikke desto mindre kan denne advarsel ignoreres, hvis pre-request-kommandoen stopper tjenesten ved hjælp af port 80, før Certbot kører.
 ssl_letsok=Anmod om certifikat
 ssl_letsonly=Bare opdater fornyelse
 ssl_usewebmin=Kopiere ny nøgle og certifikat til Webmin?
 ssl_letsrenew=Måneder mellem automatisk fornyelse
 ssl_letsnotrenew=Forny kun manuelt
-ssl_staging=Lad os kryptere server
-ssl_staging0=Ægte
+ssl_staging=Udbyderserver
+ssl_staging0=Produktion
 ssl_staging1=Iscenesættelse (kun test)
+ssl_acmeopts=Udbyderindstillinger
+ssl_acmeextra=Vis avancerede indstillinger
+ssl_acmedir=Brugerdefineret ACME-mappe-URL
+ssl_acmedirdesc=Hvis den er indstillet, tilsidesætter dette standardudbyderserveren ovenfor.
+ssl_acmekid=Nøgle-ID for ekstern kontobinding
+ssl_acmekiddesc=Valgfrit. Nogle ACME-udbydere kræver dette ud over katalog-URL'en.
+ssl_acmehmac=Ekstern kontobinding HMAC-nøgle
+ssl_acmehmacdesc=Valgfrit. Kræver den indbyggede Certbot-klient, når den bruges.
 
 newkey_err=Kunne ikke oprette SSL-nøgle
 newkey_ecn=Manglende eller ugyldigt servernavn
@@ -478,16 +487,16 @@ startpage_webminup=Vis Webmin-opdateringer på siden Systeminformation?
 startpage_moduleup=Vis modulopdateringer på siden Systeminformation?
 
 upgrade_title=Opgrader Webmin
-upgrade_desc=Denne formular giver dig mulighed for at opgradere hele Webmin-installationen til en ny version. Du kan installere fra en lokal fil, en uploadet fil eller fra den nyeste version på <a href=http://www.webmin.com/>www.webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
-upgrade_descrpm=Denne formular giver dig mulighed for at opgradere hele din webmin-installation til en ny version ved hjælp af RPM's opgraderingsmulighed. Du kan installere fra en lokal RPM-fil, en uploadet fil eller fra den seneste version på <a href=http://www.webmin.com/>www.webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
-upgrade_descdeb=Denne formular giver dig mulighed for at opgradere hele Webmin-installationen til en ny version ved at opgradere sin Debian-pakke. Du kan installere fra en lokal.deb-fil, en uploadet fil eller fra den seneste version på <a href=http://www.webmin.com/>www.webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
-upgrade_descsolaris-pkg=Denne formular giver dig mulighed for at opgradere hele din Webmin-installation til en ny version ved at fjerne den aktuelle Solaris-pakke og installere en ny. Du kan installere fra en lokal Solaris-pakkefil, en uploadet fil eller fra den seneste version på <a href=http://www.webmin.com/>www.webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
+upgrade_desc=Denne formular giver dig mulighed for at opgradere hele Webmin-installationen til en ny version. Du kan installere fra en lokal fil, en uploadet fil eller fra den nyeste version på <a href=https://webmin.com>webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
+upgrade_descrpm=Denne formular giver dig mulighed for at opgradere hele din webmin-installation til en ny version ved hjælp af RPM's opgraderingsmulighed. Du kan installere fra en lokal RPM-fil, en uploadet fil eller fra den seneste version på <a href=https://webmin.com>webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
+upgrade_descdeb=Denne formular giver dig mulighed for at opgradere hele Webmin-installationen til en ny version ved at opgradere sin Debian-pakke. Du kan installere fra en lokal.deb-fil, en uploadet fil eller fra den seneste version på <a href=https://webmin.com>webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
+upgrade_descsolaris-pkg=Denne formular giver dig mulighed for at opgradere hele din Webmin-installation til en ny version ved at fjerne den aktuelle Solaris-pakke og installere en ny. Du kan installere fra en lokal Solaris-pakkefil, en uploadet fil eller fra den seneste version på <a href=https://webmin.com>webmin.com</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
 upgrade_descsun-pkg=Denne formular giver dig mulighed for at opgradere hele din Webmin-installation til en ny version fra Solaris-pakken leveret af Sun. Du kan installere fra en lokal Solaris-pakkefil eller en uploadet fil. De seneste pakker findes på <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
 upgrade_descgentoo=Denne formular giver dig mulighed for at opgradere hele Webmin-installationen til en ny version ved at fjerne den aktuelle Gentoo Emerge-pakke og installere en ny. Du kan installere fra en lokal Gentoo-pakkefil, en uploadet fil eller fra den nyeste version i Emerge-arkivet. Ligesom med en manuel opgradering vil alle dine konfigurationsindstillinger og tredjepartsmoduler blive bevaret.
 upgrade_local=Fra lokal fil
 upgrade_uploaded=Fra uploadet fil
 upgrade_url=Fra FTP eller HTTP URL
-upgrade_ftp=Seneste version fra www.webmin.com
+upgrade_ftp=Seneste version fra webmin.com
 upgrade_cup=Seneste version fra Calderas <tt>cupdate</tt> værktøj
 upgrade_emerge=Seneste version fra Emerge-arkivet
 upgrade_delete=Slet den gamle versions bibliotek efter opgradering?
@@ -495,7 +504,7 @@ upgrade_repo=Seneste version fra $1 repository
 upgrade_ok=Opgrader Webmin
 upgrade_err1=Kunne ikke opgradere fra $1
 upgrade_err2=Kunne ikke opgradere fra uploadet fil
-upgrade_err3=Kunne ikke opgradere fra www.webmin.com
+upgrade_err3=Kunne ikke opgradere fra webmin.com
 upgrade_err4=Kunne ikke opgradere fra Emerge-arkivet
 upgrade_err5=Kunne ikke opgradere fra URL $1
 upgrade_eurl=Manglende eller ugyldig URL
@@ -524,7 +533,7 @@ upgrade_ewpackage=Ikke en gyldig Solaris-pakke til Webmin
 upgrade_egentoo=Ikke en gyldig Gentoo-pakke med Webmin
 upgrade_eupdates=Kunne ikke downloade listen over opdateringer : $1
 upgrade_echecksig=RPM-signaturverifikation mislykkedes : $1
-upgrade_nosig=Ingen verifikation af pakkesignatur udført - kontrol af tar.gz-pakker er kun mulig, når du opgraderer fra www.webmin.com.
+upgrade_nosig=Ingen verifikation af pakkesignatur udført - kontrol af tar.gz-pakker er kun mulig, når du opgraderer fra webmin.com.
 upgrade_sig=Tjek GnuPG-signatur på pakken?
 upgrade_force=Opgrader, selvom ny version er den samme eller ældre?
 upgrade_disc=Frakobl alle andre brugere?
@@ -548,10 +557,10 @@ newmod_header=Nye modulstilskud
 newmod_def=Standard opførsel - tildel nye moduler til <tt>root</tt> eller <tt>admin</tt>
 newmod_users=Giv nye moduler til :
 
-update_desc1=Denne formular giver dig mulighed for at opgradere Webmin-moduler, der har vist sig at indeholde fejl eller sikkerhedshuller fra siden <a href=http://www.webmin.com/updates.html>Webmin Updates</a> eller fra en anden kilde. Dette vil sammenligne de aktuelt installerede moduler med dem, der er tilgængelige til opdatering, og eventuelt automatisk downloade og installere alle moduler, der er forældede.
+update_desc1=Denne formular giver dig mulighed for at opgradere Webmin-moduler, der har vist sig at indeholde fejl eller sikkerhedshuller fra siden <a href=https://webmin.com/updates.html>Webmin Updates</a> eller fra en anden kilde. Dette vil sammenligne de aktuelt installerede moduler med dem, der er tilgængelige til opdatering, og eventuelt automatisk downloade og installere alle moduler, der er forældede.
 update_header1=Opdater moduler nu
 update_header2=Opdater moduler efter planen
-update_webmin=Opdatering fra www.webmin.com
+update_webmin=Opdatering fra webmin.com
 update_other=Opdatering fra andre kilder ..
 update_show=Vis kun, hvilke moduler der vil blive opdateret
 update_missing=Installer moduler, der ikke er installeret i øjeblikket
@@ -567,7 +576,7 @@ update_apply=Gem og anvend
 update_sched2=Opdater moduler på $1:$2 hver $3 dage
 update_none=Ingen Webmin-opdateringer til denne version.
 update_failed=Kunne ikke installere modulet : $1
-update_desc2=Denne formular er beregnet til planlægning af den automatiske opdatering af Webmin-moduler, der indeholder fejl eller sikkerhedshuller fra siden <a href=http://www.webmin.com/updates.html>Webmin Updates</a> eller fra en anden kilde. Selvom denne service er nyttig, skal du være forsigtig med at bruge den, da den kan give angribere mulighed for at overtage dit system, hvis opdateringsserveren nogensinde blev kompromitteret.
+update_desc2=Denne formular er beregnet til planlægning af den automatiske opdatering af Webmin-moduler, der indeholder fejl eller sikkerhedshuller fra siden <a href=https://webmin.com/updates.html>Webmin Updates</a> eller fra en anden kilde. Selvom denne service er nyttig, skal du være forsigtig med at bruge den, da den kan give angribere mulighed for at overtage dit system, hvis opdateringsserveren nogensinde blev kompromitteret.
 update_enosig=Kunne ikke downloade signaturfil til opdateringer : $1
 update_ebadsig=Opdatering af signaturcheck mislykkedes : $1
 update_enomodsig=Kunne ikke downloade signaturfil til modul : $1
@@ -634,7 +643,7 @@ session_eblockuser_time=Manglende eller ugyldig brugerblokeringstid
 session_eblockuser_failures=Manglende eller ugyldig brugerblokerende login
 session_ecookie=Din browser understøtter ikke cookies, som er nødvendige til session-godkendelse
 session_elsof=Lokal godkendelse kræver <tt>lsof</tt> -programmet
-session_remember=Tilbyder du at huske login permanent?
+session_remember=Tilbyd en "husk mig"-mulighed for permanente logins?
 session_ip=Begrænse sessioner til den samme klient-IP-adresse?
 session_hostname=Vis værtsnavn på loginskærmen?
 session_utmp=Optage logins og logout i <tt>utmp</tt>?
@@ -664,13 +673,14 @@ session_pmode0=Nægt altid brugere med udløbne adgangskoder
 session_pmode1=Tillad altid brugere med udløbne adgangskoder
 session_pmode2=Bed brugere med udløbne adgangskoder om at indtaste et nyt
 session_md5=Webmin adgangskode hashing format
+session_rpc_timeout=RPC-sessionstimeout
+session_erpc_timeout=RPC-sessionstimeout mangler eller skal være et tal større end 0
 session_md5off=Bestem automatisk
 session_md5on=Brug <tt>MD5</tt> hashing-format
 session_sha512=Brug <tt>SHA512</tt> hashing-format
 session_yescrypt=Brug <tt>yescrypt</tt> hashing-format
 session_emd5mod=MD5-hash-format kan ikke bruges, da Perl $1-modulet ikke er installeret
-session_esha512mod=SHA512 hashing-format kan ikke bruges, da Perl $1-modulet ikke er installeret
-session_eyescrypt=yescrypt hashing-format kan ikke bruges, da Perl $1-modulet ikke er installeret
+session_edigestcrypt=Hashingformatet $1 kan ikke bruges, fordi systemets <tt>crypt</tt>-funktion ikke understøtter det
 session_blocklock=Lås også brugere med mislykkede login
 session_passapi=Vil du aktivere fjernadgangskode til ændring af adgangskode?
 session_passapi0=API deaktiveret
@@ -746,13 +756,14 @@ log_delete_webmincron=Slet $1 planlagte funktioner
 log_run_webmincron=Ran $1 planlagte funktioner
 log_save_webmincron=Opdateret planlagt funktion i modul $1
 log_onedelete_webmincron=Slet planlagt funktion i modul $1
-log_letsencrypt=Anmodet om nyt SSL-certifikat fra Let's Encrypt
-log_letsencryptdns=Oprettet Let's Encrypt DNS-post til $1
-log_letsencryptcleanup=Fjernet Lad os kryptere DNS-post for $1
+log_letsencrypt=Anmodede om nyt SSL-certifikat fra en ACME-udbyder
+log_letsencryptdns=Oprettede ACME DNS-post for $1
+log_letsencryptcleanup=Fjernede ACME DNS-post for $1
 
 themes_title=Webmin-temaer
 themes_desc=Temaer kontrollerer udseendet af Webmin-brugergrænsefladen, herunder ikoner, farver, baggrunde og layout af sider. Markeringsfeltet nedenfor kan bruges til at vælge et af de temaer, der er installeret på dit system.
 themes_sel=Aktuelt tema :
+themes_configure=Åbn temakonfigurationssiden
 themes_default=Gamle Webmin-tema
 themes_none=Ingen - lad temaet bestemme
 themes_change=Lave om
@@ -1104,6 +1115,7 @@ sendmail_authdef=Standard (i øjeblikket Cram-MD5)
 sendmail_from=Fra adresse til e-mail fra Webmin
 sendmail_fromdef=Standard ($1)
 sendmail_fromaddr=Adresse
+sendmail_name=Vist navn
 sendmail_toaddr=Standard destinationsadresse for meddelelser
 sendmail_to_def=Ingen sæt
 sendmail_etoaddr=Manglende eller forkert formateret destinationsadresse
@@ -1205,6 +1217,7 @@ twofactor_enrolllink=Du kan nu tilmelde dig tofaktorautentisering i <a href='$1'
 twofactor_url=For at lære mere om $1, se dets websted på <a href='$2' target=_blank>$2</a>.
 twofactor_etotpmodule=Perl-modulet <tt>$1</tt> nødvendigt til tofaktorautentisering er ikke installeret. Brug siden <a href='$2'>Perl Modules</a> i Webmin til at installere den.
 twofactor_qrcode=Indtast den hemmelige kode $1 i TOTP-appen, eller scan QR-koden nedenfor.
+twofactor_qrcode_manual=Indtast den hemmelige kode $1 i TOTP-appen, og opsæt den manuelt, da generering af QR-koder ikke understøttes på dette system.
 twofactor_etotpid=Ugyldig TOTP base32-kodet hemmelighed
 twofactor_etotptoken=TOTP-token skal være et tal
 twofactor_etotpmatch=Forkert OTP-kode
@@ -1214,9 +1227,9 @@ twofactor_secret0=Brug en tast på 16 tegn
 twofactor_esecret=Den hemmelige nøgle skal være nøjagtigt 16 tegn lang og kun indeholde bogstaver og tal
 twofactor_esession=To-faktor-godkendelse kan ikke bruges, medmindre session-baseret godkendelse er aktiv
 
-letsencrypt_title=Lad os kryptere certifikatanmodning
+letsencrypt_title=Anmodning om SSL-udbydercertifikat
 letsencrypt_err=Kunne ikke anmode om certifikat
-letsencrypt_ecmds=Hverken kommandoen Let's Encrypt-klient <tt>certbot</tt> eller <tt>python</tt> blev fundet på dit system
+letsencrypt_ecmds=Hverken den native ACME-klientkommando <tt>certbot</tt> eller <tt>python</tt> kommandoen blev fundet på dit system
 letsencrypt_epythonmod=Python-modulet $1 nødvendigt af den indbyggede Let's Encrypt-klient er ikke installeret
 letsencrypt_epythonver=Kunne ikke hente Python-versionen : $1
 letsencrypt_epythonver2=Python version $1 eller derover er påkrævet, men du har kun version $2.
@@ -1224,6 +1237,12 @@ letsencrypt_certbot=Certbot
 letsencrypt_edroot=Den virtuelle Apache-vært $1 har intet dokumentmappe!
 letsencrypt_edom=Manglende eller ugyldigt domænenavn
 letsencrypt_erenew=Manglende eller ikke-numerisk fornyelsesinterval
+letsencrypt_eacmedir=Manglende eller ugyldig ACME-mappe-URL
+letsencrypt_eeabdir=En ACME-mappe-URL skal indtastes, når der bruges ekstern kontobinding
+letsencrypt_eeabpair=Både nøgle-ID'et for den eksterne kontobinding og HMAC-nøglen skal indtastes
+letsencrypt_eeabnative=Ekstern kontobinding kan kun bruges, når den native ACME-klient er installeret
+letsencrypt_ecertbotport=Certbot-validering kræver, at TCP-port 80 er ledig, men den er allerede i brug af en anden tjeneste. Stop tjenesten midlertidigt, eller brug webroot- eller DNS-validering i stedet.
+letsencrypt_ecertbotwebmin=Certbot-validering kan ikke bruges, mens Webmin lytter på TCP-port 80. Brug i stedet webroot- eller DNS-validering, eller flyt Webmin til en anden port.
 letsencrypt_ewebroot=Webstedets dokumentmappe findes ikke
 letsencrypt_evhost=Der blev ikke fundet nogen virtuel vært, der matchede $1
 letsencrypt_efull=Forventet fuld certifikatfil $1 blev ikke fundet
@@ -1246,9 +1265,9 @@ letsencrypt_echain=Kunne ikke hente kædet certifikat : $1
 letsencrypt_echain2=Kædet certifikat downloadet fra $1 er tomt
 letsencrypt_ecsr=Kunne ikke generere CSR : $1
 letsencrypt_ekeygen=Kunne ikke generere privat nøgle : $1
-letsencrypt_enative=Den oprindelige Let's Encrypt-klient (certbot) blev tidligere brugt på dette system og skal bruges til alle fremtidige certifikatanmodninger
-letsencrypt_eacmedns=Kun den officielle Let's Encrypt-klient understøtter DNS-baseret validering
-letsencrypt_eacmecertbot=Kun den officielle Let's Encrypt-klient understøtter Certbot-validering
+letsencrypt_enative=Den native ACME-klient (certbot) blev tidligere brugt på dette system og skal bruges til alle fremtidige certifikatanmodninger
+letsencrypt_eacmedns=Kun den native ACME-klient understøtter DNS-baseret validering
+letsencrypt_eacmecertbot=Kun den native ACME-klient understøtter Certbot-validering
 
 announce_hide=Skjul denne meddelelse
 alert_hide=Skjul advarsel

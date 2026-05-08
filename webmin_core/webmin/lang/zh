@@ -332,7 +332,6 @@ ssl_essl=您的系统中似乎没有安装 Net::SSLeay perl 模块。要安装 O
 ssl_cpan=或者，您可以让 Webmin 为您 <a href='$1'>下载并安装</a> 所需的 Net::SSLeay Perl 模块。
 ssl_emessage=来自 Perl 的错误消息：$1
 ssl_desc1=运行 Webmin 的主机似乎已安装有 SSLeay Perl 模块。使用该模块，Webmin 支持在您的浏览器和服务器之间的 SSL 加密通讯。如果您通过 Internet 访问 Webmin 服务器，那么您应该考虑使用 SSL 来预防入侵者窃取您的 Webmin 口令。
-ssl_desc2=警告 -- 只有当您的浏览器支持 SSL (例如 Netscape 或 IE)，而且浏览器和 Webmin 主机之间没有防火墙堵塞 <b>https</b> 请求时，您才能使用 SSL 支持。
 ssl_header=SSL 支持
 ssl_on=启用 SSL？
 ssl_key=私钥文件
@@ -402,7 +401,6 @@ ssl_tabcreate=自签名证书
 ssl_tabcsr=证书签名请求
 ssl_tabupload=上传证书
 ssl_tabcurrent=当前证书
-ssl_tablets=Let的 Encrypt证书
 ssl_cheader=当前证书的详细信息
 ssl_typeself=自签名
 ssl_typereal=由 CA 签署
@@ -414,14 +412,9 @@ ssl_edownload=无法从证书中提取 PEM 数据
 ssl_csralready=查看最新密钥和 CSR .
 ssl_already1=以前生成的私钥 :
 ssl_already2=以前生成的证书签名请求 :.
-ssl_letsdesc=Let Encrypt 是一个免费，自动和开放的证书颁发机构，可用于生成供 Webmin 使用的 SSL 证书。
-ssl_letserr=不幸的是，此加密算法无法在您的系统上使用：$1。
-ssl_letserr2=或者，检查 <a href='$1'>模块配置</a> 页面，以确保您使用的是 <tt>letsencrypt</tt> 命令的正确路径。
-ssl_letsdesc2=该页面可用于请求新证书，该证书将覆盖 Webmin 中当前配置的任何其他证书。但是，CA 服务要求通过检查此系统是否托管该域的网站来验证您对证书域的所有权。这是通过在网站的文档目录中放置一个小的临时文件来完成的。
 ssl_letsheader=新 SSL 证书的选项
 ssl_letsdoms=证书的主机名
 ssl_subset=跳过无法验证的主机名？
-ssl_letsmode=Let Encrypt 验证方法
 ssl_letsmode0=匹配主机名的Apache虚拟主机
 ssl_letsmode1=选定的Apache虚拟主机
 ssl_letsmode2=其他Web服务器文档目录
@@ -432,9 +425,6 @@ ssl_letsonly=仅更新续订
 ssl_usewebmin=将新的密钥和证书复制到 Webmin？
 ssl_letsrenew=自动续订之间的月数
 ssl_letsnotrenew=仅手动续订
-ssl_staging=Let Encrypt 服务器
-ssl_staging0=确认
-ssl_staging1=Staging (仅测试)
 
 newkey_err=无法创建 SSL 密钥
 newkey_ecn=未设定或无效的服务器名称
@@ -469,16 +459,16 @@ startpage_webminup=在 “系统信息” 页面上显示 Webmin 更新？
 startpage_moduleup=在 “系统信息” 页面上显示模块更新？
 
 upgrade_title=升级 Webmin
-upgrade_desc=在此表上，您可以将整个 webmin 安装升级。可从本地文件、上载文件或从 <a href=http://www.webmin.com/>www.webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均被保留。
-upgrade_descrpm=在此表上，您可以用 RPM 的升级选项将整个 webmin 安装升级到一个新版本。可从本地文件、上载文件或从 <a href=http://www.webmin.com/>www.webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均被保留。
-upgrade_descdeb=通过此选项，您可以通过升级 Debian 软件包将整个 Webmin 安装升级到新版本。您可以上传本地 .deb 文件，或从 <a href=http://www.webmin.com/>www.webmin.com</a> 下载最新版本安装。与手动升级一样，所有配置设置和第三方模块都将保留。
-upgrade_descsolaris-pkg=在此表上，您可通过删除原有的 solaris 软件包并重新安装来将整个 webmin 安装升级到一个新版本。可从本地solaris 软件包文件、上载文件或从 <a href=http://www.webmin.com/>www.webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均会被保留。
+upgrade_desc=在此表上，您可以将整个 webmin 安装升级。可从本地文件、上载文件或从 <a href=https://webmin.com>webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均被保留。
+upgrade_descrpm=在此表上，您可以用 RPM 的升级选项将整个 webmin 安装升级到一个新版本。可从本地文件、上载文件或从 <a href=https://webmin.com>webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均被保留。
+upgrade_descdeb=通过此选项，您可以通过升级 Debian 软件包将整个 Webmin 安装升级到新版本。您可以上传本地 .deb 文件，或从 <a href=https://webmin.com>webmin.com</a> 下载最新版本安装。与手动升级一样，所有配置设置和第三方模块都将保留。
+upgrade_descsolaris-pkg=在此表上，您可通过删除原有的 solaris 软件包并重新安装来将整个 webmin 安装升级到一个新版本。可从本地solaris 软件包文件、上载文件或从 <a href=https://webmin.com>webmin.com</a> 的最新的版本来安装。与手工升级一样，您的所有配置和第三方模块均会被保留。
 upgrade_descsun-pkg=该选项可以从 Sun 提供的 Solaris 软件包将 Webmin 升级到新版本。您可以从本地 Solaris 软件包或上传的文件进行安装。可以在 <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a> 上找到最新的软件包。与手动升级一样，所有配置设置和第三方模块都将保留。
 upgrade_descgentoo=通过删除当前的 Gentoo Emerge 软件包并安装新的软件包，此选项可以将整个 Webmin 安装升级到新版本。您可以选择本地的 Gentoo 软件包文件上传，或选择 Emerge 存储库中的最新版本进行安装。与手动升级一样，所有配置设置和第三方模块都将保留。
 upgrade_local=从本地文件
 upgrade_uploaded=从上载文件
 upgrade_url=从 FTP 或 HTTP URL
-upgrade_ftp=从 www.webmin.com 网站的最新版本
+upgrade_ftp=从 webmin.com 网站的最新版本
 upgrade_cup=从 Caldera 的 <tt>cupdate</tt> 工具的最新版本
 upgrade_emerge=Emerge 存储库中的最新版本
 upgrade_delete=升级之后删除旧版本的路径？
@@ -486,7 +476,7 @@ upgrade_repo=存储库中的最新版本 $1
 upgrade_ok=升级 Webmin
 upgrade_err1=无法从 $1 升级
 upgrade_err2=无法从上载文件升级
-upgrade_err3=无法从 www.webmin.com 升级
+upgrade_err3=无法从 webmin.com 升级
 upgrade_err4=无法从 Emerge 存储库升级
 upgrade_err5=无法从 URL $1 升级
 upgrade_eurl=网址未设定或无效
@@ -515,7 +505,7 @@ upgrade_ewpackage=这不是 Webmin 的 Solaris 软件包
 upgrade_egentoo=不是 Webmin 的 Gentoo 软件包
 upgrade_eupdates=下载更新列表失败 : $1
 upgrade_echecksig=RPM 签名验证失败：$1
-upgrade_nosig=未完成软件包签名验证，仅当从 www.webmin.com 升级时才可以校验 tar.gz 软件包。
+upgrade_nosig=未完成软件包签名验证，仅当从 webmin.com 升级时才可以校验 tar.gz 软件包。
 upgrade_sig=检查软件包的 GnuPG 签名？
 upgrade_force=即使新版本相同或更旧，也要升级？
 upgrade_disc=断开所有其他用户的连接？
@@ -539,10 +529,10 @@ newmod_header=新模块授权
 newmod_def=默认行为：将新模块授权给 <tt>root</tt> 或 <tt>admin</tt>
 newmod_users=授予新模块 :
 
-update_desc1=在此表上，您可以从 <a href=http://www.webmin.com/webmin/updates.html>Webmin 更新</a> 页面或者以其他方式将出错或安全漏洞的 Webmin 升级。与此相反，现在安装的带有可更新功能的模块，当有的模块版本过时的情况时，会有选择性自动下载并安装到您的系统中。
+update_desc1=在此表上，您可以从 <a href=https://webmin.com/webmin/updates.html>Webmin 更新</a> 页面或者以其他方式将出错或安全漏洞的 Webmin 升级。与此相反，现在安装的带有可更新功能的模块，当有的模块版本过时的情况时，会有选择性自动下载并安装到您的系统中。
 update_header1=现在更新模块
 update_header2=按时更新模块
-update_webmin=从 www.webmin.com 更新
+update_webmin=从 webmin.com 更新
 update_other=以其他方式
 update_show=仅显示将要更新的模块
 update_missing=安装现在尚未安装的模块
@@ -558,7 +548,7 @@ update_apply=保存并应用
 update_sched2=每 $3 天更新一次 $1 的模块：$2
 update_none=这版没有 Webmin 更新模块。
 update_failed=安装模块失败 : $1
-update_desc2=此表示用来从 <a href=http://www.webmin.com/webmin/updates.html>Webmin 更新</a>或其他地方安排出错或有安全漏洞的 Webmin 模块的自动更新时间的。虽然这项服务很有帮助，但是您在使用时应该小心，防止出现更新服务器被入侵，攻击者入侵您的系统的情况。
+update_desc2=此表示用来从 <a href=https://webmin.com/webmin/updates.html>Webmin 更新</a>或其他地方安排出错或有安全漏洞的 Webmin 模块的自动更新时间的。虽然这项服务很有帮助，但是您在使用时应该小心，防止出现更新服务器被入侵，攻击者入侵您的系统的情况。
 update_enosig=无法下载用于更新的签名文件 : $1
 update_ebadsig=更新签名检查失败 : $1
 update_enomodsig=无法下载模块的签名文件 : $1
@@ -625,7 +615,6 @@ session_eblockuser_time=未设定或无效的用户阻止时间
 session_eblockuser_failures=未设定或无效的用户阻止登录
 session_ecookie=您的浏览器不支持会话验证所需的 cookies
 session_elsof=本地验证需要 <tt>lsof</tt> 程序
-session_remember=提供永久记忆登录的功能？
 session_ip=将会话限制为相同的客户端 IP 地址？
 session_hostname=在登录屏上显示主机名称？
 session_utmp=在 <tt>utmp</tt>中记录登录和注销?
@@ -660,8 +649,6 @@ session_md5on=使用 <tt>MD5</tt> 哈希格式
 session_sha512=使用 <tt>SHA512</tt> 哈希格式
 session_yescrypt=使用 <tt>yescrypt</tt> 哈希格式
 session_emd5mod=MD5 哈希格式无法使用，因为未安装 Perl $1 模块
-session_esha512mod=SHA512 哈希格式无法使用，因为未安装 Perl $1 模块
-session_eyescrypt=yescrypt 哈希格式无法使用，因为未安装 Perl $1 模块
 session_blocklock=同时锁定登录失败的用户
 session_passapi=启用远程密码更改API?
 session_passapi0=禁用API
@@ -729,9 +716,6 @@ log_delete_webmincron=删除 $1 调度函数
 log_run_webmincron=运行 $1 调度函数
 log_save_webmincron=更新了模块 $1 中的计划函数
 log_onedelete_webmincron=模块 $1 中已删除的预定函数
-log_letsencrypt=从 Let Encrypt 申请了新的SSL证书
-log_letsencryptdns=为 $1 创建了 Let Encrypt DNS 记录
-log_letsencryptcleanup=删除了 Let Encrypt $1 的 DNS记录
 
 themes_title=Webmin 主题
 themes_desc=主题控制 Webmin 用户界面的外观，包括图标、颜色、背景，可能还包括页面的布局。下面的选择框可用来选择安装在您系统上的主题。
@@ -1189,9 +1173,6 @@ twofactor_secret0=使用 16 个字符的密钥
 twofactor_esecret=密钥长度必须恰好为 16 个字符，并且只能包含字母和数字
 twofactor_esession=除非基于会话的身份验证处于活动状态，否则不能使用双因素身份验证
 
-letsencrypt_title=Let Encrypt 认证请求
-letsencrypt_err=请求证书失败
-letsencrypt_ecmds=在您的系统上找不到 Let Encrypt 客户端命令 <tt>certbot</tt> 或 <tt>python</tt> 命令
 letsencrypt_epythonmod=内置的 Let Encrypt 客户端所需的 Python 模块 $1
 letsencrypt_epythonver=无法获取 Python 版本：$1
 letsencrypt_epythonver2=需要 Python 版本 $1 或更高版本，但是您只有版本 $2。
@@ -1221,9 +1202,6 @@ letsencrypt_echain=下载链式证书失败 : $1
 letsencrypt_echain2=从 $1 下载的链接证书为空
 letsencrypt_ecsr=无法生成 CSR：$1
 letsencrypt_ekeygen=生成私钥失败 : $1
-letsencrypt_enative=本地的 Let Encrypt 客户端（certbot）先前在此系统上使用，并且必须用于以后的所有证书请求
-letsencrypt_eacmedns=仅官方的 Let Encrypt 客户端支持基于 DNS 的验证
-letsencrypt_eacmecertbot=只有官方的Let Encrypt客户端支持Certbot验证
 
 announce_hide=隐藏此告示
 alert_hide=隐藏警告
