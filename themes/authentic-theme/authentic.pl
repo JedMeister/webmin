@@ -1105,6 +1105,16 @@ sub theme_ui_alert_box
     return $rv;
 }
 
+sub theme_ui_link_button
+{
+    my ($href, $label, $target, $tags) = @_;
+    $target ||= "_self";
+    return '<a href="' . &quote_escape($href) . '" target="' . &quote_escape($target) .
+      '" class="btn btn-default ui_link_button heighter-28"' .
+      ($tags ? ' ' . $tags : '') . '>' . &html_escape($label) . '</a>' . "\n";
+}
+
+
 sub theme_ui_table_start
 {
     my ($heading, $tabletags, $cols, $tds, $rightheading) = @_;
