@@ -306,7 +306,6 @@ ssl_essl=Sembla que el mòdul Net::SSLeay de Perl no està instal·lat al sistem
 ssl_cpan=Alternativament, pots fer que Webmin <a href='$1'>descarregui i instal·li</a> el mòdul Perl Net::SSLeay necessari per tu.
 ssl_emessage=El missatge d'error de Perl ha estat: $1
 ssl_desc1=Sembla que el host on s'està executant Webmin té instal·lat el mòdul Perl SSLeay. Utilitzant-lo, Webmin suporta comunicació xifrada SSL entre el teu navegador i el servidor. Si estàs accedint el servidor Webmin a través d'Internet, llavors hauries de pensar seriosament en utilitzar SSL per evitar que algun atacant capturi la teva contrasenya de Webmin.
-ssl_desc2=Atenció - activa el suport SSL només si tens un navegador que suporti SSL, i no hi ha cap tallafoc que bloquegi peticions <b>https</b> entre el teu navegador i el host Webmin.
 ssl_header=Suport SSL
 ssl_on=Activa SSL
 ssl_key=Fitxer de clau privada
@@ -375,7 +374,6 @@ ssl_tabcreate=Creació de Certificat Auto-signat
 ssl_tabcsr=Petició de Signatura de Certificat
 ssl_tabupload=Puja de Certificat
 ssl_tabcurrent=Certificat Actual
-ssl_tablets=Let's Encrypt
 ssl_cheader=Detalls del certificat actual
 ssl_typeself=Autosignat
 ssl_typereal=Signat per CA
@@ -387,19 +385,12 @@ ssl_edownload=No s'han pogut extreure les dades PEM del certificat
 ssl_csralready=Visualitza la clau i CSR més recent...
 ssl_already1=Clau privada generada anteriorment:
 ssl_already2=Petició de signatura de certificat generada anteriorment:
-ssl_letsdesc=Let's Encrypt és una autoritat de certificats oberta, automatitzada i lliure que es pot utilitzar per a generar un certificat SSL per a Webmin.
-ssl_letserr=Desgraciadament, no es pot utilitzar Let's Encrypt al teu sistema: $1.
-ssl_letserr2=Comprova la pàgina de <a href='$1'>configuració del mòdul</a> per assegurar que estàs utilitzant el camí correcte de l'ordre <tt>letsencrypt</tt> o <tt>letsencrypt-auto</tt>.
-ssl_letsdesc2=Aquesta pàgina es pot utilitzar per a demanar un nou certificat, que sobreescriurà qualsevol altre que estigui actualment configurat a Webmin. No obstant, el servei Let's Encrypt demana que la propietat del domini certificat sigui validada comprovant que aquests sistema allotja el lloc web del domini. Això es fa posant un petit fitxer temporal al directori de documents del lloc web.
 ssl_letsheader=Opcions del nou certificat SSL
 ssl_letsok=Demana el Certifica
 ssl_letsonly=Només Actualitza la Renovació
 ssl_usewebmin=Copia la nova clau i el nou certificat a Webmin
 ssl_letsrenew=Mesos entre renovació automàtica
 ssl_letsnotrenew=Només renovació automàtica
-ssl_staging=Servidor Let's Encrypt
-ssl_staging0=Real
-ssl_staging1=Staging (només proves)
 
 newkey_err=No s'ha pogut crear la clau SSL
 newkey_ecn=Hi falta el nom del servidor o bé és invàlid
@@ -435,23 +426,23 @@ startpage_webminup=Mostra les actualitzacions de Webmin a la pàgina d'Informaci
 startpage_moduleup=Mostra les actualitzacions de mòduls a la pàgina d'Informació del Sistema
 
 upgrade_title=Actualització de Webmin
-upgrade_desc=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió. Pots instal·lar-la des d'un fitxer local, un fitxer pujat, o des de la versió més recent de <a href=http://www.webmin.com/>www.webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
-upgrade_descrpm=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió utilitzant l'opció d'actualització RPM. Pots instal·lar-la des d'un fitxer RPM local, un fitxer pujat, o des de la versió més recent de <a href=http://www.webmin.com/>www.webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
-upgrade_descdeb=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió actualitzant el paquet Debian. Pots instal·lar-lo des d'un fitxer RPM local, un fitxer pujat, o des de la versió més recent de <a href=http://www.webmin.com/>www.webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
-upgrade_descsolaris-pkg=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió eliminant el paquet Solaris actual i instal·lant-ne un de nou. Pots fer la instal·lació a partir d'un fitxer Solaris local, un fitxer pujat o la darrera versió de <a href=http://www.webmin.com/>www.webmin.com</a>. Igual que amb una actualització manual, es conservaran totes les configuracions i mòduls de tercers.
+upgrade_desc=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió. Pots instal·lar-la des d'un fitxer local, un fitxer pujat, o des de la versió més recent de <a href=https://webmin.com>webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
+upgrade_descrpm=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió utilitzant l'opció d'actualització RPM. Pots instal·lar-la des d'un fitxer RPM local, un fitxer pujat, o des de la versió més recent de <a href=https://webmin.com>webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
+upgrade_descdeb=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió actualitzant el paquet Debian. Pots instal·lar-lo des d'un fitxer RPM local, un fitxer pujat, o des de la versió més recent de <a href=https://webmin.com>webmin.com</a>. Igual que amb una actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
+upgrade_descsolaris-pkg=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió eliminant el paquet Solaris actual i instal·lant-ne un de nou. Pots fer la instal·lació a partir d'un fitxer Solaris local, un fitxer pujat o la darrera versió de <a href=https://webmin.com>webmin.com</a>. Igual que amb una actualització manual, es conservaran totes les configuracions i mòduls de tercers.
 upgrade_descsun-pkg=Aquest formulari permet actualitzar tota la instal·lació Webmin a una nova versió a partir del paquet Solaris proporcionat per Sun. Pots fer la instal·lació a partir d'un fitxer de paquet Solaris local o un fitxer pujat. Pots trobar els darrers paquets a <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Igual que amb una actualització manual, es conservaran totes les configuracions i mòduls de tercers.
 upgrade_descgentoo=Aquest formulari et permet actualitzar tota la instal·lació de Webmin a una versió nova traient el paquet actual Gentoo Emerge i instal·lant-ne un de nou. Pots instal·lar-lo a partir d'un fitxer local, un fitxer pujat o a partir de la versió més recent del repositori de Gentoo. Igual que per a l'actualització manual, es conservaran tots els valors de configuració i tots els mòduls de terceres parts.
 upgrade_local=Des d'un fitxer local
 upgrade_uploaded=Des d'un fitxer pujat
 upgrade_url=des d'un URL FTP o HTTP
-upgrade_ftp=Versió més recent de www.webmin.com
+upgrade_ftp=Versió més recent de webmin.com
 upgrade_cup=Versió més recent amb l'eina <tt>cupdate</tt> de Caldera
 upgrade_emerge=Versió més recent del repositori Emerge
 upgrade_delete=Suprimeix el directori de la versió anterior després de l'actualització
 upgrade_ok=Actualitza Webmin
 upgrade_err1=No s'ha pogut actualitzar a partir de $1
 upgrade_err2=No s'ha pogut actualitzar des del fitxer pujat
-upgrade_err3=No s'ha pogut actualitzar des de www.webmin.com
+upgrade_err3=No s'ha pogut actualitzar des de webmin.com
 upgrade_err4=No s'ha pogut fer l'actualització des del repositori Emerge
 upgrade_err5=No s'ha pogut fer l'actualització des de l'URL $1
 upgrade_eurl=Hi falta l'URL o bé és invàlid
@@ -476,7 +467,7 @@ upgrade_ewpackage=No és un paquet Solaris vàlid per Webmin
 upgrade_egentoo=No és un paquet Gentoo de Webmin vàlid
 upgrade_eupdates=No s'ha pogut descarregar la llista d'actualitzacions: $1
 upgrade_echecksig=La verificació de la signatura del RPM ha fallat: $1
-upgrade_nosig=No s'ha fet cap verificació de la signatura del paquet - la comprovació dels paquets tar.gz només és possible en actualitzar des de www.webmin.com
+upgrade_nosig=No s'ha fet cap verificació de la signatura del paquet - la comprovació dels paquets tar.gz només és possible en actualitzar des de webmin.com
 upgrade_sig=Comprova la signatura GnuPG del paquet
 upgrade_force=Actualitza encara que la nova versió sigui la mateixa que la vella
 upgrade_disc=Desconnecta tots els altres usuaris
@@ -500,7 +491,7 @@ newmod_header=Accessos del Nou Mòdul
 newmod_def=Comportament per defecte - dóna els nous mòduls a <tt>root</tt> o <tt>admin</tt>
 newmod_users=Dóna els nous mòduls a:
 
-update_desc1=Aquest formulari et permet actualitzar els mòduls de Webmin quer contenen errors o forats de seguretat des de la pàgina d'<a href=http://www.webmin.com/updates.html>Actualitzacions de Webmin</a> des d'una altra font. Això compararà els mòduls actualment instal·lats amb aquells disponibles per a actualització, i opcionalment descarregarà i instal·larà tots els mòduls desfasats.
+update_desc1=Aquest formulari et permet actualitzar els mòduls de Webmin quer contenen errors o forats de seguretat des de la pàgina d'<a href=https://webmin.com/updates.html>Actualitzacions de Webmin</a> des d'una altra font. Això compararà els mòduls actualment instal·lats amb aquells disponibles per a actualització, i opcionalment descarregarà i instal·larà tots els mòduls desfasats.
 update_header1=Actualitza ara els mòduls
 update_header2=Actualitza els mòduls de forma planificada
 update_other=Actualitza des d'altres fonts...
@@ -518,7 +509,7 @@ update_apply=Desa i Aplica
 update_sched2=Actualitza els mòduls a les $1:$2 cada $3 dies
 update_none=No hi ha actualitzacions Webmin per a aquesta versió.
 update_failed=No s'ha pogut instal·lar el mòdul: $1
-update_desc2=Aquest formulari és per planificar l'actualització automàtica dels mòduls Webmin que tenen errors o problemes de seguretat des de la pàgina <a href=http://www.webmin.com/updates.html>Webmin Updates</a> o des d'una altra font. Tot i que aquest servei és útil, has d'anar amb compte en utilitzar-lo, ja que pot permetre que algun atacant prengui control del teu sistema si el servidor d'actualitzacions ha quedat compromès.
+update_desc2=Aquest formulari és per planificar l'actualització automàtica dels mòduls Webmin que tenen errors o problemes de seguretat des de la pàgina <a href=https://webmin.com/updates.html>Webmin Updates</a> o des d'una altra font. Tot i que aquest servei és útil, has d'anar amb compte en utilitzar-lo, ja que pot permetre que algun atacant prengui control del teu sistema si el servidor d'actualitzacions ha quedat compromès.
 update_enosig=No s'ha pogut descarregar el fitxer de signatura per a les actualitzacions: $1
 update_ebadsig=La comprovació de la signatura ha fallat: $1
 update_enomodsig=No s'ha pogut descarregar el fitxer de signatura per al mòdul: $1
@@ -584,7 +575,6 @@ session_eblockuser_time=Hi falta el temps de bloqueig de l'usuari o bé és inv�
 session_eblockuser_failures=Hi falta el nombre d'entrades bloquejants de l'usuari o bé és invàlid
 session_ecookie=El teu navegador no suporta galetes, que són necessàries per a l'autenticació de la sessió
 session_elsof=L'autenticació local requereix el programa <tt>lsof</tt>
-session_remember=Ofereix-te a recordar la contrasenya de forma permanent
 session_ip=Limita les sessions a la mateixa adreça IP client
 session_hostname=Mostra el nom de host a la pantalla de connexió
 session_realname=Mostra el nom de host real en lloc del nom de l'URL
@@ -674,9 +664,6 @@ log_delete_webmincron=S'han suprimit $1 funcions planificades
 log_run_webmincron=S'han executat $1 funcions planificades
 log_save_webmincron=S'ha actualitzat la funció planificada al mòdul $1
 log_onedelete_webmincron=S'ha suprimit la funció planificada del mòdul $1
-log_letsencrypt=S'ha demanat un nou certificat SSL per part de Let's Encrypt
-log_letsencryptdns=S'ha creat el registre DNS Let's Encrypt DNS de $1
-log_letsencryptcleanup=S'ha eliminat el registre DNS Let's Encrypt de $1
 
 themes_title=Temes Webmin
 themes_desc=Temes controla l'aparença de la interfície d'usuari de Webmin, incloent-hi les icones, els colors, els fons i la disposició de les pàgines. La caixa de selecció de sota es pot utilitzar per triar un dels temes instal·lats al sistema.
@@ -1074,9 +1061,6 @@ twofactor_secret0=Utilitza una clau de 16 caràcters
 twofactor_esecret=La clau secreta ha de tenir exactament 16 caràcters de llarg i ha de contenir només lletres i números
 twofactor_esession=L'autenticació de dos factors no es pot utilitzar si l'autenticació basada en sessió no està activa
 
-letsencrypt_title=Petició de Certificat Let's Encrypt
-letsencrypt_err=No s'ha pogut demanar el certificat
-letsencrypt_ecmds=No s'ha trobat al sistema l'ordre client de Let's Encrypt <tt>letsencrypt-auto</tt> ni l'ordre <tt>python</tt>
 letsencrypt_epythonmod=El mòdul $1 de Python necessari per al client integrat de Let's Encrypt no està instal·lat
 letsencrypt_epythonver=No s'ha pogut obtenir la versió de Python: $1
 letsencrypt_epythonver2=Cal la versió de Python $1 o superior, però només tens la versió $2.
@@ -1104,6 +1088,5 @@ letsencrypt_echain=No s'ha pogut baixar el certificat encadenat: $1
 letsencrypt_echain2=El certificat encadenat descarregat des de $1 està buit
 letsencrypt_ecsr=No s'ha pogut generar la petició CSR: $1
 letsencrypt_ekeygen=No s'ha pogut generar la clau privada: $1
-letsencrypt_enative=S'ha utilitzat anteriorment el client nadiu de Let's Encrypt (certbot) en aquest sistema, i s'ha de seguir utilitzant per a totes les peticions futures de certificats
 
 announce_hide=Amaga Aquest Anunci

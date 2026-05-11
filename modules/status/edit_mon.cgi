@@ -7,6 +7,10 @@ $access{'edit'} || &error($text{'mon_ecannot'});
 &foreign_require("servers", "servers-lib.pl");
 &ReadParse();
 @handlers = &list_handlers();
+&error_setup($text{'mon_err'});
+if (!$in{'type'} && !$in{'id'}) {
+	&error($text{'mon_etype2'});
+	}
 if ($in{'type'}) {
 	# Create a new monitor
 	$in{'type'} =~ /^[a-zA-Z0-9\_\-\.\:]+$/ || &error($text{'mon_etype'});
@@ -144,10 +148,11 @@ print &ui_table_row($text{'mon_nosched'},
 		    &ui_select("nosched", int($serv->{'nosched'}),
 			       [ [ 1, $text{'no'} ],
 				 [ 0, $text{'mon_warndef'} ],
-				 [ 3,  $text{'mon_warn1'} ],
-				 [ 2,  $text{'mon_warn0'} ],
-				 [ 4,  $text{'mon_warn2'} ],
-				 [ 5,  $text{'mon_warn3'} ] ]),
+				 [ 3, $text{'mon_warn1'} ],
+				 [ 2, $text{'mon_warn0'} ],
+				 [ 4, $text{'mon_warn2'} ],
+				 [ 5, $text{'mon_warn3'} ],
+				 [ 6, $text{'mon_quiet'} ] ]),
 		    undef, \@tds);
 
 # Show number of failures
@@ -230,6 +235,12 @@ print &ui_table_row($text{'mon_onup'},
 print &ui_table_row($text{'mon_ontimeout'},
 		    &ui_textbox("ontimeout", $serv->{'ontimeout'}, 60),
 		    undef, \@tds);
+
+# When to run commands?
+print &ui_table_row($text{'mon_cmdmode'},
+		    &ui_radio("cmdmode", $serv->{'cmdmode'} || 0,
+			      [ [ 0, text{'mon_cmdmode0'} ],
+				[ 1, text{'mon_cmdmode1'} ] ]));
 
 print &ui_table_row(" ", "<font size=-1>$text{'mon_oninfo'}</font>",
 		    undef, \@tds);

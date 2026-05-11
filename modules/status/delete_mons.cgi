@@ -4,20 +4,38 @@
 require './status-lib.pl';
 &ReadParse();
 $in{'d'} || &error($text{'deletes_enone'});
+
+# Get the monitors
 @d = split(/\0/, $in{'d'});
+foreach $d (@d) {
+	$serv = &get_service($d);
+	$serv || &error($text{'deletes_egone'});
+	push(@dels, $serv);
+	}
 
 if ($in{'delete'}) {
 	# Deleting
 	$access{'edit'} || &error($text{'mon_ecannot'});
-	foreach $d (@d) {
-		$serv = &get_service($d);
-		$serv || &error($text{'deletes_egone'});
-		push(@dels, $serv);
-		}
 	foreach $serv (@dels) {
 		&delete_service($serv);
 		}
 	&webmin_log("deletes", undef, scalar(@dels));
+	&redirect("");
+	}
+elsif ($in{'disable'} || $in{'enable'}) {
+	# Disabling or enabling scheduled check
+	$access{'edit'} || &error($text{'mon_ecannot'});
+	foreach $serv (@dels) {
+		if ($in{'disable'} && $serv->{'nosched'} != 1) {
+			$serv->{'old_nosched'} = $serv->{'nosched'};
+			$serv->{'nosched'} = 1;
+			}
+		elsif ($in{'enable'} && $serv->{'nosched'} == 1) {
+			$serv->{'nosched'} = $serv->{'old_nosched'} || 0;
+			}
+		&save_service($serv);
+		}
+	&webmin_log($in{'enable'} ? 'enables' : 'disables', undef, scalar(@dels));
 	&redirect("");
 	}
 else {

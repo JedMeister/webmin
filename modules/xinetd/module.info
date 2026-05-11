@@ -2,5 +2,5 @@ category=net
 desc=Network Services
 name=Xinetd
 longdesc=Edit servers handled by Xinetd, a replacement for inetd.
-version=2.630
-depends=2.630
+version=2.640
+depends=2.640

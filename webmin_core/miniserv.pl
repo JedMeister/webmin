@@ -98,11 +98,10 @@ if ($use_md5) {
 	push(@startup_msg, "Using MD5 module $use_md5");
 	}
 
-# Check if the SHA512 perl module is available
-eval "use Crypt::SHA";
-$use_sha512 = $@ ? "Crypt::SHA" : undef;
-if ($use_sha512) {
-	push(@startup_msg, "Using SHA512 module $use_sha512");
+# Check if the crypt function supports SHA512
+if (&unix_crypt_supports_sha512()) {
+	$use_sha512 = 1;
+	push(@startup_msg, "Using SHA512 via crypt() function");
 	}
 
 # Get miniserv's perl path and location
@@ -1704,6 +1703,8 @@ if (!$davpath && ($method eq "SEARCH" || $method eq "PUT")) {
 print DEBUG "handle_request: Need authentication\n";
 $validated = 0;
 $blocked = 0;
+local $http_auth_error;
+local $http_auth_reason;
 
 # Session authentication is never used for connections by
 # another webmin server, or for specified pages, or for DAV, or XMLRPC,
@@ -1721,7 +1722,8 @@ if ($header{'user-agent'} =~ /webmin/i ||
 # Check for SSL authentication
 my $trust_ssl = $config{'trust_real_ip'} && !$config{'no_trust_ssl'};
 if ($use_ssl && $verified_client ||
-    $trust_ssl && $header{'x-ssl-client-dn'}) {
+    $trust_ssl && $header{'x-ssl-client-dn'} &&
+                  $header{'x-ssl-client-verify'} =~ /^success/i) {
 	if ($use_ssl && $verified_client) {
 		$peername = Net::SSLeay::X509_NAME_oneline(
 				Net::SSLeay::X509_get_subject_name(
@@ -1761,11 +1763,31 @@ if (!$validated && !$deny_authentication && !$config{'session'} &&
     $header{authorization} =~ /^basic\s+(\S+)$/i) {
 	# authorization given..
 	($authuser, $authpass) = split(/:/, &b64decode($1), 2);
-	print DEBUG "handle_request: doing basic auth check authuser=$authuser authpass=$authpass\n";
+	print DEBUG "handle_request: doing basic auth check ".
+		    "authuser=$authuser authpass=$authpass\n";
 	local ($vu, $expired, $nonexist, $wvu) =
 		&validate_user_caseless($authuser, $authpass, $host,
 				        $acptip, $port);
-	print DEBUG "handle_request: vu=$vu expired=$expired nonexist=$nonexist\n";
+	local $twofactor_blocked = 0;
+	if ($vu && $wvu) {
+		# Don't allow a 2FA-protected account to fall back to
+		# password-only HTTP Basic authentication.
+		my $uinfo = &get_user_details($wvu, $vu);
+		if ($uinfo && $uinfo->{'twofactor_provider'}) {
+			print DEBUG "handle_request: rejecting basic auth for ".
+				    "$wvu because two-factor authentication ".
+				    "is enabled\n";
+			$twofactor_blocked = 1;
+			$http_auth_error = 'twofactor-required';
+			$http_auth_reason = 'With two-factor authentication '.
+					    'enabled for this account, RPC '.
+					    'access requires a separate '.
+					    'Webmin user without 2FA';
+			$vu = undef;
+			}
+		}
+	print DEBUG "handle_request: vu=$vu expired=$expired ".
+		    "nonexist=$nonexist\n";
 	if ($vu && (!$expired || $config{'passwd_mode'} == 1)) {
 		$authuser = $vu;
 		$validated = 1;
@@ -1774,10 +1796,16 @@ if (!$validated && !$deny_authentication && !$config{'session'} &&
 		$validated = 0;
 		}
 	if ($use_syslog && !$validated) {
-		syslog("crit", "%s",
-		       ($nonexist ? "Non-existent" :
-			$expired ? "Expired" : "Invalid").
-		       " login as $authuser from $acpthost");
+		my $msg = $twofactor_blocked
+			? "Login as $authuser from $acpthost rejected because ".
+			  "two-factor authentication is enabled"
+			: ($nonexist
+				? "Non-existent"
+				: $expired
+					? "Expired"
+					: "Invalid").
+			  " login as $authuser from $acpthost";
+		syslog("crit", "%s", $msg);
 		}
 	if ($authuser =~ /\r|\n|\s/) {
 		&http_error(500, "Invalid username",
@@ -1817,7 +1845,7 @@ if ($config{'session'} && !$deny_authentication &&
 				}
 			&run_logout_script($louser, $sid,
 					   $loghost, $localip);
-			&write_logout_utmp($louser, $actphost);
+			&write_logout_utmp($louser, $acpthost);
 			}
 		}
 	elsif ($in{'session'}) {
@@ -2144,15 +2172,29 @@ if (!$validated) {
 			&write_data("Server: @{[&server_info()]}\r\n");
 			&write_data("WWW-authenticate: Basic ".
 				   "realm=\"$config{'realm'}\"\r\n");
+			if ($http_auth_error) {
+				my $err = $http_auth_error;
+				$err =~ s/\r|\n//g;
+				&write_data("X-Webmin-Auth-Error: $err\r\n");
+				if ($http_auth_reason) {
+					my $reason = $http_auth_reason;
+					$reason =~ s/\r|\n//g;
+					&write_data(
+					  "X-Webmin-Auth-Reason: $reason\r\n");
+					}
+				}
 			&write_keep_alive(0);
 			&write_data("Content-type: text/html; Charset=utf-8\r\n");
 			&write_data("\r\n");
 			&reset_byte_count();
+			my $auth_err = $http_auth_reason ||
+				"A password is required to access this ".
+				"web server. Please try again.";
 			&write_data("<html>\n");
 			&write_data("<head>".&embed_error_styles($roots[0])."<title>401 &mdash; Unauthorized</title></head>\n");
 			&write_data("<body><h2 class=\"err-head\">401 &mdash; Unauthorized</h2>\n");
-			&write_data("<p class=\"err-content\">A password is required to access this\n");
-			&write_data("web server. Please try again.</p> <p>\n");
+			&write_data("<p class=\"err-content\">".
+				    &html_escape($auth_err)."</p> <p>\n");
 			&write_data("</body></html>\n");
 			&log_request($loghost, undef, $reqline, 401, &byte_count());
 			return 0;
@@ -2226,12 +2268,22 @@ if (lc($header{'connection'}) =~ /upgrade/ &&
     lc($header{'upgrade'}) eq 'websocket' &&
     $baseauthuser) {
 	print DEBUG "websockets request to $simple\n";
-	my ($ws) = grep { $_->{'path'} eq $simple } @websocket_paths;
+	my $ws_simple = $simple;
+	my ($ws) = grep { $_->{'path'} eq $ws_simple } @websocket_paths;
+	if (!$ws && $config{'redirect_prefix'}) {
+		my $prefix = $config{'redirect_prefix'};
+		$prefix =~ s/[\/]+$//g;
+		if ($prefix && $ws_simple =~ s/^\Q$prefix\E(?=\/|$)//) {
+			$ws_simple ||= "/";
+			print DEBUG "websockets retry without prefix $prefix as $ws_simple\n";
+			($ws) = grep { $_->{'path'} eq $ws_simple } @websocket_paths;
+			}
+		}
 	if (!$ws) {
 		&http_error(400, "Unknown websocket path");
 		return 0;
 		}
-	return &handle_websocket_request($ws, $simple);
+	return &handle_websocket_request($ws, $ws_simple);
 	}
 
 # Work out the active theme(s)
@@ -3351,6 +3403,43 @@ sub reset_byte_count { $write_data_count = 0; }
 # byte_count()
 sub byte_count { return $write_data_count; }
 
+# get_logged_sensitive_params()
+# Returns query parameter names whose values should be redacted in access logs
+sub get_logged_sensitive_params
+{
+my @rv = qw(access_token api_key auth key pass passwd password refresh_token secret token);
+my %seen = map { lc($_) => 1 } @rv;
+if ($config{'log_redact_params'}) {
+	foreach my $param (split(/\s+|,\s*/, $config{'log_redact_params'})) {
+		next if (!$param);
+		my $lparam = lc($param);
+		next if ($seen{$lparam}++);
+		push(@rv, $param);
+		}
+	}
+return @rv;
+}
+
+# sanitise_logged_request(request)
+# Redacts sensitive query parameter values from a request line before logging
+sub sanitise_logged_request
+{
+my ($request) = @_;
+return $request if (!defined($request));
+my $sanitised = $request;
+my @sensitive = &get_logged_sensitive_params();
+return $request if (!@sensitive);
+my $sensitive = qr/(?:@{[join("|", map { quotemeta($_) } @sensitive)]})/i;
+
+if ($sanitised =~ /^(\S+\s+)(\S+)(\s+HTTP\/\d+\.\d+)$/) {
+	my ($prefix, $uri, $suffix) = ($1, $2, $3);
+	$uri =~ s/([?&;])((?:$sensitive))=([^&;\s]*)/$1.$2."=***"/ige;
+	$sanitised = $prefix.$uri.$suffix;
+	}
+
+return $sanitised;
+}
+
 # log_request(hostname, user, request, code, bytes)
 # Write an HTTP request to the log file
 sub log_request
@@ -3358,6 +3447,7 @@ sub log_request
 local ($host, $user, $request, $code, $bytes) = @_;
 local $headers;
 my $request_nolog = $request;
+my $request_log = &sanitise_logged_request($request);
 
 # Process full request string like `POST /index.cgi?param=1 HTTP/1.1` as well
 if ($request =~ /^(POST|GET)\s+/) {
@@ -3390,7 +3480,7 @@ if ($config{'log'}) {
 	else {
 		$headers = "";
 		}
-	print MINISERVLOG "$host $ident $user [$dstr] \"$request\" ",
+	print MINISERVLOG "$host $ident $user [$dstr] \"$request_log\" ",
 			  "$code $bytes$headers\n";
 	close(MINISERVLOG);
 	}
@@ -4355,6 +4445,9 @@ if ($ok && (!$expired ||
 		local $sec = $ssl ? "; secure" : "";
 		if (!$config{'no_httponly'}) {
 			$sec .= "; httpOnly";
+			}
+		if (!$config{'no_samesite'}) {
+			$sec .= "; SameSite=Lax";
 			}
 		if ($in{'page'} !~ /^\/[A-Za-z0-9\/\.\-\_:]+$/) {
 			# Make redirect URL safe
@@ -5771,8 +5864,136 @@ if ($config{'dav_debug'}) {
 return 0;
 }
 
+# normalise_websocket_origin(scheme, host, port)
+# Canonicalises an origin for websocket security checks
+sub normalise_websocket_origin
+{
+my ($scheme, $host, $port) = @_;
+return undef if (!$scheme || !defined($host) || $host eq '');
+$scheme = lc($scheme);
+$host =~ s/^\s+|\s+$//g;
+$host =~ s/^\[(.+)\]$/$1/;
+$host = lc($host);
+$port ||= $scheme eq 'https' ? 443 : 80;
+my $portstr = $port == 80 && $scheme eq 'http' ? "" :
+	      $port == 443 && $scheme eq 'https' ? "" : ":".$port;
+my $hostport = &check_ip6address($host) ? "[".$host."]".$portstr
+					: $host.$portstr;
+return $scheme."://".$hostport;
+}
+
+# parse_websocket_origin(origin)
+# Parses an Origin header value into canonical scheme://host[:port] form
+sub parse_websocket_origin
+{
+my ($origin) = @_;
+return undef if (!defined($origin));
+$origin =~ s/^\s+|\s+$//g;
+return undef if (!$origin || lc($origin) eq 'null');
+if ($origin =~ /^(https?):\/\/\[([^\]]+)\](?::(\d+))?\/?$/i) {
+	return &normalise_websocket_origin($1, $2, $3);
+	}
+elsif ($origin =~ /^(https?):\/\/([^:\/]+)(?::(\d+))?\/?$/i) {
+	return &normalise_websocket_origin($1, $2, $3);
+	}
+return undef;
+}
+
+# parse_configured_websocket_origin(origin)
+# Parses a configured origin, accepting ws:// and wss:// aliases
+sub parse_configured_websocket_origin
+{
+my ($origin) = @_;
+return undef if (!defined($origin));
+$origin =~ s/^\s+|\s+$//g;
+$origin =~ s/^ws:\/\//http:\/\//i;  # if admin configures websocket URLs
+$origin =~ s/^wss:\/\//https:\/\//i;
+return &parse_websocket_origin($origin);
+}
+
+# forwarded_websocket_origin(proto, host, port)
+# Builds a canonical origin from reverse-proxy forwarding headers
+sub forwarded_websocket_origin
+{
+my ($proto, $host, $port) = @_;
+return undef if (!$proto || !$host);
+$proto =~ s/\s+//g;
+$proto = (split(/,/, $proto))[0];
+$host =~ s/^\s+|\s+$//g;
+$host = (split(/\s*,\s*/, $host))[0];
+if ($host =~ /^\[(.+)\]:(\d+)$/) {
+	($host, $port) = ($1, $2);
+	}
+elsif ($host =~ /^([^:]+):(\d+)$/) {
+	($host, $port) = ($1, $2);
+	}
+return &normalise_websocket_origin($proto, $host, $port);
+}
+
+# get_websocket_allowed_origins()
+# Returns all canonical origins allowed to connect to miniserv websockets
+sub get_websocket_allowed_origins
+{
+my @rv;
+my %seen;
+my $add_origin = sub {
+	my ($origin) = @_;
+	return if (!$origin || $seen{$origin}++);
+	push(@rv, $origin);
+	};
+
+# Direct access to miniserv, based on the current request host and port
+&$add_origin(&normalise_websocket_origin($use_ssl ? 'https' : 'http',
+					 $host, $port));
+
+# Canonical externally-visible URL, if one has been configured
+&$add_origin(&normalise_websocket_origin($prot, $redirhost, $redirport));
+
+# Reverse proxy headers, when present
+if ($config{'trust_real_ip'}) {
+	&$add_origin(&forwarded_websocket_origin($header{'x-forwarded-proto'},
+						 $header{'x-forwarded-host'},
+						 $header{'x-forwarded-port'}));
+	&$add_origin(&forwarded_websocket_origin($header{'x-forwarded-proto'},
+						 $header{'host'},
+						 $header{'x-forwarded-port'}));
+	}
+
+# Explicit websocket host setting, converted back to a page origin
+if ($config{'websocket_host'}) {
+	my $wshost = $config{'websocket_host'};
+	$wshost =~ s/[\/]+$//g;
+	if ($wshost =~ /^wss?:\/\//) {
+		$wshost =~ s/^ws/http/i;
+		&$add_origin(&parse_websocket_origin($wshost));
+		}
+	else {
+		&$add_origin(&forwarded_websocket_origin($ssl ? 'https' : 'http',
+							 $wshost, undef));
+		}
+	}
+
+# Extra public origins can be whitelisted explicitly for unusual edge proxy
+# configs where auto-detection cannot work
+if ($config{'websocket_extra_origins'}) {
+	foreach my $origin (split(/\s+|,\s*/, $config{'websocket_extra_origins'})) {
+		next if (!$origin);
+		my $parsed = &parse_configured_websocket_origin($origin);
+		if ($parsed) {
+			&$add_origin($parsed);
+			}
+		else {
+			print DEBUG "ignoring invalid websocket_extra_origins ".
+				    "entry $origin\n";
+			}
+		}
+	}
+
+return @rv;
+}
+
 # handle_websocket_request(&wsconfig, original-path)
-# Handle a websockets connection, which may be a proxy to another host and port
+# Handles a websocket connection, which may proxy to another host and port
 sub handle_websocket_request
 {
 my ($ws, $simple) = @_;
@@ -5789,6 +6010,26 @@ if (@users || @busers) {
 		&http_error(500, "Invalid user for Websockets connection");
 		return 0;
 		}
+	}
+if ($ws->{'token'} && (!defined($in{'token'}) ||
+    $in{'token'} ne $ws->{'token'})) {
+	print DEBUG "websockets token mismatch for $simple\n";
+	&http_error(403, "Invalid Websockets token");
+	return 0;
+	}
+my $origin = $header{'origin'} || $header{'sec-websocket-origin'};
+my $parsed_origin = &parse_websocket_origin($origin);
+if (!$origin || !$parsed_origin) {
+	print DEBUG "websockets missing or invalid Origin header\n";
+	&http_error(403, "Invalid Websockets origin");
+	return 0;
+	}
+my @allowed_origins = &get_websocket_allowed_origins();
+if (!grep { $_ eq $parsed_origin } @allowed_origins) {
+	print DEBUG "websockets origin $parsed_origin not in ".
+		    join(" ", @allowed_origins)."\n";
+	&http_error(403, "Invalid Websockets origin");
+	return 0;
 	}
 my @protos = split(/\s*,\s*/, $header{'sec-websocket-protocol'});
 print DEBUG "websockets protos ",join(" ", @protos),"\n";
@@ -6393,6 +6634,15 @@ if ($salt) {
 else {
 	return $rv;
 	}
+}
+
+# unix_crypt_supports_sha512()
+# Returns 1 if the built-in crypt() function can already do SHA512
+sub unix_crypt_supports_sha512
+{
+my $hash = '$6$Tk5o/GEE$zjvXhYf/dr5M7/jan3pgunkNrAsKmQO9r5O8sr/Cr1hFOLkWmsH4iE9hhqdmHwXd5Pzm4ubBWTEjtMeC.h5qv1';
+my $newhash = eval { crypt('test', $hash) };
+return $newhash eq $hash;
 }
 
 # encrypt_sha512(password, [salt])

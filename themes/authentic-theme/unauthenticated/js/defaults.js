@@ -13,8 +13,9 @@ var
     settings_theme_config_admins_only_privileged = false,
 
     // Content page options
-    settings_roundish_content = false,
-    settings_content_margin_multiplier_top = 0,
+    settings_roundish_content = true,
+    settings_roundish_radius = 16,
+    settings_content_margin_multiplier_top = 1,
     settings_content_margin_multiplier_side = 1,
     settings_right_table_force_single_column = false,
     settings_right_table_links_type = 2,
@@ -165,7 +166,7 @@ var
     settings_leftmenu_vm_cm_dropdown_icons = true,
     settings_perform_content_scrolling = true,
     settings_sysinfo_real_time_run_rate = 1000, // 1 second tick rate (the higher the less CPU intensive it is)
-    settings_sysinfo_real_time_stored_duration = 1800, // 30 minutes of stored stats data (max default: 3600; max manual: 86400-highly not recommended as will crash browser tab),
+    settings_sysinfo_real_time_stored_duration = 1800, // 30 minutes of stored stats data
     settings_sysinfo_real_time_shutdown_on_last = false,
     settings_sysinfo_cache_timeout = 86400,
     settings_sysinfo_cpu_fans_base_rpm = 1000,
@@ -241,6 +242,7 @@ var
             { 'sshd': '22 sftp' },
             { 'status': 'monitors' },
             { 'filemin': 'files nautilus krusader total double norton midnight commander mc far' },
+            { 'nftables': 'nftables' },
             { 'firewalld': 'iptables' },
             { 'firewall': 'iptables' },
             { 'firewall6': 'iptables' },
@@ -251,7 +253,8 @@ var
             { 'lvm': 'lvm' },
             { 'csf': 'csf' },
             { 'xterm': 'ssh shell bash zsh login ajax xterm' },
-            { 'virtualmin-wp-workbench': 'wordpress classicpress' },
+            { 'virtualmin-wp-workbench': [['index', 'wordpress classicpress wp admin']] },
+            { 'virtualmin-podman': [['list_containers', 'podman docker pods'], ['index', 'podman docker pods']] },
             {
                 'virtual-server': [
                     ['edit_newautoconfig', 'outlook thunderbird mailspring k-9 k9 mailclient autoconfig autodiscover'],
@@ -266,7 +269,7 @@ var
                     ['dnsclouds', 'AWS Amazon Route 53 Google Cloud DNS gcdns Cloudflare DNS'],
                     ['list_clouds', 'AWS Amazon S3 Rackspace Cloud Files Google Cloud Storage Dropbox Backblaze Azure Blob Storage'],
                     ['edit_newvalidate', 'fix reset'],
-                    ['list_scripts', 'wordpress roundcube whmcs phpmyadmin wp workbench'],
+                    ['list_scripts', 'roundcube whmcs phpmyadmin wordpress classicpress wp workbench wp admin'],
                     ['list_users', 'new add password realname fullname email database permissions quota mail forwarding shell thunderbird outlook geary'],
                     ['edit_domain', 'domain update plan template password features dns website database mariadb mysql mail spam webalizer webmin login awstats'],
                     ['domain_form', 'new add create domain alias subdomain sub-domain subserver sub-server top-level'],

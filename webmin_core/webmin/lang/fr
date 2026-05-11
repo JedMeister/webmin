@@ -308,7 +308,6 @@ ssl_essl=Le module perl Net :: SSLeay ne semble pas être installé sur votre sy
 ssl_cpan=Vous pouvez également demander à Webmin <a href='$1'>de télécharger et d'installer</a> le module Net::SSLeay Perl requis pour vous.
 ssl_emessage=Le message d'erreur de Perl était : $1
 ssl_desc1=L'hôte sur lequel Webmin s'exécute semble avoir installé le module SSLeay Perl. Grâce à cela, Webmin prend en charge la communication cryptée SSL entre votre navigateur et le serveur. Si vous accédez à votre serveur Webmin via Internet, vous devez absolument envisager d'utiliser SSL pour empêcher un attaquant de capturer votre mot de passe Webmin.
-ssl_desc2=Attention - n'activez la prise en charge SSL que si votre navigateur prend en charge SSL et qu'il n'y a pas de requêtes de blocage de pare-feu <b>https</b> entre votre navigateur et l'hôte Webmin.
 ssl_header=Prise en charge SSL
 ssl_on=Activer SSL?
 ssl_key=Fichier de clé privée
@@ -377,7 +376,6 @@ ssl_tabcreate=Certificat auto-signé
 ssl_tabcsr=Demande de signature de certificat
 ssl_tabupload=Télécharger le certificat
 ssl_tabcurrent=Certificat actuel
-ssl_tablets=Permet de chiffrer
 ssl_cheader=Détails du certificat actuel
 ssl_typeself=Auto-signé
 ssl_typereal=Signé par CA
@@ -389,10 +387,6 @@ ssl_edownload=Échec de l'extraction des données PEM du certificat
 ssl_csralready=Afficher la clé et le CSR les plus récents ...
 ssl_already1=Clé privée précédemment générée :
 ssl_already2=Demande de signature de certificat précédemment générée :
-ssl_letsdesc=Let's Encrypt est une autorité de certification gratuite, automatisée et ouverte qui peut être utilisée pour générer un certificat SSL à utiliser par Webmin.
-ssl_letserr=Malheureusement, Let's Encrypt ne peut pas être utilisé sur votre système : $1.
-ssl_letserr2=Vous pouvez également consulter la page <a href='$1'>de configuration du module</a> pour vous assurer que vous utilisez le chemin correct vers la commande <tt>letsencrypt</tt>.
-ssl_letsdesc2=Cette page peut être utilisée pour demander un nouveau certificat, qui écrasera tout autre déjà configuré dans Webmin. Cependant, le service Let's Encrypt nécessite que votre propriété du domaine de certificat soit validée en vérifiant que ce système héberge le site Web du domaine. Pour ce faire, placez un petit fichier temporaire dans le répertoire de documents du site Web.
 ssl_letsheader=Options pour le nouveau certificat SSL
 ssl_letsdoms=Noms d'hôte pour le certificat
 ssl_letsok=Demander un certificat
@@ -400,9 +394,6 @@ ssl_letsonly=Il suffit de mettre à jour le renouvellement
 ssl_usewebmin=Copier la nouvelle clé et le nouveau certificat dans Webmin?
 ssl_letsrenew=Mois entre le renouvellement automatique
 ssl_letsnotrenew=Renouveler uniquement manuellement
-ssl_staging=Serveur Let's Encrypt
-ssl_staging0=Réel
-ssl_staging1=Mise en scène (test uniquement)
 
 newkey_err=Échec de la création de la clé SSL
 newkey_ecn=Nom de serveur manquant ou non valide
@@ -438,23 +429,23 @@ startpage_webminup=Afficher les mises à jour Webmin sur la page Informations sy
 startpage_moduleup=Afficher les mises à jour du module sur la page Informations système?
 
 upgrade_title=Mettre à niveau Webmin
-upgrade_desc=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Webmin vers une nouvelle version. Vous pouvez installer à partir d'un fichier local, d'un fichier téléchargé ou de la dernière version sur <a href=http://www.webmin.com/>www.webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
-upgrade_descrpm=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation webmin vers une nouvelle version à l'aide de l'option de mise à niveau de RPM. Vous pouvez installer à partir d'un fichier RPM local, d'un fichier téléchargé ou de la dernière version sur <a href=http://www.webmin.com/>www.webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
-upgrade_descdeb=Ce formulaire vous permet de mettre à jour toute votre installation Webmin vers une nouvelle version en mettant à jour son paquet Debian. Vous pouvez installer à partir d'un fichier .deb local, d'un fichier téléchargé ou de la dernière version sur <a href=http://www.webmin.com/>www.webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
-upgrade_descsolaris-pkg=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Webmin vers une nouvelle version en supprimant le package Solaris actuel et en en installant un nouveau. Vous pouvez installer à partir d'un fichier de package Solaris local, d'un fichier téléchargé ou de la dernière version sur <a href=http://www.webmin.com/>www.webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
+upgrade_desc=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Webmin vers une nouvelle version. Vous pouvez installer à partir d'un fichier local, d'un fichier téléchargé ou de la dernière version sur <a href=https://webmin.com>webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
+upgrade_descrpm=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation webmin vers une nouvelle version à l'aide de l'option de mise à niveau de RPM. Vous pouvez installer à partir d'un fichier RPM local, d'un fichier téléchargé ou de la dernière version sur <a href=https://webmin.com>webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
+upgrade_descdeb=Ce formulaire vous permet de mettre à jour toute votre installation Webmin vers une nouvelle version en mettant à jour son paquet Debian. Vous pouvez installer à partir d'un fichier .deb local, d'un fichier téléchargé ou de la dernière version sur <a href=https://webmin.com>webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
+upgrade_descsolaris-pkg=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Webmin vers une nouvelle version en supprimant le package Solaris actuel et en en installant un nouveau. Vous pouvez installer à partir d'un fichier de package Solaris local, d'un fichier téléchargé ou de la dernière version sur <a href=https://webmin.com>webmin.com</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
 upgrade_descsun-pkg=Ce formulaire vous permet de mettre à niveau l'ensemble de votre installation Webmin vers une nouvelle version à partir du package Solaris fourni par Sun. Vous pouvez installer à partir d'un fichier de package Solaris local ou d'un fichier téléchargé. Les derniers packages sont disponibles à l'adresse <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a>. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
 upgrade_descgentoo=Ce formulaire vous permet de mettre à niveau toute votre installation Webmin vers une nouvelle version en supprimant le package Gentoo Emerge actuel et en en installant un nouveau. Vous pouvez installer à partir d'un fichier de package Gentoo local, d'un fichier téléchargé ou de la dernière version du référentiel Emerge. Tout comme avec une mise à niveau manuelle, tous vos paramètres de configuration et modules tiers seront conservés.
 upgrade_local=À partir d'un fichier local
 upgrade_uploaded=À partir du fichier téléchargé
 upgrade_url=Depuis une URL FTP ou HTTP
-upgrade_ftp=Dernière version de www.webmin.com
+upgrade_ftp=Dernière version de webmin.com
 upgrade_cup=Dernière version de l'outil <tt>cupdate</tt> de Caldera
 upgrade_emerge=Dernière version du référentiel Emerge
 upgrade_delete=Supprimer le répertoire des anciennes versions après la mise à niveau?
 upgrade_ok=Mettre à niveau Webmin
 upgrade_err1=Échec de la mise à niveau de $1
 upgrade_err2=Échec de la mise à niveau à partir du fichier téléchargé
-upgrade_err3=Échec de la mise à niveau depuis www.webmin.com
+upgrade_err3=Échec de la mise à niveau depuis webmin.com
 upgrade_err4=Échec de la mise à niveau du référentiel Emerge
 upgrade_err5=Échec de la mise à niveau à partir de l'URL $1
 upgrade_eurl=URL manquante ou non valide
@@ -479,7 +470,7 @@ upgrade_ewpackage=Pas un package Solaris valide pour Webmin
 upgrade_egentoo=Pas un package Gentoo valide de Webmin
 upgrade_eupdates=Échec du téléchargement de la liste des mises à jour : $1
 upgrade_echecksig=La vérification de la signature RPM a échoué : $1
-upgrade_nosig=Aucune vérification de signature de paquet effectuée - la vérification des paquets tar.gz n'est possible que lors de la mise à niveau depuis www.webmin.com.
+upgrade_nosig=Aucune vérification de signature de paquet effectuée - la vérification des paquets tar.gz n'est possible que lors de la mise à niveau depuis webmin.com.
 upgrade_sig=Vérifier la signature GnuPG sur l'emballage?
 upgrade_force=Mettre à niveau même si la nouvelle version est la même ou plus ancienne?
 upgrade_disc=Déconnecter tous les autres utilisateurs?
@@ -503,10 +494,10 @@ newmod_header=Nouvelles subventions de module
 newmod_def=Comportement par défaut - attribuez de nouveaux modules à <tt>root</tt> ou <tt>admin</tt>
 newmod_users=Accorder de nouveaux modules à :
 
-update_desc1=Ce formulaire vous permet de mettre à niveau les modules Webmin qui contiennent des bogues ou des failles de sécurité à partir de la page <a href=http://www.webmin.com/updates.html>Mises à jour Webmin</a> ou d'une autre source. Cela comparera les modules actuellement installés avec ceux disponibles pour la mise à jour, et éventuellement téléchargera et installera automatiquement tous les modules qui sont obsolètes.
+update_desc1=Ce formulaire vous permet de mettre à niveau les modules Webmin qui contiennent des bogues ou des failles de sécurité à partir de la page <a href=https://webmin.com/updates.html>Mises à jour Webmin</a> ou d'une autre source. Cela comparera les modules actuellement installés avec ceux disponibles pour la mise à jour, et éventuellement téléchargera et installera automatiquement tous les modules qui sont obsolètes.
 update_header1=Mettre à jour les modules maintenant
 update_header2=Mettre à jour les modules dans les délais
-update_webmin=Mise à jour depuis www.webmin.com
+update_webmin=Mise à jour depuis webmin.com
 update_other=Mise à jour à partir d'autres sources ...
 update_show=Afficher uniquement les modules qui seraient mis à jour
 update_missing=Installer des modules qui ne sont pas actuellement installés
@@ -522,7 +513,7 @@ update_apply=Enregistrer et appliquer
 update_sched2=Mettre à jour les modules à $1 :$2 tous les $3 jours
 update_none=Aucune mise à jour Webmin pour cette version.
 update_failed=Échec de l'installation du module : $1
-update_desc2=Ce formulaire permet de planifier la mise à jour automatique des modules Webmin contenant des bogues ou des failles de sécurité depuis la page <a href=http://www.webmin.com/updates.html>Mises à jour Webmin</a> ou depuis une autre source. Bien que ce service soit utile, vous devez faire attention à l'utiliser car il peut permettre à des attaquants de prendre le contrôle de votre système si le serveur de mise à jour a été compromis.
+update_desc2=Ce formulaire permet de planifier la mise à jour automatique des modules Webmin contenant des bogues ou des failles de sécurité depuis la page <a href=https://webmin.com/updates.html>Mises à jour Webmin</a> ou depuis une autre source. Bien que ce service soit utile, vous devez faire attention à l'utiliser car il peut permettre à des attaquants de prendre le contrôle de votre système si le serveur de mise à jour a été compromis.
 update_enosig=Impossible de télécharger le fichier de signature pour les mises à jour : $1
 update_ebadsig=La vérification de la signature des mises à jour a échoué : $1
 update_enomodsig=Impossible de télécharger le fichier de signature pour le module : $1
@@ -588,7 +579,6 @@ session_eblockuser_time=Heure de blocage utilisateur manquante ou non valide
 session_eblockuser_failures=Identifiants de blocage utilisateur manquants ou non valides
 session_ecookie=Votre navigateur ne prend pas en charge les cookies, qui sont nécessaires pour l'authentification de session
 session_elsof=L'authentification locale nécessite le programme <tt>lsof</tt>
-session_remember=Offrez de se rappeler connexion permanente?
 session_ip=Limiter les sessions à la même adresse IP client?
 session_hostname=Afficher le nom d'hôte sur l'écran de connexion?
 session_realname=Afficher le vrai nom d'hôte au lieu du nom de l'URL?
@@ -679,9 +669,6 @@ log_delete_webmincron=Fonctions planifiées à $1 supprimées
 log_run_webmincron=Ran $1 fonctions programmées
 log_save_webmincron=Mise à jour de la fonction programmée dans le module $1
 log_onedelete_webmincron=Fonction programmée supprimée dans le module $1
-log_letsencrypt=Nouveau certificat SSL demandé à Let's Encrypt
-log_letsencryptdns=Création d'un enregistrement DNS Let's Encrypt pour $1
-log_letsencryptcleanup=Suppression de l'enregistrement DNS Let's Encrypt pour $1
 
 themes_title=Thèmes Webmin
 themes_desc=Les thèmes contrôlent l'apparence de l'interface utilisateur Webmin, y compris les icônes, les couleurs, les arrière-plans et la disposition des pages. La boîte de sélection ci-dessous peut être utilisée pour choisir l'un des thèmes installés sur votre système.
@@ -1085,9 +1072,6 @@ twofactor_secret0=Utiliser une clé à 16 caractères
 twofactor_esecret=La clé secrète doit contenir exactement 16 caractères et ne contenir que des lettres et des chiffres
 twofactor_esession=L'authentification à deux facteurs ne peut être utilisée que si l'authentification basée sur la session est active
 
-letsencrypt_title=Let's Encrypt Certificate Request
-letsencrypt_err=Échec de la demande de certificat
-letsencrypt_ecmds=Ni la commande client Let's Encrypt <tt>certbot</tt> ni la commande <tt>python</tt> n’ont été trouvées sur votre système
 letsencrypt_epythonmod=Le module Python $1 requis par le client Let's Encrypt intégré n'est pas installé
 letsencrypt_epythonver=Impossible d'obtenir la version Python : $1
 letsencrypt_epythonver2=La version Python $1 ou supérieure est requise, mais vous n'avez que la version $2.
@@ -1116,8 +1100,6 @@ letsencrypt_echain=Échec du téléchargement du certificat chaîné : $1
 letsencrypt_echain2=Le certificat chaîné téléchargé à partir de $1 est vide
 letsencrypt_ecsr=Échec de la génération du CSR : $1
 letsencrypt_ekeygen=Échec de la génération de la clé privée : $1
-letsencrypt_enative=Le client natif Let's Encrypt (certbot) a été utilisé précédemment sur ce système et doit être utilisé pour toutes les futures demandes de certificat
-letsencrypt_eacmedns=Seul le client officiel Let's Encrypt prend en charge la validation DNS
 
 announce_hide=Cacher cette annonce
 alert_hide=Masquer l'alerte

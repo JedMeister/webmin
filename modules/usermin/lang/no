@@ -55,8 +55,6 @@ lang_intro=Her kan du bestemme hvilke språk Usermin skal bruke vis visning av t
 
 session_title=Autentisering
 session_desc1=Når de er aktivert, beskytter passord-tidsavbrudd Usermin tjeneren din fra brute-force passord cracking ved å legge til en statdig utvidende forsinkelse mellom hvert feilet innloggingsforsøk fra samme bruker.
-session_desc2=Når sesjonsautentisering er aktivert vil hver brukers sesjon bli sporet av Usermin. Dette muliggjøre automatisk utlogging av brukere med lang innlogging uten aktivitet. Vær oppmerksom på at aktivering og deaktiver av sesjonsautentisering kan tvinge alle brukere til å logge inn på nytt.
-session_remember=Tilby permanent innlogging?
 session_hostname=Vis vertsnavn på innloggings-skjerm?
 session_realname=Vis faktisk vertsnav i stedet for navn fra URL?
 session_authmode=Autentiserings-metode
@@ -127,7 +125,6 @@ acl_desc=Bruk denne siden til å velge hvilke installerte Usermin moduler som er
 
 ssl_title=SSL kryptering
 ssl_desc1=Verten som Usermin kjører på ser ut til å ha SSLeay Perl modulen installert. Ved bruk av denne støtter Usermin SSL kryptert kommunikasjon mellom din nettleser og tjeneren. Dersom brukere kobler seg opp mot din Usermin over Internet bør du definitivt vurdere å bruke SSL for å forhindre at andre snapper opp passord og annen sensitiv informasjon.
-ssl_desc2=Advarsel - slå bare på SSL støtte dersom du har en nettleser som støtter SSL (som Firefox eller IE), og det ikke er en brannmur som blokkerer https mellom nettleseren din og Usermin verten.
 ssl_newkey=Her kan du opprette en ny SSL nøkkel for Usermin tjeneren din.
 ssl_hole=Siden du for øyeblikket bruker standard Usermin SSL nøkkelen som alle har tilgang til, bør du generere en ny nøkkel umiddelbart. Hvis ikke kan du ikke anse SSL tilkoblingen din som sikker!
 ssl_savekey=Her kan du laste opp en eksisterende SSL privat nøkkel på PEM format samt et sertifikat som Usermin tjeneren din kan benytte.
@@ -250,18 +247,18 @@ ui_tabs=Kategoriser moduler på indeks siden?
 
 upgrade_title=Oppgrader Usermin
 upgrade_title2=Installer Usermin
-upgrade_desc=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon. Du kan installere fra en lokal fil, en opplastet fil eller fra siste versjon på <a href=http://www.usermin.com/>www.usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
-upgrade_descrpm=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon ved hjelp av RPMs oppgraderingsfunksjon. Du kan installere fra en lokal RPM fil, en opplastet fil eller fra siste versjon på <a href=http://www.usermin.com/>www.usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
-upgrade_descdeb=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon ved å oppgradere dens Debian pakke. Du kan installere fra en lokal .deb fil, en opplastet fil eller fra siste versjon på <a href=http://www.usermin.com/>www.usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
+upgrade_desc=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon. Du kan installere fra en lokal fil, en opplastet fil eller fra siste versjon på <a href=https://usermin.com>usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
+upgrade_descrpm=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon ved hjelp av RPMs oppgraderingsfunksjon. Du kan installere fra en lokal RPM fil, en opplastet fil eller fra siste versjon på <a href=https://usermin.com>usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
+upgrade_descdeb=Dette skjemaet lar deg oppgradere hele Usermin installasjonen din til en ny versjon ved å oppgradere dens Debian pakke. Du kan installere fra en lokal .deb fil, en opplastet fil eller fra siste versjon på <a href=https://usermin.com>usermin.com</a>. På samme måte som ved manuell oppgradering, vil alle dine konfigurasjonsinnstillinger og tredjeparts moduler bli beholdt.
 upgrade_local=Fra lokal fil
 upgrade_uploaded=Fra opplastet fil
 upgrade_url=Fra ftp eller http URL
-upgrade_ftp=Siste versjon fra www.usermin.com
+upgrade_ftp=Siste versjon fra usermin.com
 upgrade_delete=Slett katalog for gammel versjon etter oppgradering?
 upgrade_ok=Oppgrader Usermin
 upgrade_err1=Kunne ikke oppgradere fra $1
 upgrade_err2=Kunne ikke oppgradere fra opplastet fil
-upgrade_err3=Kunne ikke oppgradere fra www.usermin.com
+upgrade_err3=Kunne ikke oppgradere fra usermin.com
 upgrade_err5=Kunne ikke oppgradere fra URL $1
 upgrade_eurl=Manglende eller ugyldig URL
 upgrade_efile=Filen finnes ikke
@@ -282,10 +279,10 @@ upgrade_failed=.. oppgradering feilet!
 upgrade_updates=Det er $1 oppdateringer for denne nye versjonen av Usermin. <a href='$2'>Klikk her</a> for å laste dem ned og installere dem automatisk.
 upgrade_eupdates=Kunne ikke laste ned liste med oppdateringer : $1
 
-update_desc1=Dette skjemaet lar deg oppgradere Usermin moduler som har kjente feil eller sikkerhetshull, fra siden <a href=http://www.usermin.com/uupdates.html>Usermin Oppdateringer</a> eller fra en annen kilde. Det vi lda bli gjort en sammenligning mellom de installerte modulene og de som er tilgjengelige for oppdatering, og du får valget om automatisk laste ned og installere de modulene som er utdatert.
+update_desc1=Dette skjemaet lar deg oppgradere Usermin moduler som har kjente feil eller sikkerhetshull, fra siden <a href=https://usermin.com/uupdates.html>Usermin Oppdateringer</a> eller fra en annen kilde. Det vi lda bli gjort en sammenligning mellom de installerte modulene og de som er tilgjengelige for oppdatering, og du får valget om automatisk laste ned og installere de modulene som er utdatert.
 update_header1=Oppdater moduler nå
 update_header2=Oppdater moduler ihht tidsplan
-update_webmin=Oppdater fra www.usermin.com
+update_webmin=Oppdater fra usermin.com
 update_other=Oppdater fra en annen kilde
 update_show=Bare vis hvilke moduler som ville blitt oppdatert
 update_missing=Installer moduler som ikke er installert
@@ -297,7 +294,7 @@ update_apply=Lagre og bruk
 update_sched=Oppdater moduler kl. $1:00 hver $2. dag
 update_none=Ingen Usermin oppdateringer for denne versjonen.
 update_failed=Kunne ikke installere modul : $1
-update_desc2=Dette skjemaet brukes til å tidsplanlegge automatisk oppdatering av Usermin moduler med kjente feil eller sikkerhetshull fra siden <a href=http://www.usermin.com/uupdates.html>Usermin Oppdateringer</a> eller fra en annen kilde. Selv om denne tjenesten er nyttig bør den brukes med forsiktighet siden den kan tillate angripere å overta systemet ditt dersom opdateringstjeneren er blitt kompromittert.
+update_desc2=Dette skjemaet brukes til å tidsplanlegge automatisk oppdatering av Usermin moduler med kjente feil eller sikkerhetshull fra siden <a href=https://usermin.com/uupdates.html>Usermin Oppdateringer</a> eller fra en annen kilde. Selv om denne tjenesten er nyttig bør den brukes med forsiktighet siden den kan tillate angripere å overta systemet ditt dersom opdateringstjeneren er blitt kompromittert.
 
 assignment_title=Tilordne moduler på nytt
 assignment_header=Modul-kategori tilordninger

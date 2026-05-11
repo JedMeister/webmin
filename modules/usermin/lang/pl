@@ -55,8 +55,6 @@ lang_intro=Ta strona umożliwia Ci wybór języka w którym Usermin będzie wypi
 
 session_title=Autoryzacja
 session_desc1=Włączenie chroni przed atakami metodą "prób i błędów" poprzez zwiększanie odstępu czasu pomiędzy kolejnymi nieudanymi próbami zalogowania tego samego użytkownika.
-session_desc2=Włączenie spowoduje automatyczne wylogowywanie nieaktywnych użytkowników po upływie dozwolonego czasu. Bądź przygotowany na to, że włączenie lub wyłączenia autoryzacji sesji może zmusić wszystkich użytkowników do ponownego zalogowania.
-session_remember=Proponować trwałe zapamiętanie hasła?
 session_hostname=Pokazywać nazwę komputera na ekranie logowania?
 session_realname=Pokazywać rzeczywistą nazwę komputera zamiast nazwy z URL?vvv\
 session_authmode0=Użyj uwierzytelniania PAM, jeżeli jest dostępne
@@ -126,7 +124,6 @@ acl_desc=Użyj tej strony, aby wybrać, które zainstalowane moduły Usermina s�
 
 ssl_title=Szyfrowanie SSL
 ssl_desc1=Komputer, na którym działa Usermin posiada zainstalowany moduł SSLeay Perl-a. Usermin potrafi przy jego pomocy ustanowić zaszyfrowane SSL połączenia pomiędzy Twoją przeglądarką a serwerem. Jeśli łączysz się z serwerem Usermina poprzez Internet, zdecydowanie powinieneś rozważyć użycie SSL, aby zapobiec przechwyceniu przez napastnika Twojego hasła do Usermina.
-ssl_desc2=Uwaga - włącz obsługę SSL tylko jeśli Twoja przeglądarka ma obsługę SSL i nie ma pomiędzy Twoją przeglądarką a komputerem z Userminem firewalla blokującego zapytania <b>https</b>
 ssl_newkey=Ten formularz umożliwia stworzenie nowego klucza SSL dla Twojego serwera Usermina.
 ssl_hole=Używasz domyślnego klucza SSL Usermina, do którego każdy ma dostęp. Powinieneś natychmiast wygenerować nowy klucz. W przeciwnym wypadku Twoje połączenia SSL nie będą bezpieczne!
 ssl_savekey=Ten formularz pozwala na dodanie istniejącego klucza prywatnego SSL w formacie PEM oraz certyfikatu do Twojego serwera Usermina.
@@ -249,18 +246,18 @@ ui_tabs=Klasyfikować moduły?
 
 upgrade_title=Aktualizuj Usermina
 upgrade_title2=Zainstaluj Usermina
-upgrade_desc=Ta strona pozwala na aktualizację Usermina do nowej wersji. Możesz zainstalować z pliku lokalnego, z pliku dołączonego lub najnowszą wersję z <a href=http://www.usermin.com/>www.usermin.com</a>. Podobnie jak przy ręcznej aktualizacji, wszystkie Twoje ustawienia i obce moduły zostaną zachowane.
-upgrade_descrpm=Za pomocą tego formularza możesz wykonać aktualizację całej Twojej instalacji Usermina do nowej wersji z wykorzystaniem opcji "upgrade" RPM-a. Możesz zainstalować z lokalnego pliku RPM, z pliku dołączonego lub najnowszą wersję z <a href=http://www.usermin.com/>www.usermin.com</a>. Podobnie jak przy ręcznej aktualizacji, wszystkie Twoje ustawienia i obce moduły zostaną zachowane.
-upgrade_descdeb=Ten formularz pozwala na aktualizację całej instalacji Usermina do nowej wersji przez aktualizowanie jego pakietów Debiana. Możesz instalować aktualizacje ręcznie z lokalnego lub wysłanego pliku .deb albo z najnowszej wersji na <a href=http://www.usermin.com/>www.usermin.com</a>. Tak jak w przypadku ręcznej aktualizacji, wszystkie pliki konfiguracyjne i moduły osób trzecich zostaną zachowane.
+upgrade_desc=Ta strona pozwala na aktualizację Usermina do nowej wersji. Możesz zainstalować z pliku lokalnego, z pliku dołączonego lub najnowszą wersję z <a href=https://usermin.com>usermin.com</a>. Podobnie jak przy ręcznej aktualizacji, wszystkie Twoje ustawienia i obce moduły zostaną zachowane.
+upgrade_descrpm=Za pomocą tego formularza możesz wykonać aktualizację całej Twojej instalacji Usermina do nowej wersji z wykorzystaniem opcji "upgrade" RPM-a. Możesz zainstalować z lokalnego pliku RPM, z pliku dołączonego lub najnowszą wersję z <a href=https://usermin.com>usermin.com</a>. Podobnie jak przy ręcznej aktualizacji, wszystkie Twoje ustawienia i obce moduły zostaną zachowane.
+upgrade_descdeb=Ten formularz pozwala na aktualizację całej instalacji Usermina do nowej wersji przez aktualizowanie jego pakietów Debiana. Możesz instalować aktualizacje ręcznie z lokalnego lub wysłanego pliku .deb albo z najnowszej wersji na <a href=https://usermin.com>usermin.com</a>. Tak jak w przypadku ręcznej aktualizacji, wszystkie pliki konfiguracyjne i moduły osób trzecich zostaną zachowane.
 upgrade_local=Z pliku lokalnego
 upgrade_uploaded=Z wysłanego pliku
 upgrade_url=Z adresu FTP lub URL
-upgrade_ftp=Ostatnia wersja z www.usermin.com
+upgrade_ftp=Ostatnia wersja z usermin.com
 upgrade_delete=Usuwać stare wersje katalogów po aktualizacji?
 upgrade_ok=Aktualizuj Usermina
 upgrade_err1=Aktualizacja z $1 nie powiodła się
 upgrade_err2=Aktualizacja z przesłanego pliku nie powiodła się
-upgrade_err3=Aktualizacja z www.usermin.com nie powiodła się
+upgrade_err3=Aktualizacja z usermin.com nie powiodła się
 upgrade_err5=Aktualizacja z URL $1 nie powiodła się
 upgrade_eurl=Błędny lub brak adresu URL
 upgrade_efile=Plik nie istnieje
@@ -281,10 +278,10 @@ upgrade_failed=.. aktualizacja nie powiodła się!
 upgrade_updates=Jest dostępnych $1 aktualizacji dla tej wersji Usermina. <a href='$2'>Kliknij tutaj</a> aby automatycznie pobrać i zainstalować aktualizacje.
 upgrade_eupdates=Pobieranie listy aktualizacji : $1 nie powiodło się
 
-update_desc1=Za pomocą tego formularza możesz zaktualizować ze strony <a href=http://www.usermin.com/updates.html>Usermin Updates</a> lub z innego źródła te moduły Usermina, o których wiadomo, że zawierają błędy lub dziury związane z bezpieczeństwem. Wykonane zostanie porównanie obecnie zainstalowanych modułów z dostępnymi dla aktualizacji oraz, opcjonalnie, automatyczne pobranie i instalacja wszelkich nieaktualnych modułów.
+update_desc1=Za pomocą tego formularza możesz zaktualizować ze strony <a href=https://usermin.com/updates.html>Usermin Updates</a> lub z innego źródła te moduły Usermina, o których wiadomo, że zawierają błędy lub dziury związane z bezpieczeństwem. Wykonane zostanie porównanie obecnie zainstalowanych modułów z dostępnymi dla aktualizacji oraz, opcjonalnie, automatyczne pobranie i instalacja wszelkich nieaktualnych modułów.
 update_header1=Aktualizuj moduły teraz
 update_header2=Aktualizuj moduły regularnie
-update_webmin=Aktualizuj z www.usermin.com
+update_webmin=Aktualizuj z usermin.com
 update_other=Aktualizuj z innego źródła
 update_show=Tylko wskaż moduły, które zostałyby zaktualizowane
 update_missing=Zainstaluj moduły obecnie niezainstalowane
@@ -296,7 +293,7 @@ update_apply=Zapisz i zastosuj
 update_sched=Aktualizuj moduły o $1:00 co $2 dni
 update_none=Brak aktualizacji Usermina dla tej wersji.
 update_failed=Instalacja modułu : $1 nie powiodła się
-update_desc2=Ten formularz służy do konfiguracji regularnej, automatycznej aktualizacji modułów Usermina zawierających błędy lub dziury związane z bezpieczeństwem ze strony <a href=http://www.usermin.com/updates.html>UserminUpdates</a> lub z innego źródła. O ile ta usługa jest wygodna, należy zachować ostrożność, gdyż może ona umożliwić napastnikom przejęcie Twojego systemu, jeśli serwer aktualizacji zostanie kiedykolwiek narażony na szwank.
+update_desc2=Ten formularz służy do konfiguracji regularnej, automatycznej aktualizacji modułów Usermina zawierających błędy lub dziury związane z bezpieczeństwem ze strony <a href=https://usermin.com/updates.html>UserminUpdates</a> lub z innego źródła. O ile ta usługa jest wygodna, należy zachować ostrożność, gdyż może ona umożliwić napastnikom przejęcie Twojego systemu, jeśli serwer aktualizacji zostanie kiedykolwiek narażony na szwank.
 
 assignment_title=Przeklasyfikowanie modułów
 assignment_header=Kategoryzacja modułów

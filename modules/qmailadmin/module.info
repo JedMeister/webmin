@@ -4,5 +4,5 @@ category=servers
 longdesc=Configure the QMail mail server, a simpler alternative to Sendmail.
 os_support=!windows
 library=qmail-lib.pl
-version=2.630
-depends=2.630
+version=2.640
+depends=2.640

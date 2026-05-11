@@ -263,6 +263,7 @@ ssl_deny=Az elutasítandó SSL protokoll verziók
 ssl_compression=Engedélyezi a tömörített SSL-kapcsolatokat?
 ssl_honorcipherorder=Kényszeríti a kiszolgáló által definiált titkosítási sorrend használatát?
 ssl_extracas=További tanúsítványfájlok <br> (láncolt tanúsítványokhoz)
+ssl_enforce=SSL-kód kikényszerítése
 ssl_hsts=SSL kényszerítése HSTS fejléccel
 ssl_redirect=Nem SSL kéréseket átirányítani SSL módba?
 ssl_extracasdef=Ugyanaz, mint a globális SSL-beállítások
@@ -322,7 +323,7 @@ ssl_tabcreate=Önaláírt tanúsítvány
 ssl_tabcsr=Tanúsítvány aláírási igény
 ssl_tabupload=Töltse fel a tanúsítványt
 ssl_tabcurrent=Jelenlegi tanúsítvány
-ssl_tablets=Titkosítsuk
+ssl_tablets=SSL-szolgáltató
 ssl_cheader=A jelenlegi tanúsítvány részletei
 ssl_typeself=Önaláíró
 ssl_typereal=CA aláírása
@@ -334,27 +335,36 @@ ssl_edownload=Nem sikerült kivonni a PEM-adatokat a tanúsítványból
 ssl_csralready=A legfrissebb kulcs és a CSR megtekintése.
 ssl_already1=Korábban generált privát kulcs :
 ssl_already2=Korábban generált tanúsítvány aláírási kérelem :
-ssl_letsdesc=A Let's Encrypt egy ingyenes, automatizált és nyílt tanúsítási jogosultság, amely felhasználható SSL tanúsítvány előállítására a Webmin számára.
-ssl_letserr=Sajnos a Let's Encrypt nem használható a rendszerén: $1.
-ssl_letserr2=Alternatív megoldásként ellenőrizze a <a href='$1'>modulkonfiguráció</a> oldalt, hogy megbizonyosodjon arról, hogy a <tt>letsencrypt</tt> parancs helyes elérési útját használja-e.
-ssl_letsdesc2=Ez az oldal felhasználható új tanúsítvány igénylésére, amely felülírja a Webminben jelenleg konfigurált összes többi felhasználót. A Let's Encrypt szolgáltatás azonban megköveteli, hogy a tanúsítási tartomány tulajdonjogát ellenőrizze annak ellenőrzésével, hogy ez a rendszer üzemelteti-e a domain webhelyét. Ez úgy történik, hogy egy kis ideiglenes fájlt helyez a weboldal dokumentumkönyvtárába.
+ssl_letsdesc=Ez az űrlap lehetővé teszi, hogy megbízható SSL-tanúsítványt igényeljen a Webminhez egy ACME-kompatibilis szolgáltatótól, például a Let's Encrypt-től.
+ssl_letserr=Sajnos ez a rendszer nem tud tanúsítványokat kérni a következő SSL-szolgáltatótól: $1.
+ssl_letserr2=Másik lehetőségként ellenőrizze a <a href='$1'>modulkonfiguráció</a> oldalt, és győződjön meg arról, hogy a konfigurált ACME kliensparancs helyes elérési útját használja.
+ssl_letsdesc2=Az új tanúsítvány felülírja a Webminben jelenleg konfiguráltat. A kibocsátás előtt az ACME-szolgáltatónak ellenőriznie kell az egyes hostnevek feletti felügyeletet a webhely dokumentumkönyvtárában található ideiglenes fájl vagy egy ideiglenes DNS TXT rekord segítségével.
 ssl_letsheader=Új SSL tanúsítvány lehetőségei
 ssl_letsdoms=A tanúsítvány gazdanevei
 ssl_subset=Kihagyja az ellenőrizhetetlen gazdagépneveket?
-ssl_letsmode=Titkosítsuk az érvényesítési módszert
+ssl_letsmode=Domain-érvényesítési módszer
 ssl_letsmode0=Apache virtuális gazdagép megfelel a gazdagépnévnek
 ssl_letsmode1=Kiválasztott Apache virtuális gazdagép
 ssl_letsmode2=Egyéb webszerver dokumentumkönyvtár
 ssl_letsmode3=DNS-ellenőrzés BIND használatával
 ssl_letsmode4=Certbot beépített webszerver
+ssl_certbotprehook=Mindazonáltal ez a figyelmeztetés figyelmen kívül hagyható, ha a kérés előtti parancs a Certbot futtatása előtt leállítja a szolgáltatást a 80-as port használatával.
 ssl_letsok=Kérjen igazolást
 ssl_letsonly=Csak frissítse a megújítást
 ssl_usewebmin=Másolja az új kulcsot és a tanúsítványt a Webminbe?
 ssl_letsrenew=Az automatikus megújítás közötti hónapok
 ssl_letsnotrenew=Csak manuálisan kell megújítani
-ssl_staging=Titkosítsuk a szervert
-ssl_staging0=Igazi
-ssl_staging1=Szakasz (csak teszt)
+ssl_staging=Szolgáltatói szerver
+ssl_staging0=Termelés
+ssl_staging1=Beállítás (csak teszt)
+ssl_acmeopts=Szolgáltatói beállítások
+ssl_acmeextra=Speciális beállítások megjelenítése
+ssl_acmedir=Egyéni ACME könyvtár URL-címe
+ssl_acmedirdesc=Ha be van állítva, ez felülírja a fenti alapértelmezett szolgáltatói szervert.
+ssl_acmekid=Külső fiók kötési kulcs azonosítója
+ssl_acmekiddesc=Opcionális. Néhány ACME-szolgáltató ezt a könyvtár URL-címe mellett megköveteli.
+ssl_acmehmac=Külső fiókhoz kötés HMAC-kulcs
+ssl_acmehmacdesc=Opcionális. Használatához a natív Certbot kliens szükséges.
 
 newkey_err=Nem sikerült létrehozni az SSL kulcsot
 newkey_ecn=Hiányzó vagy érvénytelen szervernév
@@ -385,16 +395,16 @@ startpage_webminup=Megjeleníti a Webmin frissítéseit a Rendszerinformációk 
 startpage_moduleup=Megjeleníti a modul frissítéseit a Rendszerinformációk oldalon?
 
 upgrade_title=Frissítse a Webmin szoftvert
-upgrade_desc=Ez az űrlap lehetővé teszi a teljes Webmin-telepítés frissítését új verzióra. Telepíthet helyi fájlból, feltöltött fájlból vagy a legfrissebb verzióról a <a href=http://www.webmin.com/>www.webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
-upgrade_descrpm=Ez az űrlap lehetővé teszi, hogy a webmin teljes telepítését új verzióra frissítse az RPM frissítési opciójával. Telepíthet helyi RPM-fájlból, feltöltött fájlból vagy a legfrissebb verzióról a <a href=http://www.webmin.com/>www.webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
-upgrade_descdeb=Ez az űrlap lehetővé teszi, hogy a teljes Webmin telepítését új verzióra frissítse a Debian csomag frissítésével. Telepíthet egy helyi.deb fájlból, egy feltöltött fájlból vagy a legfrissebb verzióról a <a href=http://www.webmin.com/>www.webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
-upgrade_descsolaris-pkg=Ez az űrlap lehetővé teszi a teljes Webmin telepítésének frissítését új verzióra az aktuális Solaris csomag eltávolításával és egy új telepítésével. Telepíthet egy helyi Solaris csomagfájlból, egy feltöltött fájlból vagy a legújabb verzióról a <a href=http://www.webmin.com/>www.webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
+upgrade_desc=Ez az űrlap lehetővé teszi a teljes Webmin-telepítés frissítését új verzióra. Telepíthet helyi fájlból, feltöltött fájlból vagy a legfrissebb verzióról a <a href=https://webmin.com>webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
+upgrade_descrpm=Ez az űrlap lehetővé teszi, hogy a webmin teljes telepítését új verzióra frissítse az RPM frissítési opciójával. Telepíthet helyi RPM-fájlból, feltöltött fájlból vagy a legfrissebb verzióról a <a href=https://webmin.com>webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
+upgrade_descdeb=Ez az űrlap lehetővé teszi, hogy a teljes Webmin telepítését új verzióra frissítse a Debian csomag frissítésével. Telepíthet egy helyi.deb fájlból, egy feltöltött fájlból vagy a legfrissebb verzióról a <a href=https://webmin.com>webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
+upgrade_descsolaris-pkg=Ez az űrlap lehetővé teszi a teljes Webmin telepítésének frissítését új verzióra az aktuális Solaris csomag eltávolításával és egy új telepítésével. Telepíthet egy helyi Solaris csomagfájlból, egy feltöltött fájlból vagy a legújabb verzióról a <a href=https://webmin.com>webmin.com</a> webhelyen. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
 upgrade_descsun-pkg=Ez az űrlap lehetővé teszi a teljes Webmin telepítésének frissítését a Sun által szállított Solaris csomag új verziójára. Telepíthet egy helyi Solaris csomagfájlból vagy egy feltöltött fájlból. A legújabb csomagok megtalálhatók a <a href=http://www.sun.com/bigadmin/content/webmin/>http://www.sun.com/bigadmin/content/webmin/</a> oldalon. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
 upgrade_descgentoo=Ez az űrlap lehetővé teszi, hogy a teljes Webmin telepítését új verzióra frissítse azáltal, hogy eltávolítja a jelenlegi Gentoo Emerge csomagot, és telepít egy újat. Telepíthet egy helyi Gentoo csomagfájlból, feltöltött fájlból vagy az Emerge tároló legújabb verziójából. A kézi frissítéshez hasonlóan a konfigurációs beállításokat és a harmadik fél moduljait is megőrzik.
 upgrade_local=Helyi fájlból
 upgrade_uploaded=Feltöltött fájlból
 upgrade_url=FTP vagy HTTP URL-ről
-upgrade_ftp=A legújabb verzió a www.webmin.com webhelyről
+upgrade_ftp=A legújabb verzió a webmin.com webhelyről
 upgrade_cup=A Caldera <tt>cupdate</tt> eszközének legújabb verziója
 upgrade_emerge=A legújabb verzió az Emerge tárolóból
 upgrade_delete=Törli a régi verzió könyvtárát a frissítés után?
@@ -402,7 +412,7 @@ upgrade_repo=A(z) $1 adattár legújabb verziója
 upgrade_ok=Frissítse a Webmin szoftvert
 upgrade_err1=Nem sikerült frissíteni a $1 verzióról
 upgrade_err2=Nem sikerült frissíteni a feltöltött fájlból
-upgrade_err3=Nem sikerült frissíteni a www.webmin.com webhelyről
+upgrade_err3=Nem sikerült frissíteni a webmin.com webhelyről
 upgrade_err4=Nem sikerült frissíteni az Emerge tárolóból
 upgrade_err5=Nem sikerült frissíteni a $1 URL-ről
 upgrade_eurl=Hiányzó vagy érvénytelen URL
@@ -431,7 +441,7 @@ upgrade_ewpackage=A Webmin számára nem érvényes Solaris csomag
 upgrade_egentoo=A Webmin nem érvényes Gentoo csomagja
 upgrade_eupdates=A frissítések listájának letöltése nem sikerült : $1
 upgrade_echecksig=Az RPM aláírás ellenőrzése sikertelen : $1
-upgrade_nosig=Nincs csomag aláírás-ellenőrzés - a tar.gz csomagok ellenőrzése csak a www.webmin.com webhelyről történő frissítés esetén lehetséges.
+upgrade_nosig=Nincs csomag aláírás-ellenőrzés - a tar.gz csomagok ellenőrzése csak a webmin.com webhelyről történő frissítés esetén lehetséges.
 upgrade_sig=Ellenőrizze a GnuPG aláírást a csomagon?
 upgrade_force=Frissítés akkor is, ha az új verzió azonos vagy régebbi?
 upgrade_disc=Lekapcsolja az összes többi felhasználót?
@@ -455,10 +465,10 @@ newmod_header=Új modul támogatások
 newmod_def=Alapértelmezett viselkedés - adjon új modulokat a <tt>gyökér</tt> vagy <tt>admin</tt> számára
 newmod_users=Adjon új modulokat :
 
-update_desc1=Ez az űrlap lehetővé teszi a Webmin modulok frissítését, amelyek hibákat vagy biztonsági lyukakat találtak a <a href=http://www.webmin.com/updates.html>Webmin frissítések</a> oldalon vagy más forrásból. Ez összehasonlítja a jelenleg telepített modulokat a frissítésre elérhető modulokkal, és opcionálisan automatikusan letölti és telepíti az elavult modulokat.
+update_desc1=Ez az űrlap lehetővé teszi a Webmin modulok frissítését, amelyek hibákat vagy biztonsági lyukakat találtak a <a href=https://webmin.com/updates.html>Webmin frissítések</a> oldalon vagy más forrásból. Ez összehasonlítja a jelenleg telepített modulokat a frissítésre elérhető modulokkal, és opcionálisan automatikusan letölti és telepíti az elavult modulokat.
 update_header1=Frissítse a modulokat most
 update_header2=Frissítse a modulokat az ütemezés szerint
-update_webmin=Frissítés a www.webmin.com webhelyről
+update_webmin=Frissítés a webmin.com webhelyről
 update_other=Frissítés más forrásokból ..
 update_show=Csak azt mutatják, mely modulokat frissítik
 update_missing=Telepítse a jelenleg nem telepített modulokat
@@ -474,7 +484,7 @@ update_apply=Mentés és alkalmazás
 update_sched2=Modulok frissítése a $1 oldalon: $2 minden $3 napon
 update_none=Ehhez a verzióhoz nincs Webmin frissítés.
 update_failed=Nem sikerült telepíteni a modult : $1
-update_desc2=Ez az űrlap hibákat vagy biztonsági lyukakat tartalmazó Webmin modulok automatikus frissítésének ütemezésére szolgál a <a href=http://www.webmin.com/updates.html>Webmin frissítések</a> oldalról vagy más forrásból. Míg ez a szolgáltatás hasznos, óvatosan kell használni, mivel ez lehetővé teheti a támadók számára, hogy átvegyék a rendszerét, ha a frissítési szerver valaha veszélybe került.
+update_desc2=Ez az űrlap hibákat vagy biztonsági lyukakat tartalmazó Webmin modulok automatikus frissítésének ütemezésére szolgál a <a href=https://webmin.com/updates.html>Webmin frissítések</a> oldalról vagy más forrásból. Míg ez a szolgáltatás hasznos, óvatosan kell használni, mivel ez lehetővé teheti a támadók számára, hogy átvegyék a rendszerét, ha a frissítési szerver valaha veszélybe került.
 update_enosig=Nem sikerült letölteni az aláírási fájlt a frissítésekhez : $1
 update_ebadsig=Az aláírás frissítése sikertelen : $1
 update_enomodsig=Nem sikerült letölteni a modul aláírási fájlját : $1
@@ -541,7 +551,7 @@ session_eblockuser_time=Hiányzó vagy érvénytelen felhasználói blokkolási 
 session_eblockuser_failures=Hiányzó vagy érvénytelen felhasználói blokkoló bejelentkezések
 session_ecookie=Az Ön böngészője nem támogatja a sütik használatát, amelyek szükségesek a munkamenet hitelesítéséhez
 session_elsof=A helyi hitelesítéshez szükség van az <tt>lsof</tt> programra
-session_remember=Ajánlat, hogy emlékezzen be a bejelentkezésre?
+session_remember=Felajánljak egy „emlékezz rám” opciót az állandó bejelentkezésekhez?
 session_ip=Korlátozza-e a munkameneteket ugyanazon ügyfél IP-címére?
 session_hostname=Megjeleníti a hostnevet a bejelentkezési képernyőn?
 session_utmp=Rögzíti a be- és kijelentkezéseket az <tt>utmp</tt>-ban?
@@ -571,13 +581,14 @@ session_pmode0=Mindig tagadja meg a lejárt jelszavakkal rendelkező felhasznál
 session_pmode1=Mindig engedélyezze a lejárt jelszavakkal rendelkező felhasználókat
 session_pmode2=A lejárt jelszavakkal rendelkező felhasználókat kérjen új beírására
 session_md5=Webmin jelszó-kivonási formátum
+session_rpc_timeout=RPC munkamenet időtúllépése
+session_erpc_timeout=Az RPC munkamenet időkorlátja hiányzik, vagy 0-nál nagyobb számnak kell lennie
 session_md5off=Határozza meg automatikusan
 session_md5on=Használjon <tt>MD5</tt> kivonatformátumot
 session_sha512=Használjon <tt>SHA512</tt> kivonatformátumot
 session_yescrypt=Használjon <tt>yescrypt</tt> kivonatolási formátumot
 session_emd5mod=Az MD5 kivonatolási formátum nem használható, mivel a Perl $1 modul nincs telepítve
-session_esha512mod=Az SHA512 kivonatformátum nem használható, mivel a Perl $1 modul nincs telepítve
-session_eyescrypt=A yescrypt kivonatformátum nem használható, mivel a Perl $1 modul nincs telepítve
+session_edigestcrypt=A(z) $1 hashelési formátum nem használható, mert a rendszer <tt>crypt</tt> függvénye nem támogatja
 session_blocklock=Zárja be a sikertelen bejelentkezéssel rendelkező felhasználókat is
 session_passapi=Engedélyezi a távoli jelszó -módosító API -t?
 session_passapi0=Az API letiltva
@@ -653,13 +664,14 @@ log_delete_webmincron=Törölt $1 ütemezett függvények
 log_run_webmincron=A $1 ütemezett függvényeket futtatta
 log_save_webmincron=Frissített ütemezett funkció a $1 modulban
 log_onedelete_webmincron=Törölt ütemezett funkció a $1 modulból
-log_letsencrypt=Új SSL tanúsítványt kért a Let's Encrypttől
-log_letsencryptdns=Létrehoztuk a Encrypt DNS rekordot a $1 számára
-log_letsencryptcleanup=Eltávolítva Titkosítsuk a $1 DNS-rekordját
+log_letsencrypt=Új SSL-tanúsítványt kértem egy ACME-szolgáltatótól
+log_letsencryptdns=ACME DNS-rekord létrehozva ehhez: $1
+log_letsencryptcleanup=ACME DNS rekord eltávolítva ehhez: $1
 
 themes_title=Webmin témák
 themes_desc=A témák szabályozzák a Webmin felhasználói felületének megjelenését, beleértve az ikonokat, a színeket, a hátteret és az oldalak elrendezését. Az alábbi választómező segítségével kiválaszthatja a rendszerre telepített témákat.
 themes_sel=Aktuális téma :
+themes_configure=Téma konfigurációs oldalának megnyitása
 themes_default=Régi Webmin téma
 themes_none=Nincs - hagyja, hogy a téma döntsön
 themes_change=változás
@@ -1011,6 +1023,7 @@ sendmail_authdef=Alapértelmezett (jelenleg Cram-MD5)
 sendmail_from=A Webmin e-mail címétől
 sendmail_fromdef=Alapértelmezett ($1)
 sendmail_fromaddr=Cím
+sendmail_name=Megjelenített név
 sendmail_toaddr=Az értesítések alapértelmezett célcíme
 sendmail_to_def=Nincs beállítva
 sendmail_etoaddr=Hiányzó vagy helytelenül formázott célcím
@@ -1112,6 +1125,7 @@ twofactor_enrolllink=Most regisztrálhat kétfaktoros hitelesítésre a <a href=
 twofactor_url=Ha többet szeretne megtudni a $1 -ról, tekintse meg webhelyét a <a href='$2' target=_blank>$2</a> webhelyen.
 twofactor_etotpmodule=A két tényezőhitelesítéshez szükséges <tt>$1</tt> Perl modul nincs telepítve. A Webmin <a href='$2'>Perl-modulok</a> oldalával telepítse.
 twofactor_qrcode=Írja be a titkos kódot $1 a TOTP alkalmazásban, vagy olvassa be az alábbi QR-kódot.
+twofactor_qrcode_manual=Írd be a $1 titkos kódot a TOTP alkalmazásba, és állítsd be manuálisan, mivel a QR-kód generálása nem támogatott ezen a rendszeren.
 twofactor_etotpid=Érvénytelen TOTP base32-kódolású titok
 twofactor_etotptoken=A TOTP tokennek számnak kell lennie
 twofactor_etotpmatch=Helytelen OTP kód
@@ -1121,9 +1135,9 @@ twofactor_secret0=Használjon 16 karakterből álló billentyűt
 twofactor_esecret=A titkos kulcsnak pontosan 16 karakter hosszúnak kell lennie, és csak betűket és számokat tartalmazhat
 twofactor_esession=Két tényezős hitelesítés csak akkor használható, ha a munkamenet-alapú hitelesítés aktív
 
-letsencrypt_title=Titkosítsuk a tanúsítványkérést
+letsencrypt_title=SSL-szolgáltatói tanúsítványigénylés
 letsencrypt_err=Nem sikerült tanúsítványt kérni
-letsencrypt_ecmds=Sem a <tt>certbot</tt>, sem a <tt>python</tt> parancsot nem titkosítottuk az ügyfélnek a rendszeren.
+letsencrypt_ecmds=Sem a natív ACME kliensparancs, <tt>certbot</tt>, sem a <tt>python</tt> parancs nem található a rendszeren
 letsencrypt_epythonmod=A beépített Let's Encrypt kliens számára szükséges $1 Python modul nincs telepítve
 letsencrypt_epythonver=Nem sikerült beolvasni a Python verziót : $1
 letsencrypt_epythonver2=A $1 vagy újabb Python verzióra van szükség, de csak a $2 verzióval rendelkezik.
@@ -1131,6 +1145,12 @@ letsencrypt_certbot=Certbot
 letsencrypt_edroot=Az Apache virtuális gazdagépen $1 nincs dokumentum könyvtár!
 letsencrypt_edom=Hiányzó vagy érvénytelen domain név
 letsencrypt_erenew=Hiányzó vagy nem numerikus megújítási intervallum
+letsencrypt_eacmedir=Hiányzó vagy érvénytelen ACME könyvtár URL-címe
+letsencrypt_eeabdir=Külső fiókkötés használatakor ACME könyvtár URL-címét kell megadni
+letsencrypt_eeabpair=Mind a külső fiókhoz kötési kulcs azonosítóját, mind a HMAC kulcsot meg kell adni
+letsencrypt_eeabnative=A külső fiókkötés csak akkor használható, ha a natív ACME kliens telepítve van
+letsencrypt_ecertbotport=A Certbot érvényesítéséhez a TCP 80-as portjának szabadnak kell lennie, de azt már egy másik szolgáltatás használja. Állítsa le ideiglenesen a szolgáltatást, vagy használjon webroot vagy DNS érvényesítést.
+letsencrypt_ecertbotwebmin=A Certbot validáció nem használható, amíg a Webmin a 80-as TCP porton figyel. Használjon webroot vagy DNS validációt, vagy helyezze át a Webmint egy másik portra.
 letsencrypt_ewebroot=A webhely dokumentumkönyvtára nem létezik
 letsencrypt_evhost=Nem található a $1 megfelelő virtuális gazdagép
 letsencrypt_efull=A várt teljes tanúsítványfájl $1 nem található
@@ -1153,9 +1173,9 @@ letsencrypt_echain=Nem sikerült letölteni a láncolott tanúsítványt : $1
 letsencrypt_echain2=A $1 oldalról letöltött láncolt tanúsítvány üres
 letsencrypt_ecsr=A CSR létrehozása nem sikerült : $1
 letsencrypt_ekeygen=Nem sikerült létrehozni a privát kulcsot : $1
-letsencrypt_enative=A natív Let's Encrypt klienst (certbot) korábban használták a rendszerben, és azt minden jövőbeli tanúsítványkéréshez használni kell
-letsencrypt_eacmedns=Csak a hivatalos Let's Encrypt kliens támogatja a DNS-alapú érvényesítést
-letsencrypt_eacmecertbot=Csak a hivatalos Let's Encrypt kliens támogatja a Certbot érvényesítését
+letsencrypt_enative=A natív ACME klienst (certbot) korábban ezen a rendszeren használták, és minden jövőbeli tanúsítványkérésnél ezt kell használni
+letsencrypt_eacmedns=Csak a natív ACME kliens támogatja a DNS-alapú validációt
+letsencrypt_eacmecertbot=Csak a natív ACME kliens támogatja a Certbot validációt
 
 announce_hide=Elrejteni ezt a bejelentést
 alert_hide=Alert elrejtése

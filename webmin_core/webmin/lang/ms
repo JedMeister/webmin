@@ -300,7 +300,6 @@ ssl_essl=Modul perl Net :: SSLeay tidak ada untuk dipasang pada sistem anda. Unt
 ssl_cpan=Cara lain, anda boleh gunakan <a href='$1'>muat turun dan pasang</a> pada Webmin bagi modul Perl Net :: SSLeay untuk anda.
 ssl_emessage=Mesej ralat dari Perl adalah : $1
 ssl_desc1=Hos yang menjalankan Webmin nampaknya telah dipasang modul Perl SSLeay. Oleh itu, Webmin menyokong komunikasi penyulitan SSL antara pelayar anda dan pelayan. Sekiranya anda mencapai pelayan Webmin anda melalui Internet, maka anda perlu mempertimbangkan untuk menggunakan SSL bagi mengelakkan penyerang mengintip kata laluan Webmin anda.
-ssl_desc2=Amaran - hanya aktifkan sokongan SSL jika anda mempunyai pelayar yang menyokong SSL, dan tidak ada firewall yang menyekat permintaan <b>https</b> antara pelayar anda dan hos Webmin.
 ssl_header=Sokongan SSL
 ssl_on=Aktifkan SSL jika ada?
 ssl_key=Fail kunci peribadi
@@ -409,23 +408,23 @@ startpage_webminup=Paparkan kemas kini Webmin pada halaman Sistem Maklumat?
 startpage_moduleup=Paparkan kemas kini modul pada halaman Sistem Maklumat?
 
 upgrade_title=Menaik taraf Webmin
-upgrade_desc=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda kepada versi baharu. Anda boleh memasang dari fail lokal, fail yang dimuat naik atau dari versi terbaru di <a href=http://www.webmin.com/>www.webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
-upgrade_descrpm=Borang ini membolehkan anda untuk menaik taraf pemasangan webmin anda secara keseluruhan kepada versi baharu menggunakan pilihan naik taraf RPM. Anda boleh memasang dari fail RPM tempatan, fail yang dimuat naik atau dari versi terbaharu di <a href=http://www.webmin.com/>www.webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
-upgrade_descdeb=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baharu dengan menaik taraf pakej Debian. Anda boleh memasang dari fail deb tempatan., Fail yang dimuat naik atau dari versi terbaru di <a href=http://www.webmin.com/>www.webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
-upgrade_descsolaris-pkg=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baharu dengan mengeluarkan pakej Solaris semasa dan memasang yang baharu. Anda boleh memasang dari fail pakej Solaris tempatan, fail yang dimuat naik atau dari versi terbaru di <a href=http://www.webmin.com/>www.webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
+upgrade_desc=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda kepada versi baharu. Anda boleh memasang dari fail lokal, fail yang dimuat naik atau dari versi terbaru di <a href=https://webmin.com>webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
+upgrade_descrpm=Borang ini membolehkan anda untuk menaik taraf pemasangan webmin anda secara keseluruhan kepada versi baharu menggunakan pilihan naik taraf RPM. Anda boleh memasang dari fail RPM tempatan, fail yang dimuat naik atau dari versi terbaharu di <a href=https://webmin.com>webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
+upgrade_descdeb=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baharu dengan menaik taraf pakej Debian. Anda boleh memasang dari fail deb tempatan., Fail yang dimuat naik atau dari versi terbaru di <a href=https://webmin.com>webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
+upgrade_descsolaris-pkg=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baharu dengan mengeluarkan pakej Solaris semasa dan memasang yang baharu. Anda boleh memasang dari fail pakej Solaris tempatan, fail yang dimuat naik atau dari versi terbaru di <a href=https://webmin.com>webmin.com</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
 upgrade_descsun-pkg=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baru dari pakej Solaris yang dibekalkan oleh Sun. Anda boleh memasang dari fail pakej Solaris tempatan, atau fail yang dimuat naik. Pakej terbaru boleh didapati di <a href=http://www.sun.com/bigadmin/content/webmin/> http://www.sun.com/bigadmin/content/webmin/</a>. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
 upgrade_descgentoo=Borang ini membolehkan anda untuk menaik taraf pemasangan Webmin anda secara keseluruhan kepada versi baharu dengan mengeluarkan pakej Gentoo Emerge dan memasang yang baru. Anda boleh memasang dari fail pakej Gentoo tempatan, fail yang dimuat naik atau dari versi terbaru dalam repositori Emerge. Sama seperti menaik taraf manual, semua tetapan konfigurasi anda dan modul pihak ketiga akan disimpan.
 upgrade_local=Dari fail lokal
 upgrade_uploaded=Dari fail muat naik
 upgrade_url=Dari ftp atau URL http
-upgrade_ftp=Versi terkini dari www.webmin.com
+upgrade_ftp=Versi terkini dari webmin.com
 upgrade_cup=Versi terbaru dari Caldera alat <tt>cupdate</tt>
 upgrade_emerge=Versi terbaharu dari repositori Emerge
 upgrade_delete=Padam versi lama direktori selepas menaik taraf?
 upgrade_ok=Menaik taraf Webmin
 upgrade_err1=Gagal untuk menaik taraf dari $1
 upgrade_err2=Gagal untuk menaik taraf dari fail yang dimuat naik
-upgrade_err3=Gagal untuk menaik taraf dari www.webmin.com
+upgrade_err3=Gagal untuk menaik taraf dari webmin.com
 upgrade_err4=Gagal untuk menaik taraf dari repositori Emerge
 upgrade_err5=Gagal untuk menaik taraf dari URL $1
 upgrade_eurl=URL hilang atau tidak sah
@@ -449,7 +448,7 @@ upgrade_ewpackage=Bukan pakej Solaris yang sah untuk Webmin
 upgrade_egentoo=Bukan pakej sah Gentoo untuk Webmin
 upgrade_eupdates=Gagal untuk memuat turun senarai kemas kini : $1
 upgrade_echecksig=Pengesahan tandatangan RPM gagal : $1
-upgrade_nosig=Tiada pengesahan tandatangan pakej dilakukan - memeriksa pakej tar.gz hanya boleh dilakukan apabila menaik taraf dari www.webmin.com.
+upgrade_nosig=Tiada pengesahan tandatangan pakej dilakukan - memeriksa pakej tar.gz hanya boleh dilakukan apabila menaik taraf dari webmin.com.
 upgrade_sig=Periksa tandatangan GnuPG pada pakej?
 upgrade_force=Menaik taraf walaupun versi baharu yang sama atau terdahulu?
 upgrade_disc=Putuskan sambungan semua pengguna lain?
@@ -473,10 +472,10 @@ newmod_header=Pemberian modul baharu
 newmod_def=Tingkah laku lalai - berikan modul baharu kepada <tt>root</tt> atau <tt>admin</tt>
 newmod_users=Pemberian modul baharu kepada :
 
-update_desc1=Borang ini membolehkan anda untuk menaik taraf modul Webmin yang dikesan mengandungi pepijat atau lubang keselamatan dari <a href=http://www.webmin.com/updates.html>Kemaskini Webmin</a> atau dari sumber yang lain. Ini akan membandingkan modul yang dipasang dengan yang sedia ada untuk dikemaskini, dan dengan secara automatik memuat turun dan memasang apa-apa modul yang lama.
+update_desc1=Borang ini membolehkan anda untuk menaik taraf modul Webmin yang dikesan mengandungi pepijat atau lubang keselamatan dari <a href=https://webmin.com/updates.html>Kemaskini Webmin</a> atau dari sumber yang lain. Ini akan membandingkan modul yang dipasang dengan yang sedia ada untuk dikemaskini, dan dengan secara automatik memuat turun dan memasang apa-apa modul yang lama.
 update_header1=Kemaskini modul sekarang
 update_header2=Kemaskini modul mengikut jadual
-update_webmin=Kemaskini dari www.webmin.com
+update_webmin=Kemaskini dari webmin.com
 update_other=Kemaskini dari sumber-sumber lain ..
 update_show=Hanya paparkan modul mana yang akan dikemaskini
 update_missing=Pasang modul yang belum dipasang
@@ -492,7 +491,7 @@ update_apply=Simpan dan terapkan
 update_sched2=Kemaskini modul pada $1:$2 setiap $3 hari
 update_none=Tiada kemaskini Webmin untuk versi ini.
 update_failed=Gagal untuk memasang modul : $1
-update_desc2=Borang ini adalah untuk menjadualkan kemas kini secara automatik modul Webmin yang mengandungi pepijat atau lubang keselamatan dari <a href=http://www.webmin.com/updates.html>Kemasini Webmin</a> atau dari sumber yang lain. Walaupun perkhidmatan ini berguna, anda harus berhati-hati menggunakannya kerana ia boleh membenarkan penyerang untuk mengambil alih sistem anda jika pelayan kemas kini pernah dikompromi.
+update_desc2=Borang ini adalah untuk menjadualkan kemas kini secara automatik modul Webmin yang mengandungi pepijat atau lubang keselamatan dari <a href=https://webmin.com/updates.html>Kemasini Webmin</a> atau dari sumber yang lain. Walaupun perkhidmatan ini berguna, anda harus berhati-hati menggunakannya kerana ia boleh membenarkan penyerang untuk mengambil alih sistem anda jika pelayan kemas kini pernah dikompromi.
 update_enosig=Tidak dapat memuat turun fail tandatangan bagi kemaskini : $1
 update_ebadsig=Pemeriksaan kemas kini tandatangan gagal : $1
 update_enomodsig=Tidak dapat memuat turun fail tandatangan bagi modul : $1
@@ -551,7 +550,6 @@ session_eblockuser_time=Hilang atau masa sekatan pengguna tidak sah
 session_eblockuser_failures=Hilang atau sekatan log masuk pengguna tidak sah
 session_ecookie=Pelayar anda tidak menyokong kuki, dimana diperlukan bagi pengesahan sesi
 session_elsof=Pengesahan setempat memerlukan progran <tt>lsof</tt>
-session_remember=Tawarkan untuk ingat log masuk secara kekal?
 session_hostname=Paparkan nama hos pada skrin log masuk?
 session_realname=Paparkan nama hos sebenar dan bukannya nama dari URL?
 session_pamon=Gunakan PAM untuk pengesahan Unix, jika ada

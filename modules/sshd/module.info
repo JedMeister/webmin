@@ -2,5 +2,5 @@ name=SSHD
 desc=SSH Server
 category=servers
 longdesc=Setup the SSH server for remote secure logins.
-version=2.630
-depends=2.630
+version=2.640
+depends=2.640

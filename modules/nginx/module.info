@@ -1,0 +1,8 @@
+name=Nginx
+desc=Nginx Webserver
+category=servers
+version=2.640
+readonly=1
+syslog=1
+plugin_feature=1
+depends=2.640

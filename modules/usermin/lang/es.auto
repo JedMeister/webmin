@@ -11,7 +11,10 @@ os_update=Actualice Usermin para usar el sistema operativo detectado
 lang_title=Idioma y configuración regional
 lang_title2=Idioma y configuración regional de Usermin
 
+session_header=Opciones de autenticación y sesión
+session_remember=¿Ofrecen una opción de "recordarme" para los inicios de sesión permanentes?
 session_authmode=Método de autentificación
+session_forgot=¿Permitir la recuperación de contraseñas olvidadas?
 
 themes_desc4=Los temas instalados se pueden exportar como un archivo wbt.gz utilizando el siguiente formulario. Se puede instalar un archivo de tema en otro sistema que ejecute Usermin.
 
@@ -35,7 +38,7 @@ ui_show_ver=Versión de Usermin
 ui_show_tver=Versión temática
 ui_show_time=Tiempo en el sistema
 
-upgrade_descdeb=Este formulario le permite actualizar su instalación completa de Usermin a una nueva versión actualizando su paquete Debian. Puede instalar desde un archivo.deb local, un archivo cargado o desde la última versión en <a href=http://www.usermin.com/>www.usermin.com</a>. Al igual que con una actualización manual, se mantendrán todos sus ajustes de configuración y módulos de terceros.
+upgrade_descdeb=Este formulario le permite actualizar su instalación completa de Usermin a una nueva versión actualizando su paquete Debian. Puede instalar desde un archivo.deb local, un archivo cargado o desde la última versión en <a href=https://usermin.com>usermin.com</a>. Al igual que con una actualización manual, se mantendrán todos sus ajustes de configuración y módulos de terceros.
 
 log_copycert=Configuración SSL copiada de Webmin
 log_dav=Cambió la configuración del servidor DAV

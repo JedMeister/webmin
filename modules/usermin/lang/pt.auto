@@ -57,9 +57,9 @@ lang_title2=Idioma e localidade do Usermin
 lang_intro=Esta página permite que você escolha qual idioma o Usermin usará para exibir títulos, avisos e mensagens
 
 session_title=Autenticação
+session_header=Opções de autenticação e sessão
 session_desc1=Quando ativado, o tempo limite da senha protege o servidor Usermin contra ataques de quebra de senha de força bruta, adicionando um atraso em expansão contínua entre cada tentativa de login com falha para o mesmo usuário.
-session_desc2=Quando a autenticação de sessão está ativada, cada sessão de usuário logado será rastreada pelo Usermin, possibilitando que usuários ociosos sejam desconectados automaticamente. Esteja ciente de que habilitar ou desabilitar a autenticação de sessão pode forçar todos os usuários a fazer login novamente.
-session_remember=Oferece-se para lembrar o login permanentemente?
+session_remember=Oferecer uma opção "lembrar-me" para logins permanentes?
 session_hostname=Mostrar nome do host na tela de login?
 session_realname=Mostrar o nome real do host em vez do nome do URL?
 session_authmode=Método de autenticação
@@ -79,6 +79,7 @@ session_blank=Solicitar aos usuários com senha vazia a escolha de uma no primei
 session_homedir=Criar diretórios pessoais ausentes após o login?
 session_homedir_perms=Permissões para novo diretório
 session_ehomedir_perms=Permissões do diretório inicial octal ausentes ou inválidas
+session_forgot=Permitir recuperação de senha esquecida?
 
 themes_title=Temas Usermin
 themes_desc=Os temas controlam a aparência da interface do usuário do Usermin, incluindo ícones, cores, planos de fundo e possivelmente o layout das páginas. A caixa de seleção abaixo pode ser usada para escolher um dos temas instalados no seu sistema que será o padrão para os usuários do Usermin.
@@ -130,7 +131,6 @@ acl_desc=Use esta página para selecionar quais módulos do Usermin instalados s
 
 ssl_title=Criptografia SSL
 ssl_desc1=O host no qual o Usermin está executando parece ter o módulo SSLeay Perl instalado. Com isso, o Usermin suporta a comunicação criptografada em SSL entre o navegador e o servidor. Se os usuários estiverem acessando o servidor Usermin pela Internet, você definitivamente deve considerar o uso de SSL para impedir que um invasor capture suas senhas.
-ssl_desc2=Aviso - ative o suporte a SSL apenas se você tiver um navegador compatível com SSL e não houver firewall bloqueando solicitações <tt>https</tt> entre o navegador e o host Usermin.
 ssl_newkey=Este formulário pode ser usado para criar uma nova chave SSL para o servidor Usermin.
 ssl_hole=Como você está atualmente usando a chave SSL Usermin padrão à qual todos têm acesso, você deve gerar uma nova chave imediatamente. Caso contrário, sua conexão SSL não é segura!
 ssl_savekey=Este formulário permite fazer upload de uma chave privada e um certificado SSL existentes no formato PEM para o servidor Usermin usar.
@@ -259,18 +259,18 @@ ui_show_time=Tempo no sistema
 
 upgrade_title=Atualizar Usermin
 upgrade_title2=Instale Usermin
-upgrade_desc=Este formulário permite que você atualize toda a instalação do Usermin para uma nova versão. Você pode instalar a partir de um arquivo local, de um arquivo carregado ou da versão mais recente em <a href=http://www.usermin.com/>www.usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
-upgrade_descrpm=Este formulário permite atualizar toda a instalação do Usermin para uma nova versão usando a opção de atualização do RPM. Você pode instalar a partir de um arquivo RPM local, de um arquivo carregado ou da versão mais recente em <a href=http://www.usermin.com/>www.usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
-upgrade_descdeb=Este formulário permite que você atualize toda a instalação do Usermin para uma nova versão, atualizando o pacote Debian. Você pode instalar a partir de um arquivo.deb local, de um arquivo carregado ou da versão mais recente em <a href=http://www.usermin.com/>www.usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
+upgrade_desc=Este formulário permite que você atualize toda a instalação do Usermin para uma nova versão. Você pode instalar a partir de um arquivo local, de um arquivo carregado ou da versão mais recente em <a href=https://usermin.com>usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
+upgrade_descrpm=Este formulário permite atualizar toda a instalação do Usermin para uma nova versão usando a opção de atualização do RPM. Você pode instalar a partir de um arquivo RPM local, de um arquivo carregado ou da versão mais recente em <a href=https://usermin.com>usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
+upgrade_descdeb=Este formulário permite que você atualize toda a instalação do Usermin para uma nova versão, atualizando o pacote Debian. Você pode instalar a partir de um arquivo.deb local, de um arquivo carregado ou da versão mais recente em <a href=https://usermin.com>usermin.com</a>. Assim como com uma atualização manual, todas as suas configurações e módulos de terceiros serão mantidos.
 upgrade_local=Do arquivo local
 upgrade_uploaded=Do arquivo enviado
 upgrade_url=De FTP ou URL URL
-upgrade_ftp=Versão mais recente em www.usermin.com
+upgrade_ftp=Versão mais recente em usermin.com
 upgrade_delete=Excluir o diretório da versão antiga após a atualização?
 upgrade_ok=Atualizar Usermin
 upgrade_err1=Falha ao atualizar de $1
 upgrade_err2=Falha ao atualizar do arquivo enviado
-upgrade_err3=Falha ao atualizar de www.usermin.com
+upgrade_err3=Falha ao atualizar de usermin.com
 upgrade_err5=Falha ao atualizar do URL $1
 upgrade_eurl=URL ausente ou inválido
 upgrade_efile=Arquivo não existe
@@ -291,10 +291,10 @@ upgrade_failed=.. atualização falhou!
 upgrade_updates=Existem $1 atualizações para esta nova versão do Usermin. <a href='$2'>Clique aqui</a> para fazer o download e instalá-los automaticamente agora.
 upgrade_eupdates=Falha ao baixar a lista de atualizações : $1
 
-update_desc1=Este formulário permite que você atualize os módulos Usermin que contêm bugs ou falhas de segurança na página <a href=http://www.usermin.com/uupdates.html>Atualizações do usuáriomin</a> ou de outra fonte. Isso comparará os módulos atualmente instalados com os disponíveis para atualização e, opcionalmente, baixará e instalará automaticamente todos os módulos desatualizados.
+update_desc1=Este formulário permite que você atualize os módulos Usermin que contêm bugs ou falhas de segurança na página <a href=https://usermin.com/uupdates.html>Atualizações do usuáriomin</a> ou de outra fonte. Isso comparará os módulos atualmente instalados com os disponíveis para atualização e, opcionalmente, baixará e instalará automaticamente todos os módulos desatualizados.
 update_header1=Atualize os módulos agora
 update_header2=Atualizar módulos dentro do cronograma
-update_webmin=Atualização de www.usermin.com
+update_webmin=Atualização de usermin.com
 update_other=Atualização de outra fonte
 update_show=Mostrar apenas quais módulos seriam atualizados
 update_missing=Instale os módulos que não estão atualmente instalados
@@ -306,7 +306,7 @@ update_apply=Salvar e aplicar
 update_sched=Atualizar módulos às $1 : 00 a cada $2 dias
 update_none=Não há atualizações de Usermin para esta versão.
 update_failed=Falha ao instalar o módulo : $1
-update_desc2=Este formulário é para agendar a atualização automática dos módulos Usermin que contêm bugs ou falhas de segurança na página <a href=http://www.usermin.com/uupdates.html>Atualizações do Usermin</a> ou de outra fonte. Embora esse serviço seja útil, você deve ter cuidado ao usá-lo, pois pode permitir que invasores assumam o controle do seu sistema se o servidor de atualização estiver comprometido.
+update_desc2=Este formulário é para agendar a atualização automática dos módulos Usermin que contêm bugs ou falhas de segurança na página <a href=https://usermin.com/uupdates.html>Atualizações do Usermin</a> ou de outra fonte. Embora esse serviço seja útil, você deve ter cuidado ao usá-lo, pois pode permitir que invasores assumam o controle do seu sistema se o servidor de atualização estiver comprometido.
 
 assignment_title=Reatribuir módulos
 assignment_header=Atribuições de categoria de módulo
