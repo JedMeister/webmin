@@ -2,7 +2,10 @@ Source: webmin
 Section: admin
 Priority: optional
 Maintainer: Jeremy Davis <jeremy@turnkeylinux.org>
-Build-Depends: debhelper (>= 10), gzip, tar
+Build-Depends:
+ debhelper-compat (= 13),
+ gzip,
+ tar,
 Standards-Version: 4.0.0
 Homepage: https://webmin.com/
 Vcs-Browser: https://github.com/turnkeylinux/webmin/
