@@ -1,6 +1,6 @@
 name=Custom
 desc=Custom Commands
-depends=proc 2.640
+depends=proc 2.641
 longdesc=Create buttons to execute commonly used commands or edit files on your system.
 readonly=1
-version=2.640
+version=2.641

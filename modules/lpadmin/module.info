@@ -4,5 +4,5 @@ os_support=solaris coherent-linux redhat-linux mandrake-linux slackware-linux su
 desc=Printer Administration
 longdesc=Create and edit local and remote printers. Supports Windows print servers and Ghostscript print drivers.
 readonly=1
-version=2.640
-depends=2.640
+version=2.641
+depends=2.641

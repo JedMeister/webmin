@@ -1,8 +1,8 @@
 name=Nginx
 desc=Nginx Webserver
 category=servers
-version=2.640
+version=2.641
 readonly=1
 syslog=1
 plugin_feature=1
-depends=2.640
+depends=2.641
