@@ -32,8 +32,8 @@ Description: A web-based administration interface for Unix systems.
  To access Wembin:
  - https://<IP_OR_DOMAIN>:12321 (TurnKey pre-installed)
  - https://<IP_OR_DOMAIN>:10000 (non TurnKey pre-installed)
- - Also available via 'localhost:port' in desktop systems.
- - Log with root Linux user & password - sudo users are also
+ - Also available via 'localhost:port' if installed on desktop systems.
+ - Log in with root Linux user & password - sudo users are also
    supported but may require initial config via root user.
 
 Package: webmin-adsl-client
