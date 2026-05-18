@@ -14,16 +14,27 @@ Depends:
  libauthen-pam-perl,
  libio-pty-perl,
  libnet-ssleay-perl,
+ libsocket6-perl,
  libpam-runtime,
  openssl,
  perl,
  ${misc:Depends},
 Pre-Depends: perl
 Description: A web-based administration interface for Unix systems.
- Using Webmin you can configure DNS, Samba, NFS, local/remote filesystems
- and more using your web browser. After installation, enter the URL
- https://localhost:10000/ into your browser and login as root with your
- root password.
+ Using Webmin you can configure Firewall, DNS, Samba, NFS, local/remote
+ filesystems and more - all from your web browser. It supports
+ access via IPv4, IPv6 or domain (assuming appropriate DNS mapping).
+ .
+ The default Webmin port is 10000 but this is a custom package provided
+ by TurnKey GNU Linux and on a pre-built TurnKey system the default
+ port is 12321.
+ .
+ To access Wembin:
+ - https://<IP_OR_DOMAIN>:12321 (TurnKey pre-installed)
+ - https://<IP_OR_DOMAIN>:10000 (non TurnKey pre-installed)
+ - Also available via 'localhost:port' in desktop systems.
+ - Log with root Linux user & password - sudo users are also
+   supported but may require initial config via root user.
 
 Package: webmin-adsl-client
 Architecture: all
