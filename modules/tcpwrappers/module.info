@@ -1,6 +1,6 @@
 name=tcpwrappers
 desc=TCP Wrappers
 category=net
-version=2.640
+version=2.641
 longdesc=Configure the TCP wrappers networking access control files
-depends=2.640
+depends=2.641

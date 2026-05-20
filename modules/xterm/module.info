@@ -2,5 +2,5 @@ desc=Terminal
 name=xterm
 longdesc=Access the shell on your system without the need for a separate SSH client, using Xterm.js over Webmin WebSockets
 websockets=1
-version=2.640
-depends=2.640
+version=2.641
+depends=2.641
