@@ -2,42 +2,20 @@
 
 DH_VERBOSE = 1
 
-progname=$(shell awk '/^Source/ {print $$2}' debian/control)
-buildroot=debian/$(progname)
-
-share=$(buildroot)/usr/share/$(progname)
-tmp=debian/tmp
-
 %:
 	dh $@
 
-clean:
-	dh_clean
+override_dh_auto_build:
+	# no build step required - pure Perl/config package
 
-build:
-	dh_prep
-	mkdir -p $(tmp)
-
-install: build
-	dh_testdir
-	dh_testroot
-	mkdir -p $(share)
-	cp -aR webmin_core/* $(share)
-	dh_install debian/etc/pam.d/webmin etc/pam.d
+override_dh_auto_install:
+	# run bash script for plugin install steps
 	DH_VERBOSE=$(DH_VERBOSE) ./plugins_deb_rules.sh
-	rm -rf $(tmp)
 
-binary-indep: install
-	dh_testdir
-	dh_testroot
-	dh_installinit -r --no-start -- start 91 2 3 4 5 . stop 01 0 1 6 .
-	dh_installdeb
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
+override_dh_install:
+	dh_install
+	find debian/webmin/usr/share/webmin -name "*.pl" -exec \
+		sed -i '1s|^#!.*perl|#!/usr/bin/perl|' {} \;
 
-binary-arch: install
-
-binary: binary-indep binary-arch
-
-.PHONY: clean binary-indep binary-arch binary install
+override_dh_installsystemd:
+	dh_installsystemd --no-start

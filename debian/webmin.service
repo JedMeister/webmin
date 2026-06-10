@@ -13,6 +13,7 @@ PIDFile=/var/webmin/miniserv.pid
 Restart=always
 RestartSec=2s
 TimeoutSec=15s
+SyslogIdentifier=webmin
 
 [Install]
 WantedBy=multi-user.target
