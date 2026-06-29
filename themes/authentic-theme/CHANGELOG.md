@@ -1,5 +1,36 @@
 ## Changelog
 
+#### Version 26.50.2 (June 28, 2026)
+* Fix search-result all-items delete in File Manager
+* Fix search-result delete ordering in File Manager
+* Fix to speed up search-result deletion cleanup in File Manager
+* Fix to refine editor and viewer panel sizing in File Manager
+
+#### Version 26.50.1 (June 25, 2026)
+* Add support for live stats and terminal WebSocket connections through Webmin Servers Index proxy links
+* Fix proxying when Webmin is accessed with a webprefix using Webmin Servers Index module
+* Fix theme UI helpers to escape generated markup more safely
+
+#### Version 26.50 (June 15, 2026)
+* Add zooming to stats history graphs by holding shift and scrolling in the dashboard
+* Add support for saving live stats history for up to 24 hours without performance impact
+* Add better support for the new Nginx, nftables, and upcoming systemd, Kea-DHCP, and GRUB 2 Webmin modules
+* Add ability to always show available dashboard panels in theme configuration
+* Fix iOS terminal viewport sizing
+* Fix editor save handling, clean-state indication and dirty reload guard
+* Fix popover positioning, z-index and border color for help bubbles
+* Fix the active product switch border in the navigation menu for the dark palette
+* Fix to validate password reset return URLs
+
+<!--- separator --->
+
+#### Version 26.41.2 (May 12, 2026)
+* Fix allowed path enforcement in File Manager module
+* Fix potential unsafe theme cache deserialization
+
+#### Version 26.41.1 (May 10, 2026)
+* Fix issue where the log type cannot be selected in the System Logs module #1733
+
 #### Version 26.41 (May 6, 2026)
 * Upgrade stats history graphs from laggy SVG to a blazing-fast canvas renderer
 
@@ -10,8 +41,6 @@
 * Fix tooltip visibility in dark palette
 * Fix session login button spinner
 * Fix various button styling issues (active state, tiny buttons, airy buttons, stack position)
-
-<!--- separator --->
 
 #### Version 26.30 (March 24, 2026)
 * Add a new airy button style to the light palette to match the dark one  

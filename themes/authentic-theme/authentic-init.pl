@@ -100,6 +100,11 @@ do("$ENV{'THEME_ROOT'}/dependencies.pl")
     if (!@theme_bundle_css || !@theme_bundle_js);
 }
 
+sub load_login_lib
+{
+require("$ENV{'THEME_ROOT'}/login-lib-funcs.pl");
+}
+
 sub embed_favicon
 {
     my ($is_login_page) = @_;
@@ -1174,9 +1179,14 @@ sub get_button_style
     } elsif (string_contains($keys, "index_profile_setup")) {
         $class = "info ";
         $icon  = " fa2 fa2-settings";
-    } elsif (string_contains($keys, "index_edit_manual")) {
+    } elsif (string_contains($keys, "index_edit_manual") ||
+             string_contains($keys, "index_edit_files")) {
         $class = "warning ";
-        $icon = " fa2 fa2-code fa-1_10x margined-top-05";
+        $class = "info " if (string_contains($keys, "index_edit_files"));
+        $icon = " fa2 fa2-code margined-top--05 margined-left--1 margined-right--1 fa-1_15x";
+    } elsif (string_contains($keys, "index_dropins")) {
+        $class = "primary ";
+        $icon = " fa-kit fa-angles-down fa-0_90x margined-left-2 margined-right-1";
     } elsif (string_contains($keys, "index_bootup")) {
         $class = "success ";
         $icon = "toggle-switch-off fa-1_25x";
@@ -1234,9 +1244,42 @@ sub get_button_style
     } elsif (string_contains($keys, "rmfeatures")) {
         $icon  = "question-circle";
         $class = "warning ";
-    } elsif (string_contains($keys, "newmxs_saveadd")) {
+    } elsif (string_contains($keys, "newmxs_saveadd") ||
+             string_contains($keys, "index_toggle")) {
         $icon  = "toggle-switch  fa-1_25x";
         $class = "warning ";
+    } elsif (string_contains($keys, "index_view_status")) {
+        $icon  = "info-circle";
+        $class = "info ";
+    } elsif (string_contains($keys, "_statusnow")) {
+        $icon  = " fa-kit fa-status";
+    } elsif (string_contains($keys, "_logsnow")) {
+        $icon  = " fa-kit fa-logs";
+    } elsif (string_contains($keys, "_depsnow")) {
+        $icon  = " fa-kit fa-deps";
+    } elsif (string_contains($keys, "_propsnow")) {
+        $icon  = "info-circle";
+    } elsif (string_contains($keys, "_overridenow")) {
+        $icon = "plus-circle";
+        $class = "primary ";
+    } elsif (string_contains($keys, "_editoverridenow") ||
+             string_contains($keys, "_stockunitnow")) {
+        $icon  = "editor fa-1_10x margined-top--1-5";
+        $icon  = "eye fa-1_05x margined-left--1"
+            if (string_contains($keys, "view_stockunitnow"));
+        $class = "primary ";
+        $class = "info " if (string_contains($keys, "_stockunitnow"));
+    } elsif (string_contains($keys, "index_generate")) {
+        $icon  = "refresh-mdi fa-1_15x margined-left--2 margined-right--2";
+        $class = "warning ";
+    } elsif (string_contains($keys, "index_global_settings") ||
+             string_contains($keys, "index_ddns_settings") ||
+             string_contains($keys, "ddns_title")) {
+        $icon  = "settings";
+        $class = "info ";
+    } elsif (string_contains($keys, "index_runtime_status")) {
+        $icon  = " fa2 fa2-checklist fa-1_25x margined-left--2 margined-right--4";
+        $class = "success "; 
     } elsif (string_contains($keys, "save") ||
              string_contains($keys, "backup_ok2")    ||
              string_contains($keys, "sharedips_ok")  ||
@@ -1500,6 +1543,10 @@ sub get_button_style
         $icon  = "stop";
         $class = "warning "
             if (string_contains($keys, "index_stop_sel"));
+    } elsif (string_contains($keys, "index_mask")) {
+        $icon  = "lock";
+    } elsif (string_contains($keys, "index_unmask")) {
+        $icon  = "unlock";
     } elsif (string_contains($keys, "ok_ok")) {
         $icon  = "check-square-o";
         $class = "success ";

@@ -549,6 +549,7 @@ sub theme_ui_columns_end
 sub theme_ui_help
 {
     my ($title) = @_;
+    $title = &html_escape(&html_strip($title), 1);
     return (
 "<sup class=\"ui_help\" data-container=\"body\" data-placement=\"auto right\" data-title=\"$title\" data-toggle=\"tooltip\"><i class=\"fa fa-question-circle cursor-help ui_help_icon\"></i></sup>"
     );
@@ -801,20 +802,19 @@ sub theme_ui_select
       ($tags ? " " . $tags : "") . ">\n";
     my ($o, %opt, $s, $v);
     my %sel = ref($value) ? (map {$_, 1} @$value) : ($value, 1);
-    my $t   = 'x-md-';
     foreach $o (@$opts) {
         $o = [$o] if (!ref($o));
         $v = ($o->[1] || $o->[0]);
         $rv .=
           "<option value=\"" .
           &quote_escape($o->[0]) . "\"" . ($sel{ $o->[0] } ? " selected" : "") . ($o->[2] ne '' ? " " . $o->[2] : "") . ">" .
-          (string_contains($v, $t) ? html_escape($v) : $v) . "</option>\n";
+          html_escape($v, 1) . "</option>\n";
         $opt{ $o->[0] }++;
     }
     foreach $s (keys %sel) {
         if (!$opt{$s} && $missing) {
             $rv .= "<option value=\"" . &quote_escape($s) . "\"" . " selected>" .
-              ($s eq "" ? "&nbsp;" : (string_contains($s, $t) ? html_escape($s) : $s)) . "</option>\n";
+              ($s eq "" ? "&nbsp;" : html_escape($s, 1)) . "</option>\n";
         }
     }
     $rv .= "</select>\n";
@@ -1599,19 +1599,22 @@ sub theme_redirect_download
 sub theme_js_redirect
 {
     my ($url, $window, $timeout) = @_;
-    $window ||= "window";
-    $timeout ||= 100;
+    $window = $window && $window =~ /^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*$/
+        ? $window : "window";
+    $timeout = $timeout ? int($timeout) : 100;
     if ($url =~ /^\//) {
         # If the URL is like /foo , add webprefix
         $url = &get_webprefix().$url;
     }
+    $url = &quote_escape($url);
+    $url =~ s|<|\\u003C|g;
     return "<script type='application/javascript'>"."
             try {
                 progress.end();
                 set_onbeforeunload_status_native(0);
                 set_onbeforeunload_status(0, 0);
             } catch (e) {};
-            setTimeout(function(){location.href='@{[quote_escape($url)]}'},$timeout)".
+            setTimeout(function(){${window}.location.href='$url'},$timeout)".
            "</script>\n";
 }
 
@@ -1771,7 +1774,10 @@ sub theme_forgot_url
 {
     my ($baseurl, $id, $username) = @_;
     my $url = "$baseurl/?forgot=".&urlize($id)."&username=".&urlize($username);
-    $url .= "&return=".&urlize($in{'return'}) if ($in{'return'});
+    return $url if (!$in{'return'});
+    &load_login_lib();
+    my $return = &login_validate_forgot_return_url($in{'return'}, $baseurl);
+    $url .= "&return=".&urlize($return) if ($return);
     return $url;
 }
 
@@ -1783,7 +1789,9 @@ sub theme_forgot_handler
         # If called from the framed theme
         if ($page && $page =~ /forgot_form/ && $in{'return'}) {
             my $return = &un_urlize($in{'return'});
-            &redirect($prefix."?return=".&urlize($return));
+            &load_login_lib();
+            $return = &login_validate_forgot_return_url($return);
+            &redirect($prefix.($return ? "?return=".&urlize($return) : ""));
             exit;
         }
         # Create expected format forgot link that is sent in email

@@ -15,6 +15,7 @@ our (%in,
      $current_lang_info,
      $root_directory,
      $config_directory,
+     $var_directory,
      $current_theme,
      $theme_webprefix,
      $module_name,
@@ -46,9 +47,9 @@ sub settings
     }
 }
 
-# decode_utf8(\$scalar , [\$err])
+# decode_utf8_ref(\$scalar , [\$err])
 # Decode UTF-8 string by reference. Optionally, return error message
-sub decode_utf8 {
+sub decode_utf8_ref {
     my ($sref, $errref) = @_;
     return 0 unless defined($sref) && ref($sref) eq 'SCALAR';
     my $tmp = $$sref;
@@ -507,6 +508,12 @@ sub product_version_update_remote
 sub product_version_update
 {
     my ($product_local_version, $product_local_name) = @_;
+
+    # Normalize package release suffixes before any return path can display them.
+    if ($product_local_name =~ /^(w|u|v|c)$/ && $product_local_version) {
+        $product_local_version =~ s/^(.+?)-\d+(?:[.\w~+]*)(?:\.\w+)?$/$1/;
+    }
+
     return $product_local_version
       if ($theme_config{'settings_check_remote_updates'} eq 'false');
     my $software_versions_remote = product_version_update_remote();
@@ -906,6 +913,18 @@ sub theme_write_file_contents
         };
     # Clean up and return success
     return $cleanup->(1, 1);
+}
+
+# Return the on-disk path for persisted real-time history
+sub get_stats_history_file
+{
+    return "$var_directory/modules/$current_theme/real-time-monitoring.json";
+}
+
+# Return the on-disk path for cached real-time stats
+sub get_stats_now_file
+{
+    return "$var_directory/modules/$current_theme/real-time-monitoring-now.json";
 }
 
 # merge_stats_now_into_system_info_data(sysinfo-data-arrref, stats-now-json-string)
