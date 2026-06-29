@@ -26,7 +26,9 @@ return undef;
 # directives
 sub get_add_config_file
 {
-foreach my $f (split(/\s+/, $config{'add_config'})) {
+my $f = $config{'add_config'} || "";
+$f =~ s/^\s+|\s+$//g;
+if ($f) {
 	return $f if (-r $f);
 	}
 return &get_config_file();
@@ -364,7 +366,7 @@ if ($parent) {
 	}
 else {
 	# Add to the global config file
-	$file = &get_config_file();
+	$file = $before ? $before->{'file'} : &get_add_config_file();
 	$lref = &read_file_lines($file);
 	if ($before) {
 		# Add before another block

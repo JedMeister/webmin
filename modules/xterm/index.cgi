@@ -1,45 +1,52 @@
 #!/usr/local/bin/perl
 # Show a terminal that is connected to a Websockets server via Webmin proxying
 
-$unsafe_index_cgi = 1;
-require './xterm-lib.pl';
-&ReadParse();
-
-$ENV{'HTTP_WEBMIN_PATH'} && &error($text{'index_eproxy'});
+use strict;
+use warnings;
+no warnings 'uninitialized';
+our $unsafe_index_cgi = 1;
+require './xterm-lib.pl';    ## no critic
+our (%in, %text, %config, %gconfig, %access, %module_info,
+     $module_name, $module_config_directory, $module_var_directory,
+     $remote_user, $session_id);
+ReadParse();
 
 # Check for needed modules
-my @modnames = ("Digest::SHA", "Digest::MD5",
-                "IO::Select", "Time::HiRes",
-                "Net::WebSocket::Server");
-foreach my $modname (@modnames) {
-	eval "use ${modname};";
-	if ($@) {
-		&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0);
-		my $missinglink = &text('index_cpan', "<tt>$modname</tt>",
-			    "../cpan/download.cgi?source=3&cpan=$modname&mode=2&return=/$module_name/&returndesc=".&urlize($module_info{'desc'}));
-		if ($gconfig{'os_type'} eq 'redhat-linux') {
-			$missinglink .= " ".
-				&text('index_epel',
-					'https://docs.fedoraproject.org/en-US/epel');
-			}
-		elsif ($gconfig{'os_type'} eq 'suse-linux') {
-			$missinglink =
-				&text('index_suse', "<tt>$modname</tt>",
-					'https://software.opensuse.org/download/package?package=perl-IO-Tty&project=devel%3Alanguages%3Aperl');
-			}
-		if (&get_product_name() eq 'usermin') {
-			print &text('index_missing', $modname) ."<p>\n";
-			}
-		else {
-			print $missinglink ."<p>\n";
-			}
-		&ui_print_footer("/", $text{'index'});
-		exit;
+my @modload = (
+	['Digest::SHA',            sub { eval { require Digest::SHA;            Digest::SHA->import;            1 } }],
+	['Digest::MD5',            sub { eval { require Digest::MD5;            Digest::MD5->import;            1 } }],
+	['IO::Select',             sub { eval { require IO::Select;             IO::Select->import;             1 } }],
+	['Time::HiRes',            sub { eval { require Time::HiRes;            Time::HiRes->import;            1 } }],
+	['Net::WebSocket::Server', sub { eval { require Net::WebSocket::Server; Net::WebSocket::Server->import; 1 } }],
+	);
+foreach my $m (@modload) {
+	my ($modname, $loader) = @$m;
+	next if ($loader->());
+	ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0);
+	my $missinglink = text('index_cpan', "<tt>$modname</tt>",
+		    "../cpan/download.cgi?source=3&cpan=$modname&mode=2&return=/$module_name/&returndesc=".urlize($module_info{'desc'}));
+	if ($gconfig{'os_type'} eq 'redhat-linux') {
+		$missinglink .= " ".
+			text('index_epel',
+				'https://docs.fedoraproject.org/en-US/epel');
 		}
+	elsif ($gconfig{'os_type'} eq 'suse-linux') {
+		$missinglink =
+			text('index_suse', "<tt>$modname</tt>",
+				'https://software.opensuse.org/download/package?package=perl-IO-Tty&project=devel%3Alanguages%3Aperl');
+		}
+	if (get_product_name() eq 'usermin') {
+		print text('index_missing', $modname) ."<p>\n";
+		}
+	else {
+		print $missinglink ."<p>\n";
+		}
+	ui_print_footer("/", $text{'index'});
+	exit;
 	}
 
 # Get Webmin current version for links serial
-my $wver = &get_webmin_version();
+my $wver = get_webmin_version();
 $wver =~ s/\.//;
 
 # Build Xterm dependency links
@@ -54,12 +61,11 @@ my $termlinks =
 my $conf_size_str = $config{'size'};
 my $def_cols_n = 80;
 my $def_rows_n = 24;
-my $xmlhr = $ENV{'HTTP_X_REQUESTED_WITH'} eq "XMLHttpRequest";
-my %term_opts;
+my $xmlhr = ($ENV{'HTTP_X_REQUESTED_WITH'} || '') eq "XMLHttpRequest";
 my $font_size = $config{'fontsize'} || 14;
 
 # Parse module config
-my ($conf_cols_n, $conf_rows_n) = ($conf_size_str =~ /([\d]+)X([\d]+)/i);
+my ($conf_cols_n, $conf_rows_n) = (($conf_size_str || '') =~ /([\d]+)X([\d]+)/i);
 $conf_cols_n = int($conf_cols_n);
 $conf_rows_n = int($conf_rows_n);
 
@@ -71,12 +77,13 @@ my $env_rows = $conf_rows_n || $def_rows_n;
 # in fixed mode, and only for old themes
 if ($conf_cols_n && $conf_rows_n && !$xmlhr) {
 	$ENV{'COLUMNS'} = $conf_cols_n;
-	$ENV{'LINES'} = $conf_rows_n;	
+	$ENV{'LINES'} = $conf_rows_n;
 	}
 
 # Define columns and rows
 my $conf_screen_reader = $config{'screen_reader'} eq 'true' ? 'true' : 'false';
-$termjs_opts{'Options'} = "{ cols: $env_cols, rows: $env_rows, ".
+my %term_opts;
+$term_opts{'Options'} = "{ cols: $env_cols, rows: $env_rows, ".
 			    "screenReaderMode: $conf_screen_reader, ".
 			    "overviewRuler: { width: 9 }, ".
 			    "fontSize: $font_size }";
@@ -161,7 +168,7 @@ body[style='height:100%'] {
 EOF
 
 # Print header
-&ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0, undef,
+ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1, 0, undef,
 		 "<link rel=stylesheet href=\"$termlinks->{'css'}[0]\">\n".
 		 "<script src=\"$termlinks->{'js'}[0]\"></script>\n".
 		 "<script src=\"$termlinks->{'js'}[1]\"></script>\n".
@@ -172,32 +179,23 @@ EOF
 # Print main container
 print "<div data-label=\"$text{'index_connecting'}\" id=\"terminal\"></div>\n";
 
-# Get a free port that can be used for the socket
-my $port = &allocate_miniserv_websocket($module_name);
+# Get a free port that can be used for the socket. Normal browser sessions
+# are revalidated by miniserv while the websocket stays open. Proxied or
+# Basic-auth requests may not have a session cookie, so only those routes get
+# a one-time backend handshake secret.
+my $websocket_session_id = $session_id;
+my $backend_session;
+if (!$websocket_session_id) {
+	$websocket_session_id = generate_miniserv_websocket_token();
+	$backend_session = $websocket_session_id;
+	}
+my $port = allocate_miniserv_websocket(
+	$module_name, undef, $backend_session);
 
-# Check permissions for user to run as
-my $user = $access{'user'};
-if ($user eq "*") {
-	$user = $remote_user;
-	}
-elsif ($user eq "root" && $remote_user ne $user && !$in{'user'} &&
-       $access{'sudoenforce'} ne '0') {
-	# If possible, start with a sudo-capable user
-	my @uinfo = getpwnam($remote_user);
-	if (@uinfo && $uinfo[7]) {
-		$user = $remote_user;
-		}
-	}
-$user = $config{'user'} if ($user eq 'root' && $config{'user'});
-
-# Switch to given user
-if ($user eq "root" && $in{'user'}) {
-	defined(getpwnam($in{'user'})) ||
-		&error(&text('index_euser', &html_escape($in{'user'})));
-	$user = $in{'user'};
-	}
+# Decide which Unix account the terminal will run as
+my $user = resolve_shell_user(\%access, $remote_user, \%in, \%config);
 my @uinfo = getpwnam($user);
-@uinfo || &error(&text('index_euser', &html_escape($user)));
+@uinfo || error(text('index_euser', html_escape($user)));
 
 # Check for directory to start the shell in
 my $dir = $in{'dir'};
@@ -205,23 +203,26 @@ my $dir = $in{'dir'};
 # Launch the shell server on the allocated port
 my $shellserver_cmd = "$module_config_directory/shellserver.pl";
 if (!-r $shellserver_cmd) {
-	&create_wrapper($shellserver_cmd, $module_name, "shellserver.pl");
+	create_wrapper($shellserver_cmd, $module_name, "shellserver.pl");
 	}
-$ENV{'SESSION_ID'} = $main::session_id;
-&system_logged($shellserver_cmd." ".quotemeta($port)." ".quotemeta($user).
+# shellserver.pl validates the backend websocket key against SESSION_ID. For
+# normal sessions miniserv forwards the browser session; no-cookie routes use
+# the one-time backend_session stored in miniserv.conf above.
+$ENV{'SESSION_ID'} = $websocket_session_id;
+system_logged($shellserver_cmd." ".quotemeta($port)." ".quotemeta($user).
 	       ($dir ? " ".quotemeta($dir) : "").
 	       " >$module_var_directory/websocket-connection-$port.out 2>&1 </dev/null");
 
 # Open the terminal
-my $url = &get_miniserv_websocket_url($port, $config{'host'}, $module_name);
+my $url = get_miniserv_websocket_url($port, $config{'host'}, $module_name);
 my $webGLAddon = $termlinks->{'js'}[3];
 my $term_script = <<EOF;
 
 (function() {
 	const socket = new WebSocket('$url', 'binary'),
 	      termcont = document.getElementById('terminal'),
-	      err_conn_cannot = 'Cannot connect to the socket $url',
-	      err_conn_lost = 'Connection to the socket $url lost',
+	      err_conn_cannot = 'Cannot connect to the socket ' + socket.url,
+	      err_conn_lost = 'Connection to the socket ' + socket.url + ' lost',
 	      webGLAddonLink = '$webGLAddon',
 	      detectWebGLContext = (function() {
 	          const canvas = document.createElement("canvas"),
@@ -230,7 +231,7 @@ my $term_script = <<EOF;
 	          return gl instanceof WebGLRenderingContext ? true : false;
 	      })();
 	socket.onopen = function() {
-		const term = new Terminal($termjs_opts{'Options'}),
+		const term = new Terminal($term_opts{'Options'}),
 		      attachAddon = new AttachAddon.AttachAddon(this),
 		      fitAddon = new FitAddon.FitAddon(),
 		      renderScript = document.createElement('script');
@@ -287,7 +288,7 @@ EOF
 print "<script>\n";
 if ($xmlhr) {
 	print "var xterm_argv = ".
-          &convert_to_json(
+          convert_to_json(
             { 'conf'  => \%config,
               'files' => $termlinks,
               'socket_url' => $url,
@@ -300,4 +301,4 @@ else {
 	print $term_script;
 	}
 print "</script>\n";
-&ui_print_footer();
+ui_print_footer();

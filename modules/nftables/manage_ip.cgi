@@ -7,7 +7,7 @@ use strict;
 use warnings;
 our (%in, %text);
 ReadParse();
-assert_acl('quick');
+assert_quick_acl('ip');
 
 my $action = $in{'allow'} ? 'allow' : $in{'block'} ? 'block' : '';
 error_setup(
@@ -48,7 +48,10 @@ error(text('quick_failed', $err)) if ($err);
 
 webmin_log($action, "ip", $in{'ip'},
 	{'table' => $table->{'name'}, 'family' => $table->{'family'}});
-redirect("index.cgi?table_family=".
+my $redir = "index.cgi?table_family=".
 	    urlize($table->{'family'}).
 	    "&table_name=".
-	    urlize($table->{'name'}));
+	    urlize($table->{'name'});
+$redir .= "&view=".urlize($in{'view'})
+	if (($in{'view'} || '') =~ /^(chains|sets)$/);
+redirect($redir);
