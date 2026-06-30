@@ -6,7 +6,7 @@ use strict;
 use warnings;
 no warnings 'redefine';
 no warnings 'uninitialized';
-require './acl-lib.pl';
+require './acl-lib.pl';    ## no critic
 our (%in, %text, %config, %access, $config_directory, $base_remote_user);
 &foreign_require("webmin", "webmin-lib.pl");
 &ReadParse();
@@ -104,11 +104,6 @@ foreach my $u (@ulist) {
 
 # Find the current group
 my $oldgroup = $in{'old'} ? &get_users_group($in{'old'}) : undef;
-
-if (&supports_rbac()) {
-	# Save RBAC mode
-	$user{'rbacdeny'} = $in{'rbacdeny'};
-	}
 
 my $newgroup;
 if (defined($in{'group'})) {
@@ -374,11 +369,13 @@ else {
 	}
 
 my $aclfile = "$config_directory/$in{'name'}.acl";
-if ($in{'old'} && $in{'acl_security_form'} && !$newgroup && !$in{'safe'}) {
-	# Update user's global ACL
+if ($in{'acl_security_form'} && !$newgroup && !$in{'safe'}) {
+	# Update user's global ACL, and merge in RPC setting which has
+	# been moved out of this form
 	&foreign_require("", "acl_security.pl");
 	my %uaccess;
 	&foreign_call("", "acl_security_save", \%uaccess, \%in);
+	$uaccess{'rpc'} = $in{'rpc'};
 	&lock_file($aclfile);
 	&save_module_acl(\%uaccess, $in{'name'}, "", 1);
 	&set_ownership_permissions(undef, undef, 0640, $aclfile);

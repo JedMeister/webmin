@@ -109,12 +109,25 @@ return ();
 sub edit_MaxClients
 {
 return (1,
-	$text{'core_maxconc'},
+	&hlink($text{'core_maxconc'}, "MaxClients"),
 	&opt_input($_[0]->{'value'}, "MaxClients", $text{'core_default'}, 4));
 }
 sub save_MaxClients
 {
 return &parse_opt("MaxClients", '^\d+$',
+		  $text{'core_emaxconc'});
+}
+
+sub edit_MaxRequestWorkers
+{
+return (1,
+	&hlink($text{'core_maxconc'}, "MaxRequestWorkers"),
+	&opt_input($_[0]->{'value'}, "MaxRequestWorkers",
+		   $text{'core_default'}, 4));
+}
+sub save_MaxRequestWorkers
+{
+return &parse_opt("MaxRequestWorkers", '^\d+$',
 		  $text{'core_emaxconc'});
 }
 
@@ -133,7 +146,7 @@ return &parse_opt("MaxKeepAliveRequests", '^\d+$',
 sub edit_MaxRequestsPerChild
 {
 return (1,
-	$text{'core_maxreq'},
+	&hlink($text{'core_maxreq'}, "MaxRequestsPerChild"),
 	&opt_input($_[0]->{'value'}, "MaxRequestsPerChild", $text{'core_default'}, 5));
 }
 sub save_MaxRequestsPerChild
@@ -145,7 +158,7 @@ return &parse_opt("MaxRequestsPerChild", '^\d+$',
 sub edit_MinSpareServers
 {
 return (1,
-	$text{'core_minspare'},
+	&hlink($text{'core_minspare'}, "MinSpareServers"),
 	&opt_input($_[0]->{'value'},"MinSpareServers",$text{'core_default'}, 4));
 }
 sub save_MinSpareServers
@@ -157,7 +170,7 @@ return &parse_opt("MinSpareServers", '^\d+$',
 sub edit_MaxSpareServers
 {
 return (1,
-	$text{'core_maxspare'},
+	&hlink($text{'core_maxspare'}, "MaxSpareServers"),
 	&opt_input($_[0]->{'value'},"MaxSpareServers",$text{'core_default'}, 4));
 }
 sub save_MaxSpareServers
@@ -169,7 +182,7 @@ return &parse_opt("MaxSpareServers", '^\d+$',
 sub edit_StartServers
 {
 return (1,
-	$text{'core_initial'},
+	&hlink($text{'core_initial'}, "StartServers"),
 	&opt_input($_[0]->{'value'}, "StartServers", $text{'core_default'}, 4));
 }
 sub save_StartServers
@@ -178,9 +191,70 @@ return &parse_opt("StartServers", '^\d+$',
 		  $text{'core_einitial'});
 }
 
+sub edit_ServerLimit
+{
+return (1,
+	&hlink($text{'core_serverlimit'}, "ServerLimit"),
+	&opt_input($_[0]->{'value'}, "ServerLimit", $text{'core_default'}, 4));
+}
+sub save_ServerLimit
+{
+return &parse_opt("ServerLimit", '^\d+$',
+		  $text{'core_eserverlimit'});
+}
+
+sub edit_MinSpareThreads
+{
+return (1,
+	&hlink($text{'worker_minspare'}, "MinSpareThreads"),
+	&opt_input($_[0]->{'value'},"MinSpareThreads",$text{'core_default'}, 4));
+}
+sub save_MinSpareThreads
+{
+return &parse_opt("MinSpareThreads", '^\d+$',
+		  $text{'worker_eminspare'});
+}
+
+sub edit_MaxSpareThreads
+{
+return (1,
+	&hlink($text{'worker_maxspare'}, "MaxSpareThreads"),
+	&opt_input($_[0]->{'value'},"MaxSpareThreads",$text{'core_default'}, 4));
+}
+sub save_MaxSpareThreads
+{
+return &parse_opt("MaxSpareThreads", '^\d+$',
+		  $text{'worker_emaxspare'});
+}
+
+sub edit_ThreadLimit
+{
+return (1,
+	&hlink($text{'worker_threadlimit'}, "ThreadLimit"),
+	&opt_input($_[0]->{'value'},"ThreadLimit",$text{'core_default'}, 4));
+}
+sub save_ThreadLimit
+{
+return &parse_opt("ThreadLimit", '^\d+$',
+		  $text{'worker_ethreadlimit'});
+}
+
+sub edit_ThreadsPerChild
+{
+return (1,
+	&hlink($text{'worker_threads'}, "ThreadsPerChild"),
+	&opt_input($_[0]->{'value'},"ThreadsPerChild",$text{'core_default'}, 4));
+}
+sub save_ThreadsPerChild
+{
+return &parse_opt("ThreadsPerChild", '^\d+$',
+		  $text{'worker_ethreads'});
+}
+
 sub edit_RLimitCPU
 {
-return &rlimit_input("RLimitCPU", $text{'core_cpulimit'}, $_[0]);
+return &rlimit_input("RLimitCPU",
+		     &hlink($text{'core_cpulimit'}, "RLimitCPU"), $_[0]);
 }
 sub save_RLimitCPU
 {
@@ -189,7 +263,8 @@ return &parse_rlimit("RLimitCPU", $text{'core_cpulimit2'});
 
 sub edit_RLimitMEM
 {
-return &rlimit_input("RLimitMEM", $text{'core_memlimit'}, $_[0]);
+return &rlimit_input("RLimitMEM",
+		     &hlink($text{'core_memlimit'}, "RLimitMEM"), $_[0]);
 }
 sub save_RLimitMEM
 {
@@ -198,7 +273,8 @@ return &parse_rlimit("RLimitMEM", $text{'core_memlimit2'});
 
 sub edit_RLimitNPROC
 {
-return &rlimit_input("RLimitNPROC", $text{'core_proclimit'}, $_[0]);
+return &rlimit_input("RLimitNPROC",
+		     &hlink($text{'core_proclimit'}, "RLimitNPROC"), $_[0]);
 }
 sub save_RLimitNPROC
 {
@@ -1280,7 +1356,7 @@ return &parse_opt("LockFile", '^\S+', $text{'core_elock'});
 
 sub edit_LimitRequestBody
 {
-return (1, $text{'core_maxbody'},
+return (1, &hlink($text{'core_maxbody'}, "LimitRequestBody"),
 	&opt_input($_[0]->{'value'}, "LimitRequestBody", $text{'core_default'}, 8)
 		.&ui_space(2).$text{'bytes'});
 }
@@ -1291,7 +1367,7 @@ return &parse_opt("LimitRequestBody", '^\d+$', $text{'core_ebody'});
 
 sub edit_LimitXMLRequestBody
 {
-return (1, $text{'core_maxxml'},
+return (1, &hlink($text{'core_maxxml'}, "LimitXMLRequestBody"),
 	&opt_input($_[0]->{'value'}, "LimitXMLRequestBody",
 		   $text{'core_default'}, 8).&ui_space(2).$text{'bytes'});
 }
@@ -1304,7 +1380,7 @@ return &parse_opt("LimitXMLRequestBody", '^\d+$', $text{'core_exml'});
 
 sub edit_LimitRequestFields
 {
-return (1, $text{'core_maxhead'},
+return (1, &hlink($text{'core_maxhead'}, "LimitRequestFields"),
 	&opt_input($_[0]->{'value'}, "LimitRequestFields", $text{'core_default'}, 6));
 }
 sub save_LimitRequestFields
@@ -1314,7 +1390,7 @@ return &parse_opt("LimitRequestFields", '^\d+$', $text{'core_ehead'});
 
 sub edit_LimitRequestFieldsize
 {
-return (1, $text{'core_maxshead'},
+return (1, &hlink($text{'core_maxshead'}, "LimitRequestFieldsize"),
 	&opt_input($_[0]->{'value'}, "LimitRequestFieldsize", $text{'core_default'}, 6));
 }
 sub save_LimitRequestFieldsize
@@ -1324,7 +1400,7 @@ return &parse_opt("LimitRequestFieldsize", '^\d+$', $text{'core_eshead'});
 
 sub edit_LimitRequestLine
 {
-return (1, $text{'core_maxline'},
+return (1, &hlink($text{'core_maxline'}, "LimitRequestLine"),
 	&opt_input($_[0]->{'value'}, "LimitRequestLine", $text{'core_default'}, 6));
 }
 sub save_LimitRequestLine
@@ -1631,4 +1707,3 @@ else { return ( [ ], [ ] ); }
 }
 
 1;
-

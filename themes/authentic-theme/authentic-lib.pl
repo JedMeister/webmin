@@ -101,28 +101,7 @@ sub get_extended_sysinfo
                     my $open =
                       ($info->{'open'} || $info->{'id'} eq 'domain') ? ' in' :
                       ($theme_config{'settings_sysinfo_expand_all_accordions'} eq 'true' ? ' in' : '');
-                    my $formatted_title = (
-                                        $info->{'id'} . '-' .
-                                          $info->{'module'} eq 'status_services-status' ?
-                                          $theme_text{'theme_xhred_sysinfo_system_monitors'} :
-                                          ($info->{'id'} . '-' .
-                                             $info->{'module'} eq 'sysinfo-virtual-server' ?
-                                             $theme_text{'theme_xhred_sysinfo_software_versions'} :
-                                             ($info->{'id'} . '-' .
-                                                $info->{'module'} eq 'status-virtual-server' ?
-                                                $theme_text{'theme_xhred_sysinfo_server_status'} :
-                                                ($info->{'id'} . '-' .
-                                                   $info->{'module'} eq 'quota-virtual-server' ?
-                                                   $theme_text{'theme_xhred_sysinfo_disk_quotas'} :
-                                                   ($info->{'id'} . '-' .
-                                                      $info->{'module'} eq 'bw-virtual-server' ?
-                                                      $theme_text{'theme_xhred_sysinfo_bandwidth_quotas'} :
-                                                      ($info->{'id'} . '-' .
-                                                         $info->{'module'} eq 'updates-virtual-server' ?
-                                                         $theme_text{'theme_xhred_sysinfo_vm_package_updates'} :
-                                                         ($info->{'id'} . '-' . $info->{'module'} eq 'acl_logins-acl' ?
-                                                            $theme_text{'theme_xhred_sysinfo_recent_logins'} :
-                                                            ($info->{'desc'}))))))));
+                    my $formatted_title = theme_sysinfo_accordion_title($info);
 
                     $returned_sysinfo .= '
                     <div draggable="false" data-referrer="' .
@@ -237,7 +216,6 @@ sub get_extended_sysinfo
         if (&webmin_user_is_admin() &&
             $theme_config{'settings_sysinfo_hidden_panels_user'} !~ /\'live_stats\'/ &&
             $theme_config{'settings_sysinfo_real_time_status'} ne '0'     &&
-            (!$theme_server_webprefix || $theme_server_webprefix && -r get_stats_history_file()) &&
             (acl_system_status('cpu') || acl_system_status('mem') || acl_system_status('load')))
         {
             my $data = '<div data-charts-loader class="text-muted loading-dots flex-center">
@@ -252,18 +230,11 @@ sub get_extended_sysinfo
                             <span data-chart="proc"></span>
                             <span data-chart="disk"></span>
                             <span data-chart="net"></span>';
-            my $live_stats_not_live; 
-            $live_stats_not_live =
-                '<span data-live="'.
-                        ($theme_server_webprefix ? 0 : 1).'"'.get_button_tooltip(
-                                theme_text('theme_xhred_tooltip_dashboard_live_stats_offline',
-                                undef), undef, 'auto right').
-                                    '></span>' if ($theme_server_webprefix);
             $returned_sysinfo .=
               print_panel(
                 1,
                 'live_stats',
-"$theme_text{'theme_dashboard_accordion_live_stats'}${live_stats_not_live}<span class=\"pull-right on-hover\"><i class=\"fa fa-fw fa-times-thin\" "
+"$theme_text{'theme_dashboard_accordion_live_stats'}<span class=\"pull-right on-hover\"><i class=\"fa fa-fw fa-times-thin\" "
                   .
                   get_button_tooltip(
                                      theme_text('theme_xhred_tooltip_dashboard_panels_disable',
@@ -557,7 +528,7 @@ sub theme_list_combined_system_info
     my $cache_file_path = theme_cache_path($cache_file);
     my @data;
     # Return cached data if available
-    if (!$nocache && $is_webmin && -r $cache_file_path) {
+    if (!$nocache && $is_webmin && theme_cache_trusted_stat($cache_file_path)) {
         my $combined_system_info_cache = theme_cache_read($cache_file);
         $combined_system_info_cache = $combined_system_info_cache->[0]
             if ref($combined_system_info_cache) eq 'ARRAY' &&
@@ -566,14 +537,15 @@ sub theme_list_combined_system_info
             if (ref($combined_system_info_cache) eq 'ARRAY' &&
                 @{$combined_system_info_cache});
         # Update the existing sysinfo cache on the fly if we have newer stats
-        if ( -r (my $file = theme_cache_path("real-time-monitoring-now.json")) ) {
+        if ( -r (my $file = get_stats_now_file()) ) {
             my $stats_mtime = (stat($file))[9]            // 0;
             my $cache_mtime = (stat($cache_file_path))[9] // 0;
             merge_stats_now_into_system_info_data(
                 \@data, &read_file_contents($file))
                     if ($stats_mtime > $cache_mtime);
-            # Data merged or skipped, delete transient file ether way
-            unlink_file($file) if (&is_under_directory(theme_cache_dir(), $file));
+            # Data merged or skipped, delete transient file either way
+            my ($stats_cache_dir) = theme_var_dir();
+            unlink_file($file) if (&is_under_directory($stats_cache_dir, $file));
         }
     # Update all caches from scratch if cache is missing
     } else {
@@ -603,6 +575,67 @@ sub theme_list_combined_system_info
 
     # Return data
     return @data if @data;
+}
+
+sub theme_sysinfo_accordion_title
+{
+    my ($info) = @_;
+    my $key = $info->{'id'} . '-' . $info->{'module'};
+    return (
+        $key eq 'status_services-status' ? $theme_text{'theme_xhred_sysinfo_system_monitors'} :
+        $key eq 'sysinfo-virtual-server' ? $theme_text{'theme_xhred_sysinfo_software_versions'} :
+        $key eq 'status-virtual-server' ? $theme_text{'theme_xhred_sysinfo_server_status'} :
+        $key eq 'quota-virtual-server' ? $theme_text{'theme_xhred_sysinfo_disk_quotas'} :
+        $key eq 'bw-virtual-server' ? $theme_text{'theme_xhred_sysinfo_bandwidth_quotas'} :
+        $key eq 'updates-virtual-server' ? $theme_text{'theme_xhred_sysinfo_vm_package_updates'} :
+        $key eq 'acl_logins-acl' ? $theme_text{'theme_xhred_sysinfo_recent_logins'} :
+        $info->{'desc'});
+}
+
+sub theme_sysinfo_accordion_candidate
+{
+    my ($info) = @_;
+    return 0 if (ref($info) ne 'HASH');
+    return ($info->{'id'} && $info->{'module'} && exists($info->{'open'}));
+}
+
+sub theme_list_sysinfo_accordion_candidates
+{
+    my ($info_ref, $include_live_stats) = @_;
+    my @info = $info_ref ? @{$info_ref} : theme_list_combined_system_info();
+    my (@accordions, %seen);
+    foreach my $info (@info) {
+        next if (!theme_sysinfo_accordion_candidate($info));
+        my $id = $info->{'id'};
+        next if ($seen{$id}++);
+        push(@accordions, [$id, theme_sysinfo_accordion_title($info), $info->{'module'}]);
+    }
+    if ($include_live_stats && &webmin_user_is_admin() && !$seen{'live_stats'}++) {
+        push(@accordions, ['live_stats', $theme_text{'theme_dashboard_accordion_live_stats'}, 'A']);
+    }
+    my %panels_order = theme_sysinfo_panels_order();
+    if (%panels_order) {
+        foreach my $accordion (@accordions) {
+            next if ($accordion->[0] eq 'live_stats');
+            $accordion->[2] = $panels_order{$accordion->[0]}
+              if (exists($panels_order{$accordion->[0]}));
+        }
+    }
+    @accordions = sort { $a->[2] gt $b->[2] ? 1 : -1 } @accordions;
+    return map { [$_->[0], $_->[1]] } @accordions;
+}
+
+sub theme_sysinfo_panels_order
+{
+    my $data = $theme_config{'settings_sysinfo_panels_order'};
+    my %order;
+    return %order if (!$data || $data eq '[object Object]');
+    eval {
+        $data =~ s/'/"/g;
+        my $panels_order = convert_from_json($data);
+        %order = %{$panels_order} if (ref($panels_order) eq 'HASH');
+    };
+    return %order;
 }
 
 sub show_sysinfo_section
@@ -1645,15 +1678,16 @@ sub theme_remote_version
 }
 
 # theme_cache_dir()
-# Returns directory for per-user/admin theme cache
+# Returns trusted directory for theme cache
 sub theme_cache_dir
 {
-	if (&webmin_user_is_admin()) {
+	if ($> == 0) {
 		my ($dir) = &theme_var_dir();
 		return $dir;
 	}
-	my $dir = &get_user_home()."/tmp";
-	$dir = &tempname_dir() if (!-d $dir);
+	my $home = &get_user_home();
+	my $dir = $home ? "$home/tmp" : undef;
+	$dir = &tempname_dir() if (!$dir || !-d $dir);
 	return $dir;
 }
 
@@ -1683,8 +1717,21 @@ sub theme_cache_is_fresh
 	my ($id, $interval) = @_;
 	my $ttl  = $interval || $theme_config{'settings_cache_interval'} || 24*60*60;
 	my $path = theme_cache_path($id);
-	my @st   = stat($path);
-	return (@st && $st[9] > time() - $ttl) ? 1 : 0;
+	my $st   = theme_cache_trusted_stat($path);
+	return ($st && $st->[9] > time() - $ttl) ? 1 : 0;
+}
+
+# theme_cache_trusted_stat(path)
+# Returns stat arrayref if a cache file is safe to deserialize
+sub theme_cache_trusted_stat
+{
+	my ($path) = @_;
+	my @st = lstat($path);
+	return undef if (!@st);
+	return undef if (!-f _);
+	return undef if ($st[4] != $>);
+	return undef if ($st[2] & 022);
+	return \@st;
 }
 
 # theme_cache_read(id)
@@ -1693,7 +1740,7 @@ sub theme_cache_read
 {
 	my ($id) = @_;
 	my $path = theme_cache_path($id);
-	return undef unless -e $path;
+	return undef if (!theme_cache_trusted_stat($path));
 	my $raw = read_file_contents($path) // return undef;
 	return unserialise_variable($raw);
 }
@@ -1751,7 +1798,7 @@ sub clear_theme_cache
         opendir(my $dir, $theme_var_dir);
         grep {unlink_file("$theme_var_dir/$_") if (/^stats-server-\d+/)} readdir($dir);
         closedir($dir);
-        unlink_file("$theme_var_dir/real-time-monitoring.json");
+        unlink_file(get_stats_history_file());
         kill_byname("$current_theme/stats.pl", 9);
         unlink_file("$theme_var_dir/stats-$remote_user.json");
 
@@ -1774,7 +1821,8 @@ sub clear_theme_cache
         }
     }
 
-    # Clear user cached collected info
+    # Clear active and legacy user cached collected info
+    unlink_file(theme_cache_path(theme_cache_user_file("combined-system-info")));
     unlink_file("$tmp_dir/combined-system-info-$remote_user");
     unlink_file("$home_tmp_dir/combined-system-info-$remote_user");
 

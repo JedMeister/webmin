@@ -6,7 +6,7 @@ use strict;
 use warnings;
 no warnings 'redefine';
 no warnings 'uninitialized';
-require './acl-lib.pl';
+require './acl-lib.pl';    ## no critic
 our (%in, %text, %config, %gconfig, %access, $config_directory, $base_remote_user, $remote_user);
 &foreign_require("webmin", "webmin-lib.pl");
 
@@ -42,6 +42,11 @@ else {
 				      : $text{'edit_title2'}, "");
 	}
 my $me = &get_user($base_remote_user);
+my %uaccess = &get_module_acl($in{'user'} || "", "", 1);
+if (!$in{'user'} && $uaccess{'rpc'} == 2) {
+	# Don't offer the confusing 'root' or 'admin' RPC option by default
+	$uaccess{'rpc'} = 0;
+	}
 
 # Give up if readonly
 if ($user{'readonly'} && !$in{'readwrite'}) {
@@ -210,7 +215,10 @@ if ($access{'lang'}) {
 
 if ($access{'locale'}) {
 	# Current locale
-	eval "use DateTime; use DateTime::Locale; use DateTime::TimeZone;";
+	eval { require DateTime; DateTime->import;
+	       require DateTime::Locale; DateTime::Locale->import;
+	       require DateTime::TimeZone; DateTime::TimeZone->import;
+	       1 };
 	if (!$@ && $] > 5.011) {
 		my $locales = &list_locales();
 		my %localesrev = reverse %{$locales};
@@ -280,7 +288,7 @@ if ($showui) {
 # Start of security options section
 my $showsecurity = $access{'logouttime'} || $access{'ips'} ||
 		   $access{'minsize'} ||
-		   &supports_rbac() && $access{'mode'} == 0 || $access{'times'};
+		   $access{'times'};
 if ($showsecurity) {
 	print &ui_hidden_table_start($text{'edit_security'}, "width=100%", 2,
 				     "security", 0, [ "width=30%" ]);
@@ -319,14 +327,6 @@ if ($access{'ips'}) {
 		    join("\n", split(/\s+/, $user{'allow'} ||
 					    $user{'deny'} || "")),
 		    4, 30));
-	}
-
-if (&supports_rbac() && $access{'mode'} == 0) {
-	# Deny access to modules not managed by RBAC?
-	print &ui_table_row($text{'edit_rbacdeny'},
-		&ui_radio("rbacdeny", $user{'rbacdeny'} ? 1 : 0,
-			  [ [ 0, $text{'edit_rbacdeny0'} ],
-			    [ 1, $text{'edit_rbacdeny1'} ] ]));
 	}
 
 if ($access{'times'}) {
@@ -369,6 +369,16 @@ elsif ($miniserv{'twofactor_provider'}) {
 	print &ui_table_row($text{'edit_twofactor'},
 		$text{'edit_twofactornone'}." ".
 		&ui_submit($text{'edit_twofactoradd'}, "twofactor"));
+	}
+
+# Can accept RPC calls?
+if ($access{'acl'} && !$safe) {
+	print &ui_table_row(&hlink($text{'acl_rpc'}, 'rpc'),
+		&ui_radio("rpc", int($uaccess{'rpc'}),
+			  [ [ 1, $text{'acl_rpc1'} ],
+			    $uaccess{'rpc'} == 2 ? ( [ 2, $text{'acl_rpc2'} ] ) : ( ),
+			    [ 3, $text{'acl_rpc3'} ],
+			    [ 0, $text{'acl_rpc0'} ] ]));
 	}
 
 print &ui_hidden_table_end("security");
@@ -450,11 +460,9 @@ print &ui_hidden_table_end("mods");
 
 # Add global ACL section, but only if not set from the group
 my $groupglobal = $memg && -r "$config_directory/$memg->{'name'}.acl";
-if ($access{'acl'} && !$groupglobal && $in{'user'} && !$safe) {
+if ($access{'acl'} && !$groupglobal && !$safe) {
 	print &ui_hidden_table_start($text{'edit_global'}, "width=100%", 2,
 				     "global", 0, [ "width=30%" ]);
-	my %uaccess;
-	%uaccess = &get_module_acl($in{'user'}, "", 1);
 	print &ui_hidden("acl_security_form", 1);
 	&foreign_require("", "acl_security.pl");
 	&foreign_call("", "acl_security_form", \%uaccess);

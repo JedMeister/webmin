@@ -23,8 +23,7 @@ our $error_handler_funcs = [ ];
 
 use vars qw($loaded_theme_library $wait_for_input
 	    $done_webmin_header $trust_unknown_referers $unsafe_index_cgi
-	    %done_foreign_require $webmin_feedback_address
-	    $pragma_no_cache $foreign_args);
+	    %done_foreign_require $pragma_no_cache $foreign_args);
 # Globals
 use vars qw($module_index_name $number_to_month_map $month_to_number_map
 	    $umask_already $default_charset $licence_status $os_type
@@ -467,6 +466,45 @@ my $keys = ($modk && $gconfig{$modk}) ? "$modk or tempdir_sys" : "tempdir_sys";
        "directory in $config_directory/config and try again.");
 }
 
+=head2 webmin_temp_dir_name()
+
+Returns the final directory name used for Webmin-private temp directories.
+This defaults to .webmin, and can be changed with the hidden tempdirname
+configuration option.
+
+=cut
+sub webmin_temp_dir_name
+{
+my $name = $gconfig{'tempdirname'} || ".webmin";
+$name =~ s/^\s+//;
+$name =~ s/\s+$//;
+return $name =~ /^[^\/\\]+$/ && $name ne "." && $name ne ".." ?
+	$name : ".webmin";
+}
+
+=head2 webmin_temp_dir_path(path)
+
+Returns a temporary directory path ending in the configured Webmin-private
+directory name.
+
+=cut
+sub webmin_temp_dir_path
+{
+my ($dir) = @_;
+my $name = &webmin_temp_dir_name();
+return $dir if (!defined($dir) || $dir eq "");
+if ($gconfig{'os_type'} eq 'windows' || $dir =~ /^[a-z]:/i) {
+	my $slash = $dir =~ /\// && $dir !~ /\\/ ? "/" : "\\";
+	$dir =~ s/[\/\\]+$// if ($dir !~ /^[a-z]:[\/\\]?$/i);
+	return $dir if ($dir =~ /[\/\\]\Q$name\E$/);
+	return $dir =~ /^[a-z]:[\/\\]?$/i ? "$dir$name" :
+	       "$dir$slash$name";
+	}
+$dir =~ s/\/+$// if ($dir ne "/");
+return $dir if ($dir =~ /(^|\/)\Q$name\E$/);
+return $dir eq "/" ? "/$name" : "$dir/$name";
+}
+
 =head2 default_webmin_temp_dir()
 
 Returns the built-in Webmin temporary directory path used when no tempdir
@@ -475,7 +513,7 @@ configuration or environment override is set.
 =cut
 sub default_webmin_temp_dir
 {
-return -d "c:/temp" ? "c:/temp" : "/tmp/.webmin";
+return -d "c:/temp" ? "c:/temp" : "/tmp/".&webmin_temp_dir_name();
 }
 
 =head2 tempname_dir()
@@ -534,14 +572,18 @@ if ($gconfig{'os_type'} eq 'windows' || $tmp_dir =~ /^[a-z]:/i) {
 	}
 else {
 	# On Unix systems, need to make sure temp dir is valid
-	if ($tmp_dir ne "/tmp") {
+	if ($tmp_dir ne "/dev/shm" && $tmp_dir ne "/tmp" &&
+	    $tmp_dir ne "/var/tmp" && $tmp_dir ne "/usr/tmp") {
 		my $tries = 0;
 		my $mkdirerr;
 		while($tries++ < 10) {
 			my @st = lstat($tmp_dir);
-			last if ($st[4] == $< && (-d _) &&
-				 ($st[2] & 0777) == 0755);
 			if (@st) {
+				my $mode = $st[2] & 07777;
+				# Accept only Webmin-private dirs here. Shared
+				# system temp roots are skipped above.
+				last if ($st[4] == $< && (-d _) &&
+					 $mode == 0755);
 				unlink($tmp_dir) || rmdir($tmp_dir) ||
 					system("/bin/rm -rf ".
 					       quotemeta($tmp_dir));
@@ -560,14 +602,15 @@ else {
 			       $tmp_dir.$mkdirerr);
 			}
 		}
-	# If running as root, check parent dir (usually /tmp) to make sure it's
-	# world-writable and owned by root
+	# If running as root, check parent dir (usually /tmp) to make sure it
+	# is searchable by group and others.
 	my $tmp_parent = $tmp_dir;
 	$tmp_parent =~ s/\/[^\/]+$//;
 	if ($tmp_parent eq "/tmp") {
 		my @st = stat($tmp_parent);
-		if (($st[2] & 0555) != 0555) {
-			&error("Base temp directory $tmp_parent is not world readable and listable");
+		if (($st[2] & 0011) != 0011) {
+			&error("Base temp directory $tmp_parent must be ".
+			       "group and other executable");
 			}
 		}
 	}
@@ -625,11 +668,14 @@ sub trunc
 if (length($_[0]) <= $_[1]) {
 	return $_[0];
 	}
-my $str = substr($_[0],0,$_[1]);
-my $c;
-do {
-	$c = chop($str);
-	} while($c !~ /\S/);
+my $str = substr($_[0], 0, $_[1]);
+# If the cut landed inside a word (next char in the original is
+# non-whitespace), back the partial word out — but only when there's
+# a word boundary inside $str to back up to. If the first word is
+# longer than maxlen, return that partial word rather than empty.
+if (substr($_[0], $_[1], 1) =~ /\S/ && $str =~ /\s/) {
+	$str =~ s/\S+$//;
+	}
 $str =~ s/\s+$//;
 return $str;
 }
@@ -694,35 +740,48 @@ Check if some IPv6 address is properly formatted, and returns 1 if so.
 =cut
 sub check_ip6address
 {
-# Special case for unspecified address (analogous to 0.0.0.0 in IPv4)
-return 1 if ($_[0] eq "::");
-my @blocks = split(/:/, $_[0]);
-return 0 if (@blocks == 0 || @blocks > 8);
-
-# The address/netmask format is accepted. So we're looking for a "/" to isolate a possible netmask.
-# After that, we delete the netmask to control the address only format, but we verify whether the netmask
-# value is in [0;128].
-my $ib = $#blocks;
-my $where = index($blocks[$ib],"/");
+my $addr = $_[0];
 my $m = 0;
-if ($where != -1) {
-my $b = substr($blocks[$ib],0,$where);
-$m = substr($blocks[$ib],$where+1,length($blocks[$ib])-($where+1));
-$blocks[$ib]=$b;
-}
 
-# The netmask must take its value in [0;128]
-return 0 if ($m <0 || $m >128);
+# Strip an optional /N netmask before splitting. Doing this on the
+# raw string (rather than from the last split element) keeps split()'s
+# trailing-empty accounting intact for inputs like "2001:db8::/32",
+# where the netmask would otherwise hide the trailing "::" shorthand.
+if ($addr =~ s{/(\d+)\z}{}) {
+	$m = $1;
+	}
+return 0 if ($m < 0 || $m > 128);
+
+# Special case for unspecified address (analogous to 0.0.0.0 in IPv4),
+# both bare and with a netmask.
+return 1 if ($addr eq "::");
+
+my @blocks = split(/:/, $addr);
+return 0 if (@blocks == 0);
+
+# Accept the IPv4-in-IPv6 forms (RFC 4291 §2.5.5: "::ffff:N.N.N.N"
+# IPv4-mapped, and the more general "X:X:X:X:X:X:N.N.N.N"). If the
+# last block is a dotted-quad, validate the octets and count it as two
+# 16-bit groups for the overall 8-group ceiling. The leading ":" guard
+# distinguishes IPv4-tailed IPv6 from a bare IPv4 address — callers
+# like ip_match() rely on this sub returning false for "10.0.0.1".
+my $count = scalar(@blocks);
+if ($addr =~ /:/ &&
+    $blocks[-1] =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)\z/) {
+	return 0 if ($1 > 255 || $2 > 255 || $3 > 255 || $4 > 255);
+	$count++;
+	pop(@blocks);
+	}
+return 0 if ($count > 8);
 
 # Check the different blocks of the address : 16 bits block in hexa notation.
 # Possibility of 1 empty block or 2 if the address begins with "::".
-my $b;
 my $empty = 0;
-foreach $b (@blocks) {
+foreach my $b (@blocks) {
 	return 0 if ($b ne "" && $b !~ /^[0-9a-f]{1,4}$/i);
 	$empty++ if ($b eq "");
 	}
-return 0 if ($empty > 1 && !($_[0] =~ /^::/ && $empty == 2));
+return 0 if ($empty > 1 && !($addr =~ /^::/ && $empty == 2));
 return 1;
 }
 
@@ -4381,22 +4440,6 @@ return 0 if (!$acl{$base_remote_user,$_[0]} &&
 my @usermods = &list_usermods();
 return 0 if (!&available_usermods( [ \%foreign_module_info ], \@usermods));
 
-if (&get_product_name() eq "webmin") {
-	# Check if the user has any RBAC privileges in this module
-	if (&supports_rbac($_[0]) &&
-	    &use_rbac_module_acl(undef, $_[0])) {
-		# RBAC is enabled for this user and module - check if he
-		# has any rights
-		my $rbacs = &get_rbac_module_acl($remote_user, $_[0]);
-		return 0 if (!$rbacs);
-		}
-	elsif ($gconfig{'rbacdeny_'.$base_remote_user}) {
-		# If denying access to modules not specifically allowed by
-		# RBAC, then prevent access
-		return 0;
-		}
-	}
-
 # Check readonly support
 if (&is_readonly_mode()) {
 	return 0 if (!$foreign_module_info{'readonly'});
@@ -4819,22 +4862,16 @@ if (!$nodef) {
 
 	# If this isn't a master admin user, apply the negative permissions
 	# so that he doesn't un-expectedly gain access to new features
-	my %gacccess;
-	&read_file_cached("$config_directory/$u.acl", \%gaccess);
-	if ($gaccess{'negative'}) {
-		&read_file_cached("$mdir/negativeacl", \%rv);
+	if ($u ne '') {
+		my %gacccess;
+		&read_file_cached("$config_directory/$u.acl", \%gaccess);
+		if ($gaccess{'negative'}) {
+			&read_file_cached("$mdir/negativeacl", \%rv);
+			}
 		}
 	}
 my %usersacl;
-if (!$norbac && &supports_rbac($m) && &use_rbac_module_acl($u, $m)) {
-	# RBAC overrides exist for this user in this module
-	my $rbac = &get_rbac_module_acl(
-			defined($_[0]) ? $_[0] : $remote_user, $m);
-	foreach my $r (keys %$rbac) {
-		$rv{$r} = $rbac->{$r};
-		}
-	}
-elsif ($u ne '') {
+if ($u ne '') {
 	# Use normal Webmin ACL, if a user is set
 	my $userdb = &get_userdb_string();
 	my $foundindb = 0;
@@ -5764,6 +5801,16 @@ if ($module_name) {
 	$module_root_directory = &module_root_directory($module_name);
 	}
 
+if (!$main::allow_rpc_only &&
+    $main::webmin_script_type eq 'web' &&
+    !$main::no_acl_check &&
+    !defined($ENV{'FOREIGN_MODULE_NAME'})) {
+	# Check if this user is RPC-only
+	if (&webmin_user_can_rpc() == 2) {
+		&error($text{'erpconly'});
+		}
+	}
+
 if ($module_name && !$main::no_acl_check &&
     (!defined($ENV{'FOREIGN_MODULE_NAME'}) ||
       defined($ENV{'FOREIGN_MODULE_SEC_CHECK'})) &&
@@ -6239,6 +6286,8 @@ sub decode_base32
 {
 $_ = shift;
 my ($l);
+s/=+$//;
+$_ = uc($_);
 tr|A-Z2-7|\0-\37|;
 $_ = unpack('B*', $_);
 s/000(.....)/$1/g;
@@ -6254,7 +6303,8 @@ Returns a hash containing details of the given module. Some useful keys are :
 
 =item dir - The module directory, like sendmail.
 
-=item desc - Human-readable description, in the current users' language.
+=item desc - Human-readable description, in the current users' language. This
+may be selected from an alternate desc+suffix key.
 
 =item version - Optional module version number.
 
@@ -6315,6 +6365,24 @@ if (defined($rv{'category_'.$pn})) {
 $rv{'realcategory'} = $rv{'category'};
 $rv{'category'} = $module_categories{$mod}
 	if (defined($module_categories{$mod}));
+
+# Apply alternate description from cached module mode
+if (my @descplus = grep { /^desc\+/ } keys %rv) {
+	my %mode;
+	&read_file_cached("$config_directory/$mod/mode", \%mode);
+	my $alt = $mode{'mode'};
+	if ($alt) {
+		$alt =~ s/^\s+|\s+$//g;
+		$alt =~ s/^desc\+//;
+		my $desc = $rv{"desc+$alt"};
+		foreach my $o (@lang_order_list) {
+			my $k = "desc+${alt}_$o";
+			$desc = $rv{$k} if ($rv{$k});
+			}
+		$rv{'desc'} = $desc if ($desc);
+		}
+	delete(@rv{@descplus});
+	}
 
 # Apply overrides from local configuration files, such as for the title
 my %overs;
@@ -10192,10 +10260,15 @@ sub filter_javascript
 my ($rv, $type) = @_;
 if (!$type || $type eq 'html') {
 	$rv =~ s/<\s*script[^>]*>([\000-\377]*?)<\s*\/script\s*>//gi;
-	$rv =~ s/(on(Abort|BeforeUnload|Blur|Change|Click|ContextMenu|Copy|Cut|DblClick|Drag|DragEnd|DragEnter|DragLeave|DragOver|DragStart|DragDrop|Drop|Error|Focus|FocusIn|FocusOut|HashChange|Input|Invalid|KeyDown|KeyPress|KeyUp|Load|MouseDown|MouseEnter|MouseLeave|MouseMove|MouseOut|MouseOver|MouseUp|Move|Paste|PageShow|PageHide|Reset|Resize|Scroll|Search|Select|Submit|Toggle|Unload)=)/x$1/gi;
 	$rv =~ s/(javascript(:|&colon;|&#58;|&#x3A;))/x$1/gi;
 	$rv =~ s/(vbscript(:|&colon;|&#58;|&#x3A;))/x$1/gi;
-	$rv =~ s/<([^>]*\s|)(on\S+=)(.*)>/<$1x$2$3>/gi;
+	my $event_attr = qr/on[a-z][a-z0-9_:-]*\s*=/i;
+	my $event_attrs;
+	do {
+		$event_attrs = 0;
+		$event_attrs += $rv =~ s{(<[^>]*?)([\s/]+)($event_attr)}{$1$2x$3}g;
+		$event_attrs += $rv =~ s{(<)($event_attr)}{$1x$2}g;
+		} while ($event_attrs);
 	}
 if ($type eq 'pdf') {
 	$rv =~ s/([\n]*)<<[\n((?:.*?|\n)*?)][\w\s\/]+[\n((?:.*?|\n)*?)][\w\s\/]+JavaScript[\w\s\/]*[\n((?:.*?|\n)*?)][\w\s\/]+\s.*?>>[\n]*/$1/gmsi;
@@ -10428,35 +10501,17 @@ my @usermods = &list_usermods();
 @rv = sort { lc($a->{'desc'}) cmp lc($b->{'desc'}) }
 	    &available_usermods(\@rv, \@usermods);
 
-# Check RBAC restrictions
-my @rbacrv;
-foreach my $m (@rv) {
-	if (&supports_rbac($m->{'dir'}) &&
-	    &use_rbac_module_acl(undef, $m->{'dir'})) {
-		local $rbacs = &get_rbac_module_acl($remote_user,
-						    $m->{'dir'});
-		if ($rbacs) {
-			# RBAC allows
-			push(@rbacrv, $m);
-			}
-		}
-	else {
-		# Module or system doesn't support RBAC
-		push(@rbacrv, $m) if (!$gconfig{'rbacdeny_'.$base_remote_user});
-		}
-	}
-
 # Check theme vetos
 my @themerv;
 if (defined(&theme_foreign_available)) {
-	foreach my $m (@rbacrv) {
+	foreach my $m (@rv) {
 		if (&theme_foreign_available($m->{'dir'})) {
 			push(@themerv, $m);
 			}
 		}
 	}
 else {
-	@themerv = @rbacrv;
+	@themerv = @rv;
 	}
 
 # Check licence module vetos
@@ -11450,91 +11505,6 @@ sub number_to_month
 return ucfirst($number_to_month_map{$_[0]});
 }
 
-=head2 get_rbac_module_acl(user, module)
-
-Returns a hash reference of RBAC overrides ACLs for some user and module.
-May return undef if none exist (indicating access denied), or the string *
-if full access is granted.
-
-=cut
-sub get_rbac_module_acl
-{
-my ($user, $mod) = @_;
-eval "use Authen::SolarisRBAC";
-return undef if ($@);
-my %rv;
-my $foundany = 0;
-if (Authen::SolarisRBAC::chkauth("webmin.$mod.admin", $user)) {
-	# Automagic webmin.modulename.admin authorization exists .. allow access
-	$foundany = 1;
-	if (!Authen::SolarisRBAC::chkauth("webmin.$mod.config", $user)) {
-		%rv = ( 'noconfig' => 1 );
-		}
-	else {
-		%rv = ( );
-		}
-	}
-local $_;
-open(RBAC, "<".&module_root_directory($mod)."/rbac-mapping");
-while(<RBAC>) {
-	s/\r|\n//g;
-	s/#.*$//;
-	my ($auths, $acls) = split(/\s+/, $_);
-	my @auths = split(/,/, $auths);
-	next if (!$auths);
-	my ($merge) = ($acls =~ s/^\+//);
-	my $gotall = 1;
-	if ($auths eq "*") {
-		# These ACLs apply to all RBAC users.
-		# Only if there is some that match a specific authorization
-		# later will they be used though.
-		}
-	else {
-		# Check each of the RBAC authorizations
-		foreach my $a (@auths) {
-			if (!Authen::SolarisRBAC::chkauth($a, $user)) {
-				$gotall = 0;
-				last;
-				}
-			}
-		$foundany++ if ($gotall);
-		}
-	if ($gotall) {
-		# Found an RBAC authorization - return the ACLs
-		return "*" if ($acls eq "*");
-		my %acl = map { split(/=/, $_, 2) } split(/,/, $acls);
-		if ($merge) {
-			# Just add to current set
-			foreach my $a (keys %acl) {
-				$rv{$a} = $acl{$a};
-				}
-			}
-		else {
-			# Found final ACLs
-			return \%acl;
-			}
-		}
-	}
-close(RBAC);
-return !$foundany ? undef : %rv ? \%rv : undef;
-}
-
-=head2 supports_rbac([module])
-
-Returns 1 if RBAC client support is available, such as on Solaris.
-
-=cut
-sub supports_rbac
-{
-return 0 if ($gconfig{'os_type'} ne 'solaris');
-eval "use Authen::SolarisRBAC";
-return 0 if ($@);
-if ($_[0]) {
-	#return 0 if (!-r &module_root_directory($_[0])."/rbac-mapping");
-	}
-return 1;
-}
-
 =head2 supports_ipv6()
 
 Returns 1 if outgoing IPv6 connections can be made
@@ -11543,20 +11513,6 @@ Returns 1 if outgoing IPv6 connections can be made
 sub supports_ipv6
 {
 return $ipv6_module_error ? 0 : 1;
-}
-
-=head2 use_rbac_module_acl(user, module)
-
-Returns 1 if some user should use RBAC to get permissions for a module
-
-=cut
-sub use_rbac_module_acl
-{
-my $u = defined($_[0]) ? $_[0] : $base_remote_user;
-my $m = defined($_[1]) ? $_[1] : &get_module_name();
-return 1 if ($gconfig{'rbacdeny_'.$u});		# RBAC forced for user
-my %access = &get_module_acl($u, $m, 1);
-return $access{'rbac'} ? 1 : 0;
 }
 
 =head2 execute_command(command, stdin, stdout, stderr, translate-files?, safe?, logged?)
@@ -12596,9 +12552,9 @@ sub split_quoted_string
 {
 my ($str) = @_;
 my @rv;
-while($str =~ /^"([^"]*)"\s*([\000-\377]*)$/ ||
-      $str =~ /^'([^']*)'\s*([\000-\377]*)$/ ||
-      $str =~ /^(\S+)\s*([\000-\377]*)$/) {
+while($str =~ /^\s*"([^"]*)"\s*([\000-\377]*)$/ ||
+      $str =~ /^\s*'([^']*)'\s*([\000-\377]*)$/ ||
+      $str =~ /^\s*(\S+)\s*([\000-\377]*)$/) {
 	push(@rv, $1);
 	$str = $2;
 	}
@@ -13344,12 +13300,16 @@ if ($cmp) {
 	return &compare_version_numbers($ver1, $ver2) < 0  if ($cmp eq '<');
 	}
 
+# Default undef inputs to '' so undef args don't warn in split and
+# shorter-vs-longer comparisons don't warn on the missing-segment side.
+$ver1 = '' if (!defined($ver1));
+$ver2 = '' if (!defined($ver2));
 my @sp1 = split(/[\.\-\+\~\_]/, $ver1);
 my @sp2 = split(/[\.\-\+\~\_]/, $ver2);
 my $tmp;
 for(my $i=0; $i<@sp1 || $i<@sp2; $i++) {
-	my $v1 = $sp1[$i];
-	my $v2 = $sp2[$i];
+	my $v1 = defined($sp1[$i]) ? $sp1[$i] : '';
+	my $v2 = defined($sp2[$i]) ? $sp2[$i] : '';
 	my $comp;
 	$v1 =~ s/^ubuntu//g;
 	$v2 =~ s/^ubuntu//g;
@@ -13424,7 +13384,7 @@ return 0;
 Converts the given Perl data structure to encoded binary string
 
 =item data parameter is a hash/array reference
-=item if the output should be prettified
+=item if the output should be prettified and hash keys sorted
 =item raw-utf8 parameter, if set to 1, encodes data using UTF-8
 
 =cut
@@ -13443,11 +13403,12 @@ else {
 	error("Neither JSON::XS nor JSON::PP Perl module is available on your system");
 	}
 $json->pretty(!!$pretty);
+$json->canonical(1) if ($pretty);
 $data ||= {};
 return $raw_utf8 ? $json->utf8->encode($data) : $json->latin1->encode($data);
 }
 
-=head2 convert_from_json(data, [raw-utf8])
+=head2 convert_from_json(data, [raw-utf8], [relaxed])
 
 Parses given JSON string
 
@@ -13455,13 +13416,20 @@ Parses given JSON string
 
 =item raw-utf8 parameter, if set, treats the input as raw UTF-8
 
+=item relaxed parameter, if set, uses JSON::PP relaxed syntax including comments and trailing commas
+
 =cut
 sub convert_from_json
 {
-my ($json_text, $raw_utf8) = @_;
+my ($json_text, $raw_utf8, $relaxed) = @_;
 
 my $json;
-if (eval { require JSON::XS }) {
+if ($relaxed) {
+	eval { require JSON::PP } ||
+		error("The JSON::PP Perl module is required for relaxed JSON parsing");
+	$json = JSON::PP->new->relaxed;
+	}
+elsif (eval { require JSON::XS }) {
 	$json = JSON::XS->new;
 	}
 elsif (eval { require JSON::PP }) {
@@ -13892,12 +13860,14 @@ return &globals('delete', $variable, $scope);
 }
 
 # webmin_user_can_rpc()
-# Returns 1 if the given user can make remote calls
+# Returns 1 if the given user can receive remote calls, 0 if not, or 2 if the
+# user can receive remote calls but not use the UI
 sub webmin_user_can_rpc
 {
 my $u = $base_remote_user;
 my %access = &get_module_acl($u, "");
 return 1 if ($access{'rpc'} == 1);	# Can make arbitrary RPC calls
+return 2 if ($access{'rpc'} == 3);	# Can only make RPC calls
 return 0 if ($access{'rpc'} == 0);	# Cannot make RPCs
 
 # Assume that standard admin usernames
@@ -14324,11 +14294,11 @@ if (!$token) {
 return $token;
 }
 
-# allocate_miniserv_websocket([module], [base-remote-user])
+# allocate_miniserv_websocket([module], [base-remote-user], [backend-session])
 # Allocate a new websocket and stores it miniserv.conf file
 sub allocate_miniserv_websocket
 {
-my ($module, $buser) = @_;
+my ($module, $buser, $backend_session) = @_;
 $module ||= $module_name;
 # Find ports already in use
 &lock_file(&get_miniserv_config_file());
@@ -14356,40 +14326,67 @@ my $now = time();
 my $token = &generate_miniserv_websocket_token();
 my $opt_buser = "";
 $opt_buser = " buser=$buser" if (defined($buser) && $buser eq $base_remote_user);
+my $opt_backend = "";
+# Some websocket backends are reached with Basic auth and no browser session
+# cookie. Store the one-time backend session key that the child server expects.
+$opt_backend = " backend_session=$backend_session"
+	if (defined($backend_session) && $backend_session =~ /^\S+$/);
+my $opt_basic = "";
+$opt_basic = " allow_basic_ws=1" if ($opt_backend);
 $miniserv{"websockets_$wspath"} = "host=127.0.0.1 port=$port wspath=/ ".
-	  "user=$remote_user$opt_buser token=$token time=$now";
+	  "user=$remote_user$opt_buser$opt_backend$opt_basic token=$token time=$now";
 &put_miniserv_config(\%miniserv);
 &unlock_file(&get_miniserv_config_file());
 &reload_miniserv();
 return $port;
 }
 
-# get_miniserv_websocket_url(port, [host], [module])
-# Returns the URL for a websocket
+# get_miniserv_websocket_url(port, [host], [module], [path], [token])
+# Returns the browser-visible URL for a websocket. The optional path/token
+# arguments are used by linked-server websocket proxy routes, whose path does
+# not follow the normal /module/ws-port form.
 sub get_miniserv_websocket_url
 {
-my ($port, $host, $module) = @_;
+my ($port, $host, $module, $path, $wstoken) = @_;
 $module ||= $module_name;
-my $ws_proto = lc($ENV{'HTTPS'}) eq 'on' ? 'wss' : 'ws';
 my %miniserv;
 my $webprefix = &get_webprefix();
 &get_miniserv_config(\%miniserv);
 my $trust_proxy = $miniserv{'trust_real_ip'};
-my $wspath = "/$module/ws-".$port;
-my $wstoken;
-if ($miniserv{'websockets_'.$wspath} &&
+my $default_ws_proto = lc($ENV{'HTTPS'}) eq 'on' ? 'wss' : 'ws';
+my $ws_proto;
+# Match the public browser scheme when Webmin is behind a trusted reverse
+# proxy, but only allow websocket schemes into the returned URL.
+if ($trust_proxy && $ENV{'HTTP_X_FORWARDED_PROTO'}) {
+	$ws_proto = (split(/\s*,\s*/, $ENV{'HTTP_X_FORWARDED_PROTO'}))[0];
+	$ws_proto =~ s/^\s+|\s+$//g;
+	}
+if (!$ws_proto && $trust_proxy && $ENV{'HTTP_FORWARDED'} &&
+    (split(/\s*,\s*/, $ENV{'HTTP_FORWARDED'}))[0] =~
+	/(?:^|;)\s*proto="?([^";]+)"?/i) {
+	$ws_proto = $1;
+	}
+$ws_proto ||= $default_ws_proto;
+$ws_proto = lc($ws_proto);
+$ws_proto = 'wss' if ($ws_proto eq 'https');
+$ws_proto = 'ws' if ($ws_proto eq 'http');
+$ws_proto = $default_ws_proto if ($ws_proto ne 'wss' && $ws_proto ne 'ws');
+my $wspath = $path || "/$module/ws-".$port;
+# If the caller already generated the token, use it directly; otherwise fall
+# back to reading the token stored for the normal allocated websocket route.
+if (!defined($wstoken) && $miniserv{'websockets_'.$wspath} &&
     $miniserv{'websockets_'.$wspath} =~ /\btoken=(\S+)/) {
 	$wstoken = $1;
 	}
 my $http_host_conf = &trim($miniserv{'websocket_host'} || $host);
-# Pass as defined
+# Prefer the explicit websocket host when configured
 if ($http_host_conf) {
 	if ($http_host_conf !~ /^wss?:\/\//) {
 		$http_host_conf = "$ws_proto://$http_host_conf";
 		}
 	$http_host_conf =~ s/[\/]+$//g;
 	}
-# Try to rely on the proxy
+# Otherwise use trusted proxy headers when available
 if ($trust_proxy && !defined($http_host_conf)) {
 	my $forwarded_host = $ENV{'HTTP_X_FORWARDED_HOST'};
 	if ($forwarded_host) {
@@ -14432,19 +14429,26 @@ sub cleanup_miniserv_websockets
 my ($skip, $module) = @_;
 $skip ||= [ ];
 $module ||= $module_name;
+my $link_ttl = 5*60;
 &lock_file(&get_miniserv_config_file());
 my %miniserv;
 &get_miniserv_config(\%miniserv);
 my $now = time();
 my @clean;
 foreach my $k (keys %miniserv) {
-    $k =~ /^websockets_\/$module\/ws-(\d+)$/ || next;
-    my $port = $1;
-    next if (&indexof($port, @$skip) >= 0);
     my $when = 0;
     if ($miniserv{$k} =~ /time=(\d+)/) {
         $when = $1;
         }
+    if ($k =~ /^websockets_\/\Q$module\E\/ws-link-/) {
+        # Linked-server websocket routes carry a backend credential and are
+        # single-use. If the browser never opens them, expire them by age.
+        push(@clean, $k) if (!$when || $now - $when > $link_ttl);
+        next;
+        }
+    $k =~ /^websockets_\/\Q$module\E\/ws-(\d+)$/ || next;
+    my $port = $1;
+    next if (&indexof($port, @$skip) >= 0);
     if ($now - $when > 60) {
         # Has been open for a while, check if the port is still in use?
         my $err;

@@ -1,6 +1,7 @@
 use vars qw($theme_no_table $ui_radio_selector_donejs $module_name
 	    $ui_multi_select_donejs, $ui_formcount,
-	    $ui_form_end_side_by_side_donecss);
+	    $ui_form_end_side_by_side_donecss,
+	    $ui_form_grouped_buttons_donecss);
 
 =head1 ui-lib.pl
 
@@ -59,7 +60,7 @@ sub ui_help
 {
 return &theme_ui_help(@_) if (defined(&theme_ui_help));
 my ($title) = @_;
-$title = html_strip($title);
+$title = &html_escape(&html_strip($title));
 return ("<sup class=\"ui_help\" aria-label=\"$title\" data-tooltip><samp>?</samp></sup>");
 }
 
@@ -83,7 +84,10 @@ sub ui_img
 {
 return &theme_ui_img(@_) if (defined(&theme_ui_img));
 my ($src, $alt, $title, $class, $tags) = @_;
-return ("<img src='".$src."' class='ui_img".($class ? " ".$class : "")."' alt='$alt' ".($title ? "title='$title'" : "").($tags ? " ".$tags : "").">");
+my $esrc   = &quote_escape($src);
+my $ealt   = &quote_escape($alt);
+my $etitle = &quote_escape($title);
+return ("<img src='".$esrc."' class='ui_img".($class ? " ".$class : "")."' alt='$ealt' ".($title ne '' ? "title='$etitle'" : "").($tags ? " ".$tags : "").">");
 }
 
 =head2 ui_link_button(href, text, [target], [tags])
@@ -817,6 +821,48 @@ $rv .= &_ui_form_end_nojs($nojs);
 return $rv;
 }
 
+=head2 ui_form_grouped_buttons(&groups, [width])
+
+Returns HTML for a responsive row of submit buttons, without closing the form.
+Each button uses the same array format as C<ui_form_end>.
+
+Pass an array of button groups. A group can be a normal button list, or a list
+of button lists when you want a visible gap between sets of buttons. Groups are
+spread across the row when there is room, and wrap on narrow screens. Buttons
+inside the same list stay visually joined.
+
+Example :
+
+  my @save_buttons = ([ undef, $text{'save'} ]);
+  my @control_buttons = ([ 'start', $text{'start'} ],
+                         [ 'stop', $text{'stop'} ]);
+  my @delete_buttons = ([ 'delete', $text{'delete'} ]);
+
+  print &ui_form_grouped_buttons([
+    [ \@save_buttons, \@control_buttons ],
+    \@delete_buttons,
+    ]);
+
+=cut
+sub ui_form_grouped_buttons
+{
+return &theme_ui_form_grouped_buttons(@_) if (defined(&theme_ui_form_grouped_buttons));
+my ($groups, $width) = @_;
+$groups ||= [ ];
+my @groups = grep { $_ && ref($_) eq 'ARRAY' && @$_ } @$groups;
+return "" if (!@groups);
+
+my %attrs = ( 'class' => 'ui_form_grouped_buttons' );
+$attrs{'style'} = "width:$width" if ($width);
+my $rv = &_ui_form_grouped_buttons_css();
+$rv .= &ui_tag_start('div', \%attrs);
+foreach my $group (@groups) {
+	$rv .= &_ui_form_grouped_buttons_group($group);
+	}
+$rv .= &ui_tag_end('div');
+return $rv;
+}
+
 sub _ui_form_end_buttons_table
 {
 my ($buttons, $width, $formid, $class) = @_;
@@ -850,6 +896,54 @@ $rv .= "</tr></table>\n";
 return $rv;
 }
 
+sub _ui_form_grouped_buttons_group
+{
+my ($group) = @_;
+my @clusters = &_ui_form_grouped_buttons_clusters($group);
+return "" if (!@clusters);
+my $rv = &ui_tag_start('div', { 'class' => 'ui_form_grouped_group' });
+foreach my $cluster (@clusters) {
+	$rv .= &_ui_form_grouped_buttons_cluster($cluster);
+	}
+$rv .= &ui_tag_end('div');
+return $rv;
+}
+
+sub _ui_form_grouped_buttons_clusters
+{
+my ($group) = @_;
+return ( ) if (!$group || ref($group) ne 'ARRAY' || !@$group);
+foreach my $item (@$group) {
+	next if (!defined($item));
+	return ref($item) eq 'ARRAY' &&
+	       (!@$item || ref($item->[0]) eq 'ARRAY') ?
+		grep { $_ && ref($_) eq 'ARRAY' && @$_ } @$group :
+		( $group );
+	}
+return ( );
+}
+
+sub _ui_form_grouped_buttons_cluster
+{
+my ($buttons) = @_;
+return "" if (!$buttons || !@$buttons);
+my $rv = &ui_tag_start('span', { 'class' => 'ui_form_grouped_cluster' });
+foreach my $b (@$buttons) {
+	next if (!defined($b));
+	if (ref($b)) {
+		my $submit = &ui_submit($b->[1], $b->[0], $b->[3], $b->[4]);
+		chomp($submit);
+		$rv .= $submit;
+		$rv .= $b->[2] ? " ".$b->[2] : "";
+		}
+	elsif ($b) {
+		$rv .= $b;
+		}
+	}
+$rv .= &ui_tag_end('span');
+return $rv;
+}
+
 sub _ui_form_end_side_by_side_css
 {
 return "" if ($ui_form_end_side_by_side_donecss++);
@@ -874,6 +968,41 @@ return <<'EOF';
 }
 </style>
 EOF
+}
+
+sub _ui_form_grouped_buttons_css
+{
+return "" if ($ui_form_grouped_buttons_donecss++);
+my $css = <<'EOF';
+.ui_form_grouped_buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em 0.45em;
+	align-items: flex-start;
+	justify-content: space-between;
+	width: 100%;
+}
+.ui_form_grouped_group {
+	display: flex;
+	flex-wrap: wrap;
+	flex: 0 0 auto;
+	align-items: center;
+	width: max-content;
+	max-width: 100%;
+	margin: 0 -0.45em -0.45em 0;
+}
+.ui_form_grouped_cluster {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	max-width: 100%;
+	margin: 0 0.45em 0 0;
+}
+.ui_form_grouped_cluster .ui_submit {
+	margin: 0 0 0.45em 0;
+}
+EOF
+return &ui_tag('style', $css, { 'type' => 'text/css' });
 }
 
 sub _ui_form_end_nojs
@@ -1104,13 +1233,13 @@ foreach $o (@$opts) {
 	$o = [ $o ] if (!ref($o));
 	$rv .= "<option value=\"".&quote_escape($o->[0])."\"".
 	       ($sel{$o->[0]} ? " selected" : "").($o->[2] ne '' ? " ".$o->[2] : "").">".
-	       ($o->[1] || $o->[0])."</option>\n";
+	       &html_escape($o->[1] || $o->[0], 1)."</option>\n";
 	$opt{$o->[0]}++;
 	}
 foreach $s (keys %sel) {
 	if (!$opt{$s} && $missing) {
 		$rv .= "<option value=\"".&quote_escape($s)."\"".
-		       " selected>".($s eq "" ? "&nbsp;" : $s)."</option>\n";
+		       " selected>".($s eq "" ? "&nbsp;" : &html_escape($s, 1))."</option>\n";
 		}
 	}
 $rv .= "</select>\n";
@@ -2719,16 +2848,17 @@ Returns HTML for a text string, with its color determined by $type.
 sub ui_text_color
 {
 my ($text, $type) = @_;
-my ($color);
+my ($color, $class_type);
 
 if (defined (&theme_ui_text_color)) {
     return &theme_ui_text_color(@_);
     }
-if ($type eq "success") { $color = "#3c763d"; }
-elsif ($type eq "info") { $color = "#31708f"; }
-elsif ($type eq "warn") { $color = "#8a6d3b"; }
-elsif ($type eq "danger") { $color = "#a94442"; }
-return "<span class=\"ui_text_color text_type_$type\" style=\"color: $color\">$text</span>";
+$class_type = $type eq "warn" ? "warning" : $type;
+if ($type eq "success") { $color = "var(--text-color-success, #3c763d)"; }
+elsif ($type eq "info") { $color = "var(--text-color-info, #31708f)"; }
+elsif ($type eq "warn") { $color = "var(--text-color-warning, #8a6d3b)"; }
+elsif ($type eq "danger") { $color = "var(--text-color-danger, #a94442)"; }
+return "<span class=\"ui_text_color text_type_$type text-$class_type\" style=\"color: $color\">$text</span>";
 }
 
 =head2 ui_alert_box(msg, type)
@@ -2908,6 +3038,136 @@ foreach $f (@{$_[2]}) {
 return $_[3] ? "$_[3]='$rv'" : $rv;
 }
 
+=head2 ui_form_field_state_javascript(control-name, &active-values, &element-ids, &field-names, [&reset-values])
+
+Returns a <script> block that keeps page elements and form fields in sync with
+another form control. When the control's current value is one of active-values,
+the element IDs are shown and field names are enabled. Otherwise the elements
+are hidden, the fields are disabled, and any reset-values are applied.
+
+=item control-name - Name of the controlling form field.
+
+=item active-values - Array ref of values for which dependents are active.
+
+=item element-ids - Array ref of element IDs to show or hide.
+
+=item field-names - Array ref of form field names to enable or disable.
+
+=item reset-values - Optional hash ref of field name to value to set when disabled.
+
+=cut
+sub ui_form_field_state_javascript
+{
+return &theme_ui_form_field_state_javascript(@_)
+	if (defined(&theme_ui_form_field_state_javascript));
+my ($control, $values, $ids, $fields, $resets) = @_;
+$values ||= [ ];
+$ids ||= [ ];
+$fields ||= [ ];
+$resets ||= { };
+my $js_quote = sub {
+	my ($str) = @_;
+	return "'".&quote_javascript($str)."'";
+	};
+my $js_array = sub {
+	my ($arr) = @_;
+	return "[".join(",", map { &$js_quote($_) } @$arr)."]";
+	};
+my $js_hash = sub {
+	my ($hash) = @_;
+	return "{".
+	       join(",", map { &$js_quote($_).":".&$js_quote($hash->{$_}) }
+			 sort { $a cmp $b } keys %$hash).
+	       "}";
+	};
+my $jcontrol = &$js_quote($control);
+my $jvalues = &$js_array($values);
+my $jids = &$js_array($ids);
+my $jfields = &$js_array($fields);
+my $jresets = &$js_hash($resets);
+return <<EOF;
+<script type='text/javascript'>
+(function() {
+	var controlName = $jcontrol,
+	    activeValues = $jvalues,
+	    elementIds = $jids,
+	    fieldNames = $jfields,
+	    resetValues = $jresets;
+
+	function currentControlValue() {
+		var controls = document.getElementsByName(controlName), i, c;
+		for (i = 0; i < controls.length; i++) {
+			c = controls[i];
+			if (c.type == 'radio' || c.type == 'checkbox') {
+				if (c.checked) {
+					return c.value;
+				}
+			}
+			else {
+				return c.value;
+			}
+		}
+		return null;
+	}
+
+	function hasActiveValue(value) {
+		var i;
+		for (i = 0; i < activeValues.length; i++) {
+			if (String(activeValues[i]) == String(value)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	function setFieldValue(field, value) {
+		if (field.type == 'radio' || field.type == 'checkbox') {
+			field.checked = String(field.value) == String(value);
+		}
+		else {
+			field.value = value;
+		}
+	}
+
+	function syncDependentFields() {
+		var active = hasActiveValue(currentControlValue()), i, j, elem,
+		    fields, field, name;
+		for (i = 0; i < elementIds.length; i++) {
+			elem = document.getElementById(elementIds[i]);
+			if (elem) {
+				elem.style.display = active ? '' : 'none';
+			}
+		}
+		for (i = 0; i < fieldNames.length; i++) {
+			name = fieldNames[i];
+			fields = document.getElementsByName(name);
+			for (j = 0; j < fields.length; j++) {
+				field = fields[j];
+				field.disabled = !active;
+				if (!active &&
+				    Object.prototype.hasOwnProperty.call(resetValues, name)) {
+					setFieldValue(field, resetValues[name]);
+				}
+			}
+		}
+	}
+
+	var controls = document.getElementsByName(controlName), i;
+	for (i = 0; i < controls.length; i++) {
+		controls[i].addEventListener('change', syncDependentFields);
+		controls[i].addEventListener('input', syncDependentFields);
+	}
+	if (document.readyState == 'loading') {
+		document.addEventListener('DOMContentLoaded', syncDependentFields);
+	}
+	else {
+		syncDependentFields();
+	}
+})();
+</script>
+EOF
+}
+
 =head2 js_redirect(url, [window-object], [timeout])
 
 Returns HTML to trigger a redirect to some URL.
@@ -2919,15 +3179,22 @@ my ($url, $window, $timeout) = @_;
 if (defined(&theme_js_redirect)) {
 	return &theme_js_redirect(@_);
 	}
-$window ||= "window";
-$timeout ||= 0;
+$window = $window && $window =~ /^[\w.]+$/ ? $window : "window";
+$timeout = int($timeout);
 if ($url =~ /^\//) {
 	# If the URL is like /foo , add webprefix
 	$url = &get_webprefix().$url;
 	}
+$url = &quote_escape($url);
+# Prevent the URL from terminating or destabilising the enclosing
+# script element. Escaping every "<" stops the HTML parser from ever
+# seeing </script (which would close it) or <!-- (which would enter
+# script-data-escaped state). < evaluates back to "<" in JS, so
+# the redirect target is preserved.
+$url =~ s|<|\\u003C|g;
 return "<script type='text/javascript'>
 		setTimeout(function(){
-			${window}.location = '".&quote_escape($url)."';
+			${window}.location = '$url';
 		}, $timeout);
 	</script>";
 }
@@ -3013,6 +3280,18 @@ $rv .= "<summary>$c->{'title'}</summary>";
 $rv .= "<span>$c->{'content'}</span>";
 $rv .= "</details>";
 return $rv;
+}
+
+=head2 ui_div(data)
+
+Returns passed HTML as div element
+
+=cut
+sub ui_div
+{
+return &theme_ui_div(@_) if (defined(&theme_ui_div));
+my ($data) = @_;
+return &ui_tag('div', $data, { 'class' => 'ui_div' });
 }
 
 =head2 ui_div_row(label, content)
@@ -3471,13 +3750,13 @@ return &theme_ui_brh() if (defined(&theme_ui_brh));
 return "<br data-x-br>\n";
 }
 
-# ui_tag_start(tag, [attrs], [no-new-line])
+# ui_tag_start(tag, [attrs])
 # Function to create an opening HTML tag with optional attributes.
 # Attributes are passed as a hash reference and its values are quote escaped.
 sub ui_tag_start
 {
 return theme_ui_tag_start(@_) if (defined(&theme_ui_tag_start));
-my ($tag, $attrs, $nnl) = @_;
+my ($tag, $attrs) = @_;
 
 # Ensure every tag gets a proper marker class
 $attrs ||= {};
@@ -3505,7 +3784,7 @@ if ($attrs && ref($attrs) eq 'HASH') {
 	}
 
 # Close the opening tag
-$rv .= $nnl ? ">" : ">\n";
+$rv .= ">";
 
 # Handle special case for <html> tag
 $rv = "<!DOCTYPE html>\n$rv" if ($tag eq 'html');
@@ -3539,7 +3818,7 @@ sub ui_tag
 {
 return theme_ui_tag(@_) if (defined(&theme_ui_tag));
 my ($tag, $content, $attrs) = @_;
-my $rv = ui_tag_start($tag, $attrs, !defined($content));
+my $rv = ui_tag_start($tag, $attrs);
 $rv .= ui_tag_content($content) if (defined($content));
 my %void_tags = map { $_ => 1 }
 	qw(
@@ -3922,4 +4201,3 @@ return $rv;
 }
 
 1;
-

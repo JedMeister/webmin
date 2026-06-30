@@ -6,7 +6,7 @@ use strict;
 use warnings;
 no warnings 'redefine';
 no warnings 'uninitialized';
-require './acl-lib.pl';
+require './acl-lib.pl';    ## no critic
 our (%in, %text, %config, %gconfig, %access, $base_remote_user);
 &ReadParse();
 &ui_print_header(undef, $text{'index_title'}, "", undef, 1, 1);
@@ -206,11 +206,6 @@ if (uc($ENV{'HTTPS'}) eq "ON" && $miniserv{'ca'}) {
 push(@icons, "images/twofactor.gif");
 push(@links, "twofactor_form.cgi");
 push(@titles, $text{'index_twofactor'});
-if ($access{'rbacenable'} && $gconfig{'os_type'} eq 'solaris') {
-	push(@icons, "images/rbac.gif");
-	push(@links, "edit_rbac.cgi");
-	push(@titles, $text{'index_rbac'});
-	}
 if ($access{'pass'}) {
 	push(@icons, "images/pass.gif");
 	push(@links, "edit_pass.cgi");

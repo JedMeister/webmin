@@ -35,7 +35,7 @@ $rv .= sprintf "<input type=radio name=AssignUserId_def value=0 %s>\n",
 $rv .= &text('perchild_assignug',
 	"<input name=AssignUserId_uid size=8 value='$_[0]->{'words'}->[0]'>",
 	"<input name=AssignUserId_gid size=8 value='$_[0]->{'words'}->[1]'>");
-return (2, $text{'perchild_assign'}, $rv);
+return (2, &hlink($text{'perchild_assign'}, "AssignUserId"), $rv);
 }
 sub save_AssignUserId
 {
@@ -66,7 +66,7 @@ foreach $c (@{$_[0]}, undef) {
 	$i++;
 	}
 $rv .= "</table>\n";
-return (2, $text{'perchild_child'}, $rv);
+return (2, &hlink($text{'perchild_child'}, "ChildPerUserId"), $rv);
 }
 sub save_ChildPerUserId
 {
@@ -88,7 +88,7 @@ return ( \@rv );
 sub edit_MinSpareThreads
 {
 return (1,
-	$text{'worker_minspare'},
+	&hlink($text{'worker_minspare'}, "MinSpareThreads"),
 	&opt_input($_[0]->{'value'},"MinSpareThreads",$text{'default'}, 4));
 }
 sub save_MinSpareThreads
@@ -100,7 +100,7 @@ return &parse_opt("MinSpareThreads", '^\d+$',
 sub edit_MaxSpareThreads
 {
 return (1,
-	$text{'worker_maxspare'},
+	&hlink($text{'worker_maxspare'}, "MaxSpareThreads"),
 	&opt_input($_[0]->{'value'},"MaxSpareThreads",$text{'default'}, 4));
 }
 sub save_MaxSpareThreads
@@ -112,7 +112,7 @@ return &parse_opt("MaxSpareThreads", '^\d+$',
 sub edit_StartThreads
 {
 return (1,
-	$text{'perchild_sthreads'},
+	&hlink($text{'perchild_sthreads'}, "StartThreads"),
 	&opt_input($_[0]->{'value'},"StartThreads",$text{'default'}, 4));
 }
 sub save_StartThreads
@@ -124,7 +124,7 @@ return &parse_opt("StartThreads", '^\d+$',
 sub edit_NumServers
 {
 return (1,
-	$text{'perchild_numservers'},
+	&hlink($text{'perchild_numservers'}, "NumServers"),
 	&opt_input($_[0]->{'value'},"NumServers",$text{'default'}, 4));
 }
 sub save_NumServers
@@ -136,7 +136,7 @@ return &parse_opt("NumServers", '^\d+$',
 sub edit_MaxThreadsPerChild
 {
 return (1,
-	$text{'perchild_maxthreads'},
+	&hlink($text{'perchild_maxthreads'}, "MaxThreadsPerChild"),
 	&opt_input($_[0]->{'value'},"MaxThreadsPerChild",$text{'default'}, 4));
 }
 sub save_MaxThreadsPerChild

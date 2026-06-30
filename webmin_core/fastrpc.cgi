@@ -8,6 +8,8 @@ BEGIN { push(@INC, "."); };
 use WebminCore;
 use POSIX;
 use Socket;
+
+$main::allow_rpc_only = 1;
 $force_lang = $default_lang;
 &init_config();
 

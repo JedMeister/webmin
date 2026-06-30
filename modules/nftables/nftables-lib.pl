@@ -29,6 +29,25 @@ my ($action) = @_;
 check_acl($action) || error(text('acl_ecannot'));
 }
 
+# check_quick_acl([quick-action])
+# Returns true if the current user can use a quick action
+sub check_quick_acl
+{
+my ($action) = @_;
+return 0 if (!check_acl('quick'));
+return 1 if (!$action);
+my $key = "quick_".$action;
+return !defined($access{$key}) || $access{$key} ? 1 : 0;
+}
+
+# assert_quick_acl([quick-action])
+# Fails if the current user cannot use a quick action
+sub assert_quick_acl
+{
+my ($action) = @_;
+check_quick_acl($action) || error(text('acl_ecannot'));
+}
+
 # table_acl_name(&table)
 # Returns the ACL token for a table
 sub table_acl_name
@@ -153,9 +172,9 @@ return has_command($cmd);
 sub nft_version_text
 {
 my $cmd = get_nft_command();
-return undef if (!$cmd);
+return if (!$cmd);
 my $out = backquote_command(quotemeta($cmd)." --version 2>&1");
-return undef if ($? || !$out);
+return if ($? || !$out);
 $out =~ s/\r?\n.*$//s;
 $out =~ s/^\s+|\s+$//g;
 if ($out =~ /^nftables\s+v?(\S+)(?:\s+(.*))?$/i) {
@@ -170,7 +189,7 @@ return $out;
 # Returns an error message if nftables is not installed, undef if all is OK
 sub check_nftables
 {
-return undef if (get_nft_command());
+return if (get_nft_command());
 return text('index_ecommand', "<tt>nft</tt>");
 }
 
@@ -702,6 +721,244 @@ my ($rule) = @_;
 return if (!$rule || ref($rule) ne 'HASH');
 return 'allow' if (($rule->{'comment'} || '') eq 'Webmin quick allow');
 return 'block' if (($rule->{'comment'} || '') eq 'Webmin quick block');
+return 'port' if (($rule->{'comment'} || '') eq 'Webmin quick port');
+return 'service' if (($rule->{'comment'} || '') =~ /^Webmin quick service\b/);
+return 'forward' if (($rule->{'comment'} || '') eq 'Webmin quick forward');
+return;
+}
+
+# quick_rule_rank(type)
+# Returns the insertion priority for generated quick rules
+sub quick_rule_rank
+{
+my ($type) = @_;
+return 0 if ($type && $type eq 'allow');
+return 1 if ($type && $type eq 'block');
+return 2 if ($type && ($type eq 'port' ||
+		       $type eq 'service' ||
+		       $type eq 'forward'));
+return 9;
+}
+
+# insert_quick_rule(&table, chain, &rule, rank)
+# Inserts a quick rule before normal rules but after lower ranked quick rules
+sub insert_quick_rule
+{
+my ($table, $chain, $rule, $rank) = @_;
+$table->{'rules'} ||= [ ];
+my $insert = scalar(@{$table->{'rules'} || [ ]});
+for (my $i = 0 ; $i < @{$table->{'rules'} || [ ]} ; $i++) {
+	my $r = $table->{'rules'}->[$i];
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	my $rrank = quick_rule_rank(quick_rule_type($r));
+	if ($rrank > $rank) {
+		$insert = $i;
+		last;
+		}
+	}
+splice(@{$table->{'rules'}}, $insert, 0, $rule);
+reindex_table_rules($table);
+return;
+}
+
+# table_supports_quick_l4(&table)
+# Returns an error if quick TCP/UDP rules cannot be added to this table
+sub table_supports_quick_l4
+{
+my ($table) = @_;
+return text('quick_etable') if (!$table || ref($table) ne 'HASH');
+return if (($table->{'family'} || '') =~ /^(inet|ip|ip6)$/);
+return text('quick_efamily', nft_table_spec($table));
+}
+
+# parse_quick_port(port|range)
+# Returns a validated port expression and optional error
+sub parse_quick_port
+{
+my ($port) = @_;
+$port = "" if (!defined($port));
+$port =~ s/^\s+//;
+$port =~ s/\s+$//;
+return (undef, text('quick_eport')) if ($port eq '');
+if ($port =~ /^(\d+)$/) {
+	my $p = $1;
+	return valid_profile_port_number($p)
+	    ? ($p, undef)
+	    : (undef, text('quick_eport'));
+	}
+if ($port =~ /^(\d+)-(\d+)$/) {
+	my ($from, $to) = ($1, $2);
+	return (undef, text('quick_eport'))
+	    if (!valid_profile_port_number($from) ||
+		!valid_profile_port_number($to));
+	return (undef, text('quick_eportrange')) if ($from >= $to);
+	return ("$from-$to", undef);
+	}
+return (undef, text('quick_eport'));
+}
+
+# normalize_quick_proto(proto)
+# Returns a supported transport protocol for quick port operations
+sub normalize_quick_proto
+{
+my ($proto) = @_;
+$proto = lc($proto || '');
+return $proto if ($proto eq 'tcp' || $proto eq 'udp');
+return;
+}
+
+# port_interval(port|range)
+# Returns numeric start and end values for a port expression
+sub port_interval
+{
+my ($port) = @_;
+return ($1, $1) if (defined($port) && $port =~ /^(\d+)$/);
+return ($1, $2) if (defined($port) && $port =~ /^(\d+)-(\d+)$/);
+return;
+}
+
+# port_expr_covers(existing, wanted)
+# Returns true if one port expression covers another
+sub port_expr_covers
+{
+my ($existing, $wanted) = @_;
+return 1 if (defined($existing) && defined($wanted) && $existing eq $wanted);
+my ($es, $ee) = port_interval($existing);
+my ($ws, $we) = port_interval($wanted);
+return defined($es) && defined($ws) && $es <= $ws && $ee >= $we;
+}
+
+# set_contains_port(&set, port|range)
+# Returns true if an inet_service set covers a port expression
+sub set_contains_port
+{
+my ($set, $port) = @_;
+return 0 if (!$set || ref($set) ne 'HASH');
+return 0 if (!$set->{'elements'} || ref($set->{'elements'}) ne 'ARRAY');
+foreach my $e (@{$set->{'elements'}}) {
+	return 1 if (port_expr_covers($e, $port));
+	}
+return 0;
+}
+
+# add_ports_to_set(&set, ports...)
+# Adds ports to an inet_service set and returns true if it changed
+sub add_ports_to_set
+{
+my ($set, @ports) = @_;
+return 0 if (!$set || ref($set) ne 'HASH' || !@ports);
+my @old = $set->{'elements'} && ref($set->{'elements'}) eq 'ARRAY'
+	? @{$set->{'elements'}}
+	: ( );
+my @new = normalize_port_set_elements(@old, @ports);
+return 0 if (join("\0", @old) eq join("\0", @new));
+$set->{'elements'} = \@new;
+if (grep { /-/ } @new) {
+	my $flags = $set->{'flags'} || '';
+	if ($flags !~ /(?:^|[,\s])interval(?:$|[,\s])/) {
+		$set->{'flags'} = $flags ? $flags.", interval" : "interval";
+		}
+	}
+return 1;
+}
+
+# find_accept_port_set(&table, chain, proto)
+# Finds a port set already accepted by an input rule for a protocol
+sub find_accept_port_set
+{
+my ($table, $chain, $proto) = @_;
+return if (!$table || ref($table) ne 'HASH');
+return if (!$table->{'rules'} || ref($table->{'rules'}) ne 'ARRAY');
+foreach my $r (@{$table->{'rules'}}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	next if (($r->{'action'} || '') ne 'accept');
+	next if (($r->{'proto'} || '') ne $proto);
+	my $setname = set_name_from_value($r->{'dport'});
+	next if (!$setname);
+	my $sets = $table->{'sets'} && ref($table->{'sets'}) eq 'HASH'
+		? $table->{'sets'}
+		: {};
+	my $set = $sets->{$setname};
+	next if (!$set || set_type_kind($set->{'type'}) ne 'port');
+	return $setname;
+	}
+return;
+}
+
+# quick_accept_port_covered(&table, chain, proto, port|range)
+# Returns true if an existing accept rule already covers a port
+sub quick_accept_port_covered
+{
+my ($table, $chain, $proto, $port) = @_;
+return 0 if (!$table || ref($table) ne 'HASH');
+foreach my $r (@{$table->{'rules'} || [ ]}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	next if (($r->{'action'} || '') ne 'accept');
+	next if (($r->{'proto'} || '') ne $proto);
+	my $dport = $r->{'dport'};
+	next if (!defined($dport) || $dport eq '');
+	my $setname = set_name_from_value($dport);
+	if ($setname) {
+		my $sets = $table->{'sets'} && ref($table->{'sets'}) eq 'HASH'
+			? $table->{'sets'}
+			: {};
+		return 1
+		    if (set_contains_port($sets->{$setname}, $port));
+		next;
+		}
+	return 1 if (port_expr_covers($dport, $port));
+	}
+return 0;
+}
+
+# add_quick_accept_port(&table, port|range, proto, comment)
+# Adds or merges an accepted destination-port rule. Returns changed and error.
+sub add_quick_accept_port
+{
+my ($table, $port, $proto, $comment) = @_;
+my $err = table_supports_quick_l4($table);
+return (0, $err) if ($err);
+$proto = normalize_quick_proto($proto);
+return (0, text('quick_eproto')) if (!$proto);
+($port, $err) = parse_quick_port($port);
+return (0, $err) if ($err);
+
+my $chain = find_input_chain($table);
+return (0, text('quick_echain', nft_table_spec($table))) if (!$chain);
+
+my $setname = find_accept_port_set($table, $chain, $proto);
+if ($setname) {
+	my $changed = add_ports_to_set($table->{'sets'}->{$setname}, $port);
+	return ($changed, undef);
+	}
+return (0, undef)
+    if (quick_accept_port_covered($table, $chain, $proto, $port));
+
+my $rule = {
+	'chain' => $chain,
+	'proto' => $proto,
+	'dport' => $port,
+	'action' => 'accept',
+	'comment' => $comment || 'Webmin quick port',
+};
+$rule->{'text'} = format_rule_text($rule);
+insert_quick_rule($table, $chain, $rule,
+	quick_rule_rank(quick_rule_type($rule)));
+return (1, undef);
+}
+
+# add_quick_port_rule(&table, port|range, proto)
+# Adds an accepted destination-port quick rule
+sub add_quick_port_rule
+{
+my ($table, $port, $proto) = @_;
+my ($changed, $err) =
+    add_quick_accept_port($table, $port, $proto, 'Webmin quick port');
+return $err if ($err);
+return text('quick_edup', $port) if (!$changed);
 return;
 }
 
@@ -726,7 +983,6 @@ if (($table->{'family'} || '') eq 'ip' && $family ne 'ip' ||
 my $chain = find_input_chain($table);
 return text('quick_echain', nft_table_spec($table)) if (!$chain);
 
-$table->{'rules'} ||= [ ];
 foreach my $r (@{$table->{'rules'} || [ ]}) {
 	next if (!$r || ref($r) ne 'HASH');
 	next if (($r->{'chain'} || '') ne $chain);
@@ -749,29 +1005,641 @@ my $rule = {
 };
 $rule->{'text'} = format_rule_text($rule);
 
-my $insert = scalar(@{$table->{'rules'} || [ ]});
+insert_quick_rule($table, $chain, $rule,
+	$action eq 'allow' ? quick_rule_rank('allow') : quick_rule_rank('block'));
+return;
+}
 
-# Keep quick allow rules first, then quick block rules, then normal input
-# rules. This makes the quick controls predictable regardless of later rules.
-for (my $i = 0 ; $i < @{$table->{'rules'} || [ ]} ; $i++) {
-	my $r = $table->{'rules'}->[$i];
-	next if (!$r || ref($r) ne 'HASH');
-	next if (($r->{'chain'} || '') ne $chain);
-	my $qt = quick_rule_type($r);
-	if ($action eq 'allow') {
-		next if ($qt && $qt eq 'allow');
-		$insert = $i;
-		last;
+# builtin_quick_service_defs()
+# Returns built-in service definitions used when /etc/services is unavailable
+sub builtin_quick_service_defs
+{
+my @defs = (
+	[ 'ssh',      [ [ 'tcp', '22' ] ] ],
+	[ 'http',     [ [ 'tcp', '80' ] ] ],
+	[ 'https',    [ [ 'tcp', '443' ] ] ],
+	[ 'dns',      [ [ 'tcp', '53' ], [ 'udp', '53' ] ], [ 'domain' ] ],
+	[ 'smtp',     [ [ 'tcp', '25' ] ] ],
+	[ 'submission', [ [ 'tcp', '587' ] ], [ 'msa' ] ],
+	[ 'smtps',    [ [ 'tcp', '465' ] ], [ 'submissions' ] ],
+	[ 'imap',     [ [ 'tcp', '143' ] ] ],
+	[ 'imaps',    [ [ 'tcp', '993' ] ] ],
+	[ 'pop3',     [ [ 'tcp', '110' ] ] ],
+	[ 'pop3s',    [ [ 'tcp', '995' ] ] ],
+	[ 'ftp',      [ [ 'tcp', '21' ] ] ],
+	[ 'ntp',      [ [ 'udp', '123' ] ] ],
+);
+my @rv;
+foreach my $d (@defs) {
+	my ($id, $ports, $aliases) = @$d;
+	my $svc = {
+		'id' => $id,
+		'aliases' => $aliases || [ ],
+		'ports' => {},
+		'source_ports' => {},
+		'protocols' => [ ],
+	};
+	foreach my $p (@$ports) {
+		push(@{$svc->{'ports'}->{$p->[0]}}, $p->[1]);
 		}
-	else {
-		next if ($qt && ($qt eq 'allow' || $qt eq 'block'));
-		$insert = $i;
-		last;
+	$svc->{'label'} = quick_service_label($svc);
+	push(@rv, $svc);
+	}
+return @rv;
+}
+
+# read_etc_service_defs([services-file])
+# Returns service definitions from /etc/services canonical names and aliases
+sub read_etc_service_defs
+{
+my ($file) = @_;
+$file ||= "/etc/services";
+my %defs;
+if (open(my $fh, "<", $file)) {
+	while(my $line = <$fh>) {
+		$line =~ s/#.*$//;
+		$line =~ s/^\s+//;
+		$line =~ s/\s+$//;
+		next if ($line eq '');
+		my ($name, $portproto, @aliases) = split(/\s+/, $line);
+		next if (!$name || !$portproto);
+		next if ($name !~ /^[A-Za-z0-9_.+-]+$/);
+		next if ($portproto !~ /^(\d+)\/(tcp|udp)$/i);
+		my ($port, $proto) = ($1, lc($2));
+		next if (!valid_profile_port_number($port));
+		@aliases = grep { /^[A-Za-z0-9_.+-]+$/ } @aliases;
+		$defs{$name} ||= {
+			'id' => $name,
+			'aliases' => [ ],
+			'ports' => {},
+			'source_ports' => {},
+			'protocols' => [ ],
+		};
+		push(@{$defs{$name}->{'ports'}->{$proto}}, $port);
+		push(@{$defs{$name}->{'aliases'}}, @aliases);
+		}
+	close($fh);
+	}
+foreach my $id (keys %defs) {
+	my %aliases_seen;
+	$defs{$id}->{'aliases'} =
+	    [ grep { !$aliases_seen{$_}++ } @{$defs{$id}->{'aliases'}} ];
+	foreach my $proto (keys %{$defs{$id}->{'ports'}}) {
+		my %seen;
+		$defs{$id}->{'ports'}->{$proto} =
+		    [ normalize_port_set_elements(grep { !$seen{$_}++ }
+			    @{$defs{$id}->{'ports'}->{$proto}}) ];
+		}
+	$defs{$id}->{'label'} = quick_service_label($defs{$id});
+	}
+return values %defs;
+}
+
+# setup_quick_service_defs()
+# Returns quick service definitions from the module's dynamic profile services
+sub setup_quick_service_defs
+{
+my @rv;
+foreach my $svc (setup_services()) {
+	my $id = $svc->{'id'};
+	next if (!$id);
+	my $def = {
+		'id' => $id,
+		'ports' => {},
+		'source_ports' => {},
+		'protocols' => [ ],
+		'rules' => [ @{$svc->{'rules'} || [ ]} ],
+	};
+	foreach my $rule (@{$def->{'rules'}}) {
+		if ($rule =~ /^(tcp|udp)\s+dport\s+(\S+)\s+accept$/) {
+			push(@{$def->{'ports'}->{$1}}, $2);
+			}
+		elsif ($rule =~ /^(tcp|udp)\s+sport\s+(\S+)\s+accept$/) {
+			push(@{$def->{'source_ports'}->{$1}}, $2);
+			}
+		}
+	$def->{'label'} = quick_service_label($def);
+	push(@rv, $def);
+	}
+return @rv;
+}
+
+# quick_service_label(&service)
+# Returns a service label with ports and protocols
+sub quick_service_label
+{
+my ($svc) = @_;
+my $name = $svc->{'id'} || "";
+my @details;
+foreach my $kind ('ports', 'source_ports') {
+	my $ports = $svc->{$kind} || {};
+	my %by_ports;
+	foreach my $proto (sort keys %$ports) {
+		my @ports = @{$ports->{$proto} || [ ]};
+		next if (!@ports);
+		push(@{$by_ports{join(", ", @ports)}}, uc($proto));
+		}
+	foreach my $plist (sort port_sort keys %by_ports) {
+		my $prefix = $kind eq 'source_ports' ? text('quick_source_ports')." " : "";
+		push(@details, $prefix.$plist." ".join("/", @{$by_ports{$plist}}));
 		}
 	}
-splice(@{$table->{'rules'}}, $insert, 0, $rule);
-reindex_table_rules($table);
+if ($svc->{'protocols'} && @{$svc->{'protocols'}}) {
+	push(@details, map { uc($_) } @{$svc->{'protocols'}});
+	}
+return @details ? $name." (".join("; ", @details).")" : $name;
+}
+
+# merge_quick_service(&defs, &service)
+# Adds or replaces one quick service definition
+sub merge_quick_service
+{
+my ($defs, $svc) = @_;
+return if (!$defs || !$svc || ref($svc) ne 'HASH' || !$svc->{'id'});
+$defs->{$svc->{'id'}} = $svc;
 return;
+}
+
+# quick_services([services-file])
+# Returns available service definitions for the quick service selector
+sub quick_services
+{
+my ($services_file) = @_;
+my %defs;
+foreach my $svc (builtin_quick_service_defs()) {
+	merge_quick_service(\%defs, $svc);
+	}
+foreach my $svc (read_etc_service_defs($services_file)) {
+	merge_quick_service(\%defs, $svc);
+	}
+foreach my $svc (setup_quick_service_defs()) {
+	merge_quick_service(\%defs, $svc);
+	}
+my @sorted = sort { lc($a->{'label'}) cmp lc($b->{'label'}) } values %defs;
+return @sorted;
+}
+
+# service_search_text(&service)
+# Returns searchable service names and aliases
+sub service_search_text
+{
+my ($svc) = @_;
+return lc(join(" ",
+	$svc->{'id'} || "",
+	$svc->{'label'} || "",
+	@{$svc->{'aliases'} || [ ]}
+));
+}
+
+# search_quick_services(query, [limit], [services-file])
+# Returns quick service definitions matching a short search string
+sub search_quick_services
+{
+my ($query, $limit, $services_file) = @_;
+$query = "" if (!defined($query));
+$query =~ s/^\s+//;
+$query =~ s/\s+$//;
+return ( ) if ($query eq "");
+$limit ||= 20;
+$limit = 1 if ($limit < 1);
+$limit = 50 if ($limit > 50);
+my $q = lc($query);
+my @ranked;
+foreach my $svc (&quick_services($services_file)) {
+	my $id = lc($svc->{'id'} || "");
+	my $label = lc($svc->{'label'} || $svc->{'id'} || "");
+	my @aliases = map { lc($_) } @{$svc->{'aliases'} || [ ]};
+	my $search = service_search_text($svc);
+	my $rank;
+	if ($id eq $q) {
+		$rank = 0;
+		}
+	elsif (grep { $_ eq $q } @aliases) {
+		$rank = 1;
+		}
+	elsif ($id =~ /^\Q$q\E/) {
+		$rank = 2;
+		}
+	elsif (grep { /^\Q$q\E/ } @aliases) {
+		$rank = 3;
+		}
+	elsif ($label =~ /^\Q$q\E/) {
+		$rank = 4;
+		}
+	elsif ($id =~ /\Q$q\E/) {
+		$rank = 5;
+		}
+	elsif ($search =~ /\Q$q\E/) {
+		$rank = 6;
+		}
+	else {
+		next;
+		}
+	push(@ranked, [ $rank, $label, $svc ]);
+	}
+@ranked = sort { $a->[0] <=> $b->[0] || $a->[1] cmp $b->[1] } @ranked;
+my @rv;
+foreach my $r (@ranked) {
+	push(@rv, $r->[2]);
+	last if (@rv >= $limit);
+	}
+return @rv;
+}
+
+# quick_service_by_id(service-id, [services-file])
+# Returns a quick service definition by ID
+sub quick_service_by_id
+{
+my ($id, $services_file) = @_;
+$id = "" if (!defined($id));
+$id =~ s/^\s+//;
+$id =~ s/\s+$//;
+return if ($id !~ /^[A-Za-z0-9_.+-]+$/);
+foreach my $svc (quick_services($services_file)) {
+	return $svc if ($svc->{'id'} eq $id);
+	foreach my $alias (@{$svc->{'aliases'} || [ ]}) {
+		return $svc if ($alias eq $id);
+		}
+	}
+return;
+}
+
+# quick_service_rules(&service)
+# Returns nftables accept rule texts for a quick service definition
+sub quick_service_rules
+{
+my ($svc) = @_;
+return if (!$svc || ref($svc) ne 'HASH');
+return @{$svc->{'rules'}} if ($svc->{'rules'} && @{$svc->{'rules'}});
+my @rules;
+foreach my $proto (sort keys %{$svc->{'ports'} || {}}) {
+	foreach my $port (@{$svc->{'ports'}->{$proto} || [ ]}) {
+		push(@rules, "$proto dport $port accept");
+		}
+	}
+foreach my $proto (sort keys %{$svc->{'source_ports'} || {}}) {
+	foreach my $port (@{$svc->{'source_ports'}->{$proto} || [ ]}) {
+		push(@rules, "$proto sport $port accept");
+		}
+	}
+foreach my $proto (@{$svc->{'protocols'} || [ ]}) {
+	push(@rules, "meta l4proto $proto accept");
+	}
+return @rules;
+}
+
+# quick_rule_text_compatible(&table, rule-text)
+# Returns true if a rule text does not conflict with the table family
+sub quick_rule_text_compatible
+{
+my ($table, $text) = @_;
+my $family = $table->{'family'} || '';
+return 0 if ($family eq 'ip' && $text =~ /(?:^|\s)ip6\s/);
+return 0 if ($family eq 'ip6' && $text =~ /(?:^|\s)ip\s/);
+return 1;
+}
+
+# quick_add_raw_input_rule(&table, chain, rule-text, comment)
+# Adds a raw quick input rule if it does not already exist
+sub quick_add_raw_input_rule
+{
+my ($table, $chain, $text, $comment) = @_;
+$text =~ s/^\s+//;
+$text =~ s/\s+$//;
+return 0 if ($text eq '');
+return 0 if (!quick_rule_text_compatible($table, $text));
+my $out = quick_rule_with_comment($text, $comment);
+foreach my $r (@{$table->{'rules'} || [ ]}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	return 0 if (($r->{'text'} || '') eq $out || ($r->{'text'} || '') eq $text);
+	}
+my $rule = parse_rule_text($out);
+$rule->{'chain'} = $chain;
+$rule->{'text'} = $out;
+insert_quick_rule($table, $chain, $rule,
+	quick_rule_rank(quick_rule_type($rule)));
+return 1;
+}
+
+# quick_rule_with_comment(rule-text, comment)
+# Appends a comment to a rule text if it does not already have one
+sub quick_rule_with_comment
+{
+my ($text, $comment) = @_;
+return $text if ($text =~ /(?:^|\s)comment\s+/);
+my $c = escape_nft_string($comment || "");
+return $c ne "" ? $text." comment \"".$c."\"" : $text;
+}
+
+# add_quick_service_rule(&table, service-id)
+# Adds accept rules for a known service to the table's input chain
+sub add_quick_service_rule
+{
+my ($table, $service_id) = @_;
+my $err = table_supports_quick_l4($table);
+return $err if ($err);
+my $chain = find_input_chain($table);
+return text('quick_echain', nft_table_spec($table)) if (!$chain);
+my $svc = quick_service_by_id($service_id);
+return text('quick_eservice') if (!$svc);
+my @rules = quick_service_rules($svc);
+return text('quick_eservice_empty', $service_id) if (!@rules);
+
+my $changed = 0;
+my $comment = "Webmin quick service: ".$svc->{'id'};
+foreach my $text (@rules) {
+	if ($text =~ /^(tcp|udp)\s+dport\s+(\S+)\s+accept$/) {
+		my ($ok, $perr) =
+		    add_quick_accept_port($table, $2, $1, $comment);
+		return $perr if ($perr);
+		$changed ||= $ok;
+		}
+	else {
+		my $ok = quick_add_raw_input_rule(
+			$table, $chain, $text, $comment);
+		$changed ||= $ok;
+		}
+	}
+return $changed ? undef : text('quick_edup', $svc->{'label'});
+}
+
+# parse_quick_forward_addr(address, &table)
+# Validates a port-forward destination address
+sub parse_quick_forward_addr
+{
+my ($addr, $table) = @_;
+$addr = "" if (!defined($addr));
+$addr =~ s/^\s+//;
+$addr =~ s/\s+$//;
+return (undef, undef, undef) if ($addr eq '');
+return (undef, undef, text('quick_eforward_addr')) if ($addr =~ m{/});
+my $family;
+if (check_ipaddress($addr)) {
+	$family = 'ip';
+	}
+elsif (check_ip6address($addr)) {
+	$family = 'ip6';
+	}
+else {
+	return (undef, undef, text('quick_eforward_addr'));
+	}
+if (($table->{'family'} || '') eq 'ip' && $family ne 'ip' ||
+    ($table->{'family'} || '') eq 'ip6' && $family ne 'ip6') {
+	return (undef, undef,
+		text('quick_eforward_family', nft_table_spec($table)));
+	}
+return ($addr, $family, undef);
+}
+
+# find_base_chain(&table, hook, [type])
+# Finds the best base chain for a hook and optional type
+sub find_base_chain
+{
+my ($table, $hook, $type) = @_;
+return if (!$table || !$table->{'chains'} || ref($table->{'chains'}) ne 'HASH');
+foreach my $name (sort keys %{$table->{'chains'}}) {
+	my $chain = $table->{'chains'}->{$name} || {};
+	next if (($chain->{'hook'} || '') ne $hook);
+	next if (defined($type) && ($chain->{'type'} || '') ne $type);
+	return $name if ($name eq $hook);
+	}
+foreach my $name (sort keys %{$table->{'chains'}}) {
+	my $chain = $table->{'chains'}->{$name} || {};
+	next if (($chain->{'hook'} || '') ne $hook);
+	next if (defined($type) && ($chain->{'type'} || '') ne $type);
+	return $name;
+	}
+return;
+}
+
+# unique_chain_name(&table, base-name)
+# Returns an unused chain name in a table
+sub unique_chain_name
+{
+my ($table, $base) = @_;
+$base ||= "chain";
+my $name = $base;
+my $i = 1;
+while ($table->{'chains'}->{$name}) {
+	$name = $base."_".$i++;
+	}
+return $name;
+}
+
+# ensure_prerouting_nat_chain(&table)
+# Finds or creates a NAT prerouting chain for quick port forwards
+sub ensure_prerouting_nat_chain
+{
+my ($table) = @_;
+my $chain = find_base_chain($table, 'prerouting', 'nat');
+return $chain if ($chain);
+my $base = $table->{'chains'}->{'prerouting'} ? 'prerouting_nat' : 'prerouting';
+$chain = unique_chain_name($table, $base);
+$table->{'chains'}->{$chain} = {
+	'type' => 'nat',
+	'hook' => 'prerouting',
+	'priority' => '-100',
+	'policy' => 'accept',
+};
+return $chain;
+}
+
+# quick_text_rule_exists(&table, chain, rule-text)
+# Returns true if exact rule text already exists in a chain
+sub quick_text_rule_exists
+{
+my ($table, $chain, $text) = @_;
+foreach my $r (@{$table->{'rules'} || [ ]}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	return 1 if (($r->{'text'} || '') eq $text);
+	}
+return 0;
+}
+
+# format_forward_target(&table, addr, addr-family, port)
+# Formats the dnat or redirect statement for a quick port forward
+sub format_forward_target
+{
+my ($table, $addr, $addr_family, $port) = @_;
+if ($addr) {
+	my $target = format_nat_target($addr, $port);
+	my $stmt = "dnat ";
+	$stmt .= $addr_family." " if (($table->{'family'} || '') eq 'inet');
+	return $stmt."to ".$target;
+	}
+return "redirect to :".$port;
+}
+
+# parse_nat_target(target)
+# Splits a redirect/dnat target into address and port parts
+sub parse_nat_target
+{
+my ($target) = @_;
+return (undef, undef) if (!defined($target) || $target eq '');
+return (undef, $1) if ($target =~ /^:(.+)$/);
+return ($1, $2) if ($target =~ /^\[([^\]]+)\]:(.+)$/);
+return ($1, $2) if ($target =~ /^([^:]+):([^:]+)$/);
+return ($target, undef);
+}
+
+# format_nat_target(address, port)
+# Formats a redirect/dnat target from address and port parts
+sub format_nat_target
+{
+my ($addr, $port) = @_;
+$addr = undef if (defined($addr) && $addr eq '');
+$port = undef if (defined($port) && $port eq '');
+if (defined($addr)) {
+	my $target = $addr;
+	if (defined($port)) {
+		$target = $addr =~ /:/ ? "[".$addr."]:".$port : $addr.":".$port;
+		}
+	return $target;
+	}
+return defined($port) ? ":".$port : "";
+}
+
+# format_nat_expr(&rule)
+# Formats a redirect or dnat expression from a structured rule
+sub format_nat_expr
+{
+my ($rule) = @_;
+my $action = $rule->{'action'} || '';
+return if ($action !~ /^(redirect|dnat)$/);
+my $target = format_nat_target($rule->{'nat_addr'}, $rule->{'nat_port'});
+my $out = $action;
+if ($action eq 'dnat' && $rule->{'nat_family'}) {
+	$out .= " ".$rule->{'nat_family'};
+	}
+$out .= " to ".$target if ($target ne '');
+return $out;
+}
+
+# quick_forward_has_established(&table, chain)
+# Returns true if a forward chain already accepts established traffic
+sub quick_forward_has_established
+{
+my ($table, $chain) = @_;
+foreach my $r (@{$table->{'rules'} || [ ]}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	next if (($r->{'action'} || '') ne 'accept');
+	return 1 if (($r->{'ct_state'} || '') =~ /\bestablished\b/);
+	}
+return 0;
+}
+
+# quick_forward_accept_covered(&table, chain, proto, port, addr)
+# Returns true if a forward accept rule already covers a DNAT destination
+sub quick_forward_accept_covered
+{
+my ($table, $chain, $proto, $port, $addr) = @_;
+foreach my $r (@{$table->{'rules'} || [ ]}) {
+	next if (!$r || ref($r) ne 'HASH');
+	next if (($r->{'chain'} || '') ne $chain);
+	next if (($r->{'action'} || '') ne 'accept');
+	next if (($r->{'proto'} || '') ne $proto);
+	next if (($r->{'daddr'} || '') ne $addr);
+	return 1 if (port_expr_covers($r->{'dport'}, $port));
+	}
+return 0;
+}
+
+# add_quick_forward_filter(&table, proto, port, addr, addr-family)
+# Adds matching forward-chain accepts for remote DNAT destinations
+sub add_quick_forward_filter
+{
+my ($table, $proto, $port, $addr, $addr_family) = @_;
+my $chain = find_base_chain($table, 'forward', 'filter');
+$chain ||= find_base_chain($table, 'forward');
+return 0 if (!$chain);
+my $changed = 0;
+if (!quick_forward_has_established($table, $chain)) {
+	my $est = {
+		'chain' => $chain,
+		'ct_state' => 'established,related',
+		'action' => 'accept',
+		'comment' => 'Webmin quick forward',
+	};
+	$est->{'text'} = format_rule_text($est);
+	insert_quick_rule($table, $chain, $est,
+		quick_rule_rank(quick_rule_type($est)));
+	$changed = 1;
+	}
+if (!quick_forward_accept_covered($table, $chain, $proto, $port, $addr)) {
+	my $rule = {
+		'chain' => $chain,
+		'daddr' => $addr,
+		'daddr_family' => $addr_family,
+		'proto' => $proto,
+		'dport' => $port,
+		'action' => 'accept',
+		'comment' => 'Webmin quick forward',
+	};
+	$rule->{'text'} = format_rule_text($rule);
+	insert_quick_rule($table, $chain, $rule,
+		quick_rule_rank(quick_rule_type($rule)));
+	$changed = 1;
+	}
+return $changed;
+}
+
+# add_quick_forward_rule(&table, src-port, proto, dst-port, dst-addr)
+# Adds a simple port forward to the selected table
+sub add_quick_forward_rule
+{
+my ($table, $src_port, $proto, $dst_port, $dst_addr) = @_;
+my $err = table_supports_quick_l4($table);
+return $err if ($err);
+$proto = normalize_quick_proto($proto);
+return text('quick_eproto') if (!$proto);
+($src_port, $err) = parse_quick_port($src_port);
+return $err if ($err);
+$dst_port = "" if (!defined($dst_port));
+$dst_port =~ s/^\s+//;
+$dst_port =~ s/\s+$//;
+if ($dst_port ne "") {
+	($dst_port, $err) = parse_quick_port($dst_port);
+	return $err if ($err);
+	}
+else {
+	$dst_port = undef;
+	}
+my ($addr, $addr_family, $addr_err) =
+    parse_quick_forward_addr($dst_addr, $table);
+return $addr_err if ($addr_err);
+return text('quick_eforward_target') if (!$addr && !$dst_port);
+
+my $chain = ensure_prerouting_nat_chain($table);
+my $target = format_forward_target($table, $addr, $addr_family, $dst_port);
+my $rule_text = "$proto dport $src_port $target";
+$rule_text = quick_rule_with_comment($rule_text, 'Webmin quick forward');
+my $changed = 0;
+if (!quick_text_rule_exists($table, $chain, $rule_text)) {
+	my $rule = parse_rule_text($rule_text);
+	$rule->{'chain'} = $chain;
+	$rule->{'text'} = $rule_text;
+	insert_quick_rule($table, $chain, $rule,
+		quick_rule_rank(quick_rule_type($rule)));
+	$changed = 1;
+	}
+
+my $filter_port = $dst_port || $src_port;
+if ($addr) {
+	my $ok = add_quick_forward_filter(
+		$table, $proto, $filter_port, $addr, $addr_family);
+	$changed ||= $ok;
+	}
+else {
+	my ($ok, $perr) =
+	    add_quick_accept_port($table, $filter_port, $proto,
+		'Webmin quick forward');
+	return $perr if ($perr);
+	$changed ||= $ok;
+	}
+return $changed ? undef : text('quick_edup', $src_port);
 }
 
 # move_rule_in_chain(&table, chain, index, direction)
@@ -1095,6 +1963,32 @@ while ($i < @tokens) {
 		$i++;
 		next;
 		}
+	if ($tok =~ /^(redirect|dnat)$/) {
+		my $action = $tok;
+		my $j = $i + 1;
+		my @nt = ($tok);
+		if ($action eq 'dnat' && $j < @tokens &&
+		    ($tokens[$j] eq 'ip' || $tokens[$j] eq 'ip6')) {
+			$rule{'nat_family'} = $tokens[$j];
+			push(@nt, $tokens[$j]);
+			$j++;
+			}
+		if ($j < @tokens && $tokens[$j] eq 'to') {
+			push(@nt, $tokens[$j]);
+			$j++;
+			if ($j < @tokens) {
+				my ($addr, $port) = parse_nat_target($tokens[$j]);
+				$rule{'nat_addr'} = $addr if (defined($addr));
+				$rule{'nat_port'} = $port if (defined($port));
+				push(@nt, $tokens[$j]);
+				$j++;
+				}
+			}
+		$rule{'action'} = $action;
+		push(@exprs, {'type' => 'nat', 'text' => join(" ", @nt)});
+		$i = $j;
+		next;
+		}
 	if ($tok =~ /^(accept|drop|reject|return)$/) {
 		$rule{'action'} = $tok;
 		push(@exprs, {'type' => 'action', 'text' => $tok});
@@ -1261,6 +2155,16 @@ if ($exprs && ref($exprs) eq 'ARRAY' && @$exprs) {
 				}
 			next;
 			}
+		if ($type eq 'nat') {
+			if (!$used{'nat'}) {
+				my $nat = format_nat_expr($rule);
+				if ($nat) {
+					push(@parts, $nat);
+					$used{'nat'} = 1;
+					}
+				}
+			next;
+			}
 		if ($type eq 'jump') {
 			if (!$used{'jump'} && $rule->{'jump'}) {
 				push(@parts, "jump ".$rule->{'jump'});
@@ -1338,7 +2242,12 @@ if (!$used{'jump'} && $rule->{'jump'}) {
 if (!$used{'goto'} && $rule->{'goto'}) {
 	push(@parts, "goto ".$rule->{'goto'});
 	}
-if ($rule->{'action'} && !$rule->{'jump'} && !$rule->{'goto'}) {
+if (!$used{'nat'}) {
+	my $nat = format_nat_expr($rule);
+	push(@parts, $nat) if ($nat);
+	}
+if ($rule->{'action'} && !$rule->{'jump'} && !$rule->{'goto'} &&
+    $rule->{'action'} !~ /^(redirect|dnat)$/) {
 	push(@parts, $rule->{'action'});
 	}
 if (defined($rule->{'comment'}) && $rule->{'comment'} ne '') {
@@ -1535,151 +2444,757 @@ return (
 );
 }
 
+# profile_ports_or_default(&ports, proto, &service-names, &fallback-ports)
+# Returns valid nftables port expressions from config, /etc/services or fallback
+sub profile_ports_or_default
+{
+my ($ports, $proto, $service_names, $fallbacks) = @_;
+my @ports = clean_profile_ports($proto, @$ports);
+if (!@ports && $service_names && @$service_names) {
+	@ports = clean_profile_ports(
+		$proto,
+		map { get_etc_service_port($_, $proto) } @$service_names
+		);
+	}
+if (!@ports && $fallbacks) {
+	@ports = clean_profile_ports($proto, @$fallbacks);
+	}
+return @ports;
+}
+
+# clean_profile_ports(proto, port|service|range, ...)
+# Expands service names and removes invalid profile port expressions
+sub clean_profile_ports
+{
+my ($proto, @ports) = @_;
+my %seen;
+foreach my $port (@ports) {
+	next if (!defined($port));
+	foreach my $p (split(/[\s,]+/, $port)) {
+		foreach my $e (expand_profile_port($p, $proto)) {
+			$seen{$e} = 1;
+			}
+		}
+	}
+return normalize_port_set_elements(keys %seen);
+}
+
+# expand_profile_port(port|service|range, proto)
+# Converts one configured value to one or more nftables port expressions
+sub expand_profile_port
+{
+my ($port, $proto) = @_;
+return ( ) if (!defined($port));
+$port =~ s/^\s+//;
+$port =~ s/\s+$//;
+return ( ) if ($port eq '');
+if ($port =~ /^(\d+)$/) {
+	my $p = $1;
+	return valid_profile_port_number($p) ? ($p) : ( );
+	}
+if ($port =~ /^(\d+)-(\d+)$/) {
+	my ($from, $to) = ($1, $2);
+	return valid_profile_port_number($from) &&
+	       valid_profile_port_number($to) ? ("$from-$to") : ( );
+	}
+my $svcport = get_etc_service_port($port, $proto);
+return defined($svcport) ? ($svcport) : ( );
+}
+
+# valid_profile_port_number(port)
+# Returns true for a valid TCP/UDP port number
+sub valid_profile_port_number
+{
+return defined($_[0]) && $_[0] =~ /^\d+$/ && $_[0] >= 1 && $_[0] <= 65535;
+}
+
+# profile_port_number(port|service, proto)
+# Returns a single numeric port number for a configured value
+sub profile_port_number
+{
+my ($port, $proto) = @_;
+my @ports = expand_profile_port($port, $proto);
+return @ports && $ports[0] =~ /^\d+$/ ? $ports[0] : undef;
+}
+
+# profile_accept_rules(proto, ports...)
+# Returns simple inbound accept rules for the given ports
+sub profile_accept_rules
+{
+my ($proto, @ports) = @_;
+return map { "$proto dport $_ accept" } @ports;
+}
+
+# profile_ports_label(ports...)
+# Formats a port list for the setup UI
+sub profile_ports_label
+{
+return @_ ? join(", ", @_) : "-";
+}
+
+# get_etc_service_port(service|&services, proto, [services-file])
+# Looks up a default service port in /etc/services
+sub get_etc_service_port
+{
+my ($services, $proto, $file) = @_;
+my @services = ref($services) eq 'ARRAY' ? @$services : ($services);
+my $map = read_etc_services($file);
+foreach my $service (@services) {
+	next if (!defined($service));
+	my $port = $map->{lc($proto || '')}->{lc($service)};
+	return $port if (defined($port));
+	}
+return;
+}
+
+# read_etc_services([services-file])
+# Parses /etc/services into a protocol/name to port map
+sub read_etc_services
+{
+my ($file) = @_;
+$file ||= "/etc/services";
+our %profile_etc_services_cache;
+return $profile_etc_services_cache{$file}
+	if (defined($profile_etc_services_cache{$file}));
+my %map;
+if (open(my $fh, "<", $file)) {
+	while(my $line = <$fh>) {
+		$line =~ s/#.*$//;
+		$line =~ s/^\s+//;
+		$line =~ s/\s+$//;
+		next if ($line eq '');
+		my ($name, $portproto, @aliases) = split(/\s+/, $line);
+		next if (!$name || !$portproto);
+		next if ($portproto !~ /^(\d+)\/([A-Za-z0-9_+-]+)$/);
+		my ($port, $proto) = ($1, lc($2));
+		next if (!valid_profile_port_number($port));
+		foreach my $n ($name, @aliases) {
+			$map{$proto}->{lc($n)} ||= $port;
+			}
+		}
+	close($fh);
+	}
+$profile_etc_services_cache{$file} = \%map;
+return \%map;
+}
+
+# foreign_require_quiet(module, [config-key...])
+# Loads a foreign module API, returning false on any failure
+sub foreign_require_quiet
+{
+my ($mod, @config_keys) = @_;
+my $ok = eval {
+	if (foreign_check($mod) &&
+	    foreign_config_has_readable_file($mod, @config_keys)) {
+		local $main::error_must_die = 1;
+		foreign_require($mod);
+		1;
+		}
+	else {
+		0;
+		}
+	};
+return $ok && !$@ ? 1 : 0;
+}
+
+# foreign_config_has_readable_file(module, config-key...)
+# Returns true if no keys are required, or a configured file exists
+sub foreign_config_has_readable_file
+{
+my ($mod, @keys) = @_;
+return 1 if (!@keys);
+my %fconfig = foreign_config($mod);
+foreach my $key (@keys) {
+	foreach my $file (split(/\s+/, $fconfig{$key} || '')) {
+		return 1 if (-r $file);
+		}
+	}
+return 0;
+}
+
+# configured_port_from_address(value, [default-port])
+# Extracts a port from address:port, [address]:port or bare port values
+sub configured_port_from_address
+{
+my ($value, $default) = @_;
+return if (!defined($value) || $value eq '');
+return $1 if ($value =~ /^(\d+)$/);
+return $1 if ($value =~ /^\[[^\]]+\]:(\d+)$/);
+return $1 if ($value =~ /^[^:]+:(\d+)$/);
+return $default if (defined($default) && $value =~ /\S/);
+return;
+}
+
+# address_is_loopback(address)
+# Returns true if an address is loopback-only
+sub address_is_loopback
+{
+my ($addr) = @_;
+return 0 if (!defined($addr) || $addr eq '' || $addr eq '*' ||
+	     $addr eq '0.0.0.0' || $addr eq '::' || $addr eq '[::]');
+$addr =~ s/^\[//;
+$addr =~ s/\]$//;
+return 1 if (lc($addr) eq 'localhost' || $addr eq '::1' ||
+	     $addr =~ /^127\./);
+return 0;
+}
+
+# get_sshd_ports()
+# Returns configured SSH server ports from the sshd module
+sub get_sshd_ports
+{
+return ( ) if (!foreign_require_quiet('sshd', 'sshd_config'));
+my @ports = eval {
+	my $conf = sshd::get_sshd_config();
+	my @rv;
+	foreach my $p (sshd::find('Port', $conf)) {
+		push(@rv, @{$p->{'values'} || [ ]});
+		}
+	foreach my $l (sshd::find('ListenAddress', $conf)) {
+		my $listen = $l->{'values'}->[0];
+		my $port = configured_port_from_address($listen);
+		push(@rv, $port) if ($port);
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# miniserv_config_ports(&miniserv-config)
+# Extracts configured miniserv listener ports
+sub miniserv_config_ports
+{
+my ($miniserv) = @_;
+my @ports;
+push(@ports, $miniserv->{'port'})
+	if (valid_profile_port_number($miniserv->{'port'}));
+foreach my $sock (split(/\s+/, $miniserv->{'sockets'} || '')) {
+	my $port = configured_port_from_address($sock);
+	push(@ports, $port) if ($port);
+	}
+return clean_profile_ports('tcp', @ports);
+}
+
+# get_webmin_ports()
+# Returns configured Webmin listener ports
+sub get_webmin_ports
+{
+my %miniserv;
+if (get_miniserv_config(\%miniserv)) {
+	return miniserv_config_ports(\%miniserv);
+	}
+return ( );
+}
+
+# get_usermin_ports()
+# Returns configured Usermin listener ports
+sub get_usermin_ports
+{
+return ( ) if (!foreign_require_quiet('usermin'));
+my @ports = eval {
+	my %miniserv;
+	usermin::get_usermin_miniserv_config(\%miniserv);
+	miniserv_config_ports(\%miniserv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_bind_ports(tls)
+# Returns configured BIND DNS or DNS-over-TLS listener ports
+sub get_bind_ports
+{
+my ($want_tls) = @_;
+return ( ) if (!foreign_require_quiet('bind8', 'named_conf'));
+my @ports = eval {
+	my $conf = bind8::get_config();
+	my $options = bind8::find('options', $conf);
+	my @rv;
+	if ($options) {
+		foreach my $l (bind8::find('listen-on', $options->{'members'}),
+			       bind8::find('listen-on-v6',
+				   $options->{'members'})) {
+			my $vals = $l->{'values'} || [ ];
+			my $has_tls = scalar(grep { $_ eq 'tls' } @$vals) ? 1 : 0;
+			next if ($want_tls != $has_tls);
+			my $port;
+			for(my $i = 0; $i < @$vals; $i++) {
+				if ($vals->[$i] eq 'port') {
+					$port = $vals->[$i + 1];
+					last;
+					}
+				}
+			$port ||= get_etc_service_port('domain', 'tcp') || 53;
+			push(@rv, $port);
+			}
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_apache_ports(https)
+# Returns configured Apache HTTP or HTTPS listener ports
+sub get_apache_ports
+{
+my ($https) = @_;
+return ( ) if (!foreign_require_quiet('apache', 'httpd_conf'));
+my @ports = eval {
+	my $conf = apache::get_config();
+	my $defport = profile_port_number(
+		apache::find_directive('Port', $conf, 1), 'tcp');
+	$defport ||= get_etc_service_port('http', 'tcp') || 80;
+	my (%http_vhost, %https_vhost, @rv);
+	foreach my $v (apache::find_directive_struct('VirtualHost', $conf)) {
+		my $vm = $v->{'members'} || [ ];
+		my $ssl = lc(apache::find_vdirective(
+			'SSLEngine', $vm, $conf, 1) || '') eq 'on';
+		foreach my $word (@{$v->{'words'} || [ ]}) {
+			my $port = configured_port_from_address($word, $defport);
+			next if (!$port || $port eq '*');
+			if ($ssl || $port == 443) {
+				$https_vhost{$port} = 1;
+				}
+			else {
+				$http_vhost{$port} = 1;
+				}
+			}
+		}
+	foreach my $port (keys %http_vhost, keys %https_vhost) {
+		push(@rv, $port)
+			if ($https ? $https_vhost{$port} : $http_vhost{$port});
+		}
+	foreach my $listen (apache::find_directive('Listen', $conf)) {
+		my ($first) = split(/\s+/, $listen);
+		my $port = configured_port_from_address($first, $defport);
+		next if (!$port);
+		if ($https) {
+			push(@rv, $port)
+				if ($https_vhost{$port} ||
+				    (!$http_vhost{$port} && $port == 443));
+			}
+		else {
+			push(@rv, $port)
+				if ($http_vhost{$port} ||
+				    (!$https_vhost{$port} && $port != 443));
+			}
+		}
+	if (!@rv && !$https && $defport != 443) {
+		push(@rv, $defport);
+		}
+	elsif (!@rv && $https && $defport == 443) {
+		push(@rv, $defport);
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_nginx_ports(https)
+# Returns configured Nginx HTTP or HTTPS listener ports
+sub get_nginx_ports
+{
+my ($https) = @_;
+return ( ) if (!foreign_require_quiet('nginx', 'nginx_config'));
+my @ports = eval {
+	my $conf = nginx::get_config();
+	my $http = nginx::find('http', $conf);
+	my @rv;
+	if ($http) {
+		foreach my $server (nginx::find('server', $http)) {
+			my @listen = nginx::find('listen', $server);
+			@listen = ({ 'words' => [ '80' ] }) if (!@listen);
+			my $server_ssl = lc(nginx::find_value('ssl', $server) || '')
+			    eq 'on';
+			foreach my $l (@listen) {
+				my @words = @{$l->{'words'} || [ ]};
+				next if (!@words || $words[0] =~ /^unix:/);
+				my (undef, $port) = nginx::split_ip_port($words[0]);
+				next if (!valid_profile_port_number($port));
+				my $ssl = $server_ssl ||
+				    scalar(grep { lc($_) eq 'ssl' } @words);
+				if ($https ? ($ssl || $port == 443) :
+					     (!$ssl && $port != 443)) {
+					push(@rv, $port);
+					}
+				}
+			}
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_dovecot_ports(listener)
+# Returns configured Dovecot IMAP/POP3 listener ports
+sub get_dovecot_ports
+{
+my ($listener) = @_;
+return ( ) if (!foreign_require_quiet('dovecot', 'dovecot_config'));
+my @ports = eval {
+	my $conf = dovecot::get_config();
+	my @rv;
+	foreach my $p (dovecot::find('port', $conf, 0,
+				     'inet_listener', $listener)) {
+		push(@rv, $p->{'value'}) if (($p->{'value'} || '') ne '0');
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_proftpd_ports()
+# Returns configured ProFTPD control listener ports
+sub get_proftpd_ports
+{
+return ( ) if (!foreign_require_quiet('proftpd', 'proftpd_conf'));
+my @ports = eval {
+	my $conf = proftpd::get_config();
+	my @rv = proftpd::find_directive('Port', $conf);
+	foreach my $v (proftpd::find_directive_struct('VirtualHost', $conf)) {
+		push(@rv, proftpd::find_directive('Port',
+			$v->{'members'} || [ ]));
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_proftpd_passive_ports()
+# Returns configured ProFTPD passive port ranges
+sub get_proftpd_passive_ports
+{
+return ( ) if (!foreign_require_quiet('proftpd', 'proftpd_conf'));
+my @ports = eval {
+	my $conf = proftpd::get_config();
+	my @dirs = proftpd::find_directive_struct('PassivePorts', $conf);
+	foreach my $v (proftpd::find_directive_struct('VirtualHost', $conf)) {
+		push(@dirs, proftpd::find_directive_struct(
+			'PassivePorts', $v->{'members'} || [ ]));
+		}
+	my @rv;
+	foreach my $d (@dirs) {
+		my @w = @{$d->{'words'} || [ ]};
+		push(@rv, "$w[0]-$w[1]")
+			if (valid_profile_port_number($w[0]) &&
+			    valid_profile_port_number($w[1]));
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# get_postfix_ports(service)
+# Returns configured Postfix SMTP listener ports for smtp/submission/smtps
+sub get_postfix_ports
+{
+my ($service) = @_;
+return ( ) if (!foreign_require_quiet('postfix', 'postfix_master'));
+my @ports = eval {
+	my $masters = postfix::get_master_config();
+	my @rv;
+	foreach my $m (@$masters) {
+		next if (!$m->{'enabled'} || $m->{'type'} ne 'inet');
+		next if (($m->{'command'} || '') !~ /(^|\s)smtpd(\s|$)/);
+		my ($port, $addr) = postfix_master_port($m->{'name'});
+		next if (!$port || address_is_loopback($addr));
+		push(@rv, $port)
+			if (mail_listener_matches_service(
+				$service, $m->{'name'}, $port));
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# postfix_master_port(service-name)
+# Returns port and optional bind address from a Postfix master.cf service name
+sub postfix_master_port
+{
+my ($name) = @_;
+return (undef, undef) if (!defined($name));
+if ($name =~ /^\[([^\]]+)\]:(\S+)$/ || $name =~ /^([^:]+):(\S+)$/) {
+	my ($addr, $svc) = ($1, $2);
+	return (profile_port_number($svc, 'tcp'), $addr);
+	}
+return (profile_port_number($name, 'tcp'), undef);
+}
+
+# get_sendmail_ports(service)
+# Returns configured Sendmail listener ports for smtp/submission/smtps
+sub get_sendmail_ports
+{
+my ($service) = @_;
+return ( ) if (!foreign_require_quiet('sendmail', 'sendmail_cf'));
+my @ports = eval {
+	my $conf = sendmail::get_sendmailcf();
+	my @rv;
+	{
+		no warnings 'once';
+		local @sendmail::rv;
+		foreach my $dpo (sendmail::find_options(
+				 'DaemonPortOptions', $conf)) {
+			my %opts;
+			foreach my $o (split(/\s*,\s*/, $dpo->[1])) {
+				if ($o =~ /^([^=]+)=(\S+)$/) {
+					$opts{$1} = $2;
+					}
+				}
+			foreach my $k (qw(Name Address Port Modifiers Family)) {
+				my $short = substr($k, 0, 1);
+				$opts{$k} ||= $opts{$short};
+				}
+			$opts{'Address'} ||= $opts{'Addr'};
+			next if (address_is_loopback($opts{'Address'}));
+			my $name = $opts{'Name'} || 'MTA';
+			my $port = $opts{'Port'} ?
+			    profile_port_number($opts{'Port'}, 'tcp') :
+			    default_mail_service_port($name);
+			next if (!$port);
+			push(@rv, $port)
+				if (mail_listener_matches_service(
+					$service, $name, $port));
+			}
+		}
+	clean_profile_ports('tcp', @rv);
+	};
+return $@ ? ( ) : @ports;
+}
+
+# default_mail_service_port(listener-name)
+# Returns the default port implied by a Sendmail daemon name
+sub default_mail_service_port
+{
+my ($name) = @_;
+my $lname = lc($name || '');
+return get_etc_service_port('submission', 'tcp') || 587
+	if ($lname eq 'msa' || $lname eq 'submission');
+return get_etc_service_port([ 'submissions', 'smtps' ], 'tcp') || 465
+	if ($lname eq 'smtps' || $lname eq 'submissions');
+return get_etc_service_port('smtp', 'tcp') || 25;
+}
+
+# mail_listener_matches_service(service, listener-name, port)
+# Classifies MTA listener ports into smtp/submission/smtps profile services
+sub mail_listener_matches_service
+{
+my ($service, $name, $port) = @_;
+my $lname = lc($name || '');
+my $smtp = get_etc_service_port('smtp', 'tcp') || 25;
+my $submission = get_etc_service_port('submission', 'tcp') || 587;
+my $smtps = get_etc_service_port([ 'submissions', 'smtps' ], 'tcp') || 465;
+if ($service eq 'submission') {
+	return $lname eq 'submission' || $lname eq 'msa' ||
+	       $port == $submission;
+	}
+if ($service eq 'smtps') {
+	return $lname eq 'smtps' || $lname eq 'submissions' ||
+	       $port == $smtps;
+	}
+return $lname eq 'smtp' || $lname eq 'mta' || $port == $smtp ||
+       ($port != $submission && $port != $smtps);
+}
+
 # setup_services()
 # Returns selectable services and ports used by ruleset profiles
 sub setup_services
 {
-my $webmin_port = get_webmin_port();
-my $usermin_port = get_usermin_port();
+my @ssh_ports = profile_ports_or_default([ get_sshd_ports() ],
+	'tcp', [ 'ssh' ], [ 22 ]);
+my @webmin_ports = profile_ports_or_default([ get_webmin_ports() ],
+	'tcp', [ 'webmin' ], [ 10000 ]);
+my @usermin_ports = profile_ports_or_default([ get_usermin_ports() ],
+	'tcp', [ 'usermin' ], [ 20000 ]);
+my @dhcpv6_ports = profile_ports_or_default([ ],
+	'udp', [ 'dhcpv6-client' ], [ 546 ]);
+my @dns_ports = profile_ports_or_default([ get_bind_ports(0) ],
+	'tcp', [ 'domain', 'dns' ], [ 53 ]);
+my @dot_ports = profile_ports_or_default([ get_bind_ports(1) ],
+	'tcp', [ 'domain-s', 'dns-over-tls' ], [ 853 ]);
+my @ftp_ports = profile_ports_or_default([ get_proftpd_ports() ],
+	'tcp', [ 'ftp' ], [ 21 ]);
+my @http_ports = profile_ports_or_default(
+	[ get_apache_ports(0), get_nginx_ports(0) ],
+	'tcp', [ 'http', 'www', 'www-http' ], [ 80 ]);
+my @https_ports = profile_ports_or_default(
+	[ get_apache_ports(1), get_nginx_ports(1) ],
+	'tcp', [ 'https' ], [ 443 ]);
+my @imap_ports = profile_ports_or_default(
+	[ get_dovecot_ports('imap') ],
+	'tcp', [ 'imap2', 'imap' ], [ 143 ]);
+my @imaps_ports = profile_ports_or_default(
+	[ get_dovecot_ports('imaps') ],
+	'tcp', [ 'imaps' ], [ 993 ]);
+my @mdns_ports = profile_ports_or_default([ ],
+	'udp', [ 'mdns' ], [ 5353 ]);
+my @pop3_ports = profile_ports_or_default(
+	[ get_dovecot_ports('pop3') ],
+	'tcp', [ 'pop3' ], [ 110 ]);
+my @pop3s_ports = profile_ports_or_default(
+	[ get_dovecot_ports('pop3s') ],
+	'tcp', [ 'pop3s' ], [ 995 ]);
+my @smtp_ports = profile_ports_or_default(
+	[ get_postfix_ports('smtp'), get_sendmail_ports('smtp') ],
+	'tcp', [ 'smtp' ], [ 25 ]);
+my @submission_ports = profile_ports_or_default(
+	[ get_postfix_ports('submission'), get_sendmail_ports('submission') ],
+	'tcp', [ 'submission' ], [ 587 ]);
+my @smtps_ports = profile_ports_or_default(
+	[ get_postfix_ports('smtps'), get_sendmail_ports('smtps') ],
+	'tcp', [ 'submissions', 'smtps' ], [ 465 ]);
+my @ftp_data_ports = profile_ports_or_default([ ],
+	'tcp', [ 'ftp-data' ], [ 20 ]);
+my @passive_ftp_ports = profile_ports_or_default(
+	[ get_proftpd_passive_ports() ],
+	'tcp', [ ], [ '49152-65535' ]);
 return (
 	{
 		'id' => 'ssh',
 		'label' => text('setup_svc_ssh'),
 		'type' => text('setup_type_service'),
-		'port' => '22',
+		'port' => profile_ports_label(@ssh_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 22 accept']
+		'rules' => [ profile_accept_rules('tcp', @ssh_ports) ]
 	},
 	{
 		'id' => 'webmin',
 		'label' => text('setup_svc_webmin'),
 		'type' => text('setup_type_service'),
-		'port' => $webmin_port,
+		'port' => profile_ports_label(@webmin_ports),
 		'proto' => 'TCP',
-		'rules' => ["tcp dport $webmin_port accept"]
+		'rules' => [ profile_accept_rules('tcp', @webmin_ports) ]
 	},
 	{
 		'id' => 'dhcpv6',
 		'label' => text('setup_svc_dhcpv6'),
 		'type' => text('setup_type_service'),
-		'port' => '546',
+		'port' => profile_ports_label(@dhcpv6_ports),
 		'proto' => 'UDP',
-		'rules' => ['ip6 daddr fe80::/64 udp dport 546 accept']
+		'rules' => [
+			map { "ip6 daddr fe80::/64 udp dport $_ accept" }
+			    @dhcpv6_ports
+		]
 	},
 	{
 		'id' => 'dns',
 		'label' => text('setup_svc_dns'),
 		'type' => text('setup_type_service'),
-		'port' => '53',
+		'port' => profile_ports_label(@dns_ports),
 		'proto' => 'TCP/UDP',
-		'rules' => ['tcp dport 53 accept', 'udp dport 53 accept']
+		'rules' => [
+			profile_accept_rules('tcp', @dns_ports),
+			profile_accept_rules('udp', @dns_ports)
+		]
 	},
 	{
 		'id' => 'dot',
 		'label' => text('setup_svc_dot'),
 		'type' => text('setup_type_service'),
-		'port' => '853',
+		'port' => profile_ports_label(@dot_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 853 accept']
+		'rules' => [ profile_accept_rules('tcp', @dot_ports) ]
 	},
 	{
 		'id' => 'ftp',
 		'label' => text('setup_svc_ftp'),
 		'type' => text('setup_type_service'),
-		'port' => '21',
+		'port' => profile_ports_label(@ftp_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 21 accept']
+		'rules' => [ profile_accept_rules('tcp', @ftp_ports) ]
 	},
 	{
 		'id' => 'http',
 		'label' => text('setup_svc_http'),
 		'type' => text('setup_type_service'),
-		'port' => '80',
+		'port' => profile_ports_label(@http_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 80 accept']
+		'rules' => [ profile_accept_rules('tcp', @http_ports) ]
 	},
 	{
 		'id' => 'https',
 		'label' => text('setup_svc_https'),
 		'type' => text('setup_type_service'),
-		'port' => '443',
+		'port' => profile_ports_label(@https_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 443 accept']
+		'rules' => [ profile_accept_rules('tcp', @https_ports) ]
 	},
 	{
 		'id' => 'imap',
 		'label' => text('setup_svc_imap'),
 		'type' => text('setup_type_service'),
-		'port' => '143',
+		'port' => profile_ports_label(@imap_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 143 accept']
+		'rules' => [ profile_accept_rules('tcp', @imap_ports) ]
 	},
 	{
 		'id' => 'imaps',
 		'label' => text('setup_svc_imaps'),
 		'type' => text('setup_type_service'),
-		'port' => '993',
+		'port' => profile_ports_label(@imaps_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 993 accept']
+		'rules' => [ profile_accept_rules('tcp', @imaps_ports) ]
 	},
 	{
 		'id' => 'mdns',
 		'label' => text('setup_svc_mdns'),
 		'type' => text('setup_type_service'),
-		'port' => '5353',
+		'port' => profile_ports_label(@mdns_ports),
 		'proto' => 'UDP',
 		'rules' => [
-			'ip daddr 224.0.0.251 udp dport 5353 accept',
-			'ip6 daddr ff02::fb udp dport 5353 accept'
+			map {
+				(
+				"ip daddr 224.0.0.251 udp dport $_ accept",
+				"ip6 daddr ff02::fb udp dport $_ accept"
+				)
+			} @mdns_ports
 		]
 	},
 	{
 		'id' => 'pop3',
 		'label' => text('setup_svc_pop3'),
 		'type' => text('setup_type_service'),
-		'port' => '110',
+		'port' => profile_ports_label(@pop3_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 110 accept']
+		'rules' => [ profile_accept_rules('tcp', @pop3_ports) ]
 	},
 	{
 		'id' => 'pop3s',
 		'label' => text('setup_svc_pop3s'),
 		'type' => text('setup_type_service'),
-		'port' => '995',
+		'port' => profile_ports_label(@pop3s_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 995 accept']
+		'rules' => [ profile_accept_rules('tcp', @pop3s_ports) ]
 	},
 	{
 		'id' => 'smtp',
 		'label' => text('setup_svc_smtp'),
 		'type' => text('setup_type_service'),
-		'port' => '25',
+		'port' => profile_ports_label(@smtp_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 25 accept']
+		'rules' => [ profile_accept_rules('tcp', @smtp_ports) ]
 	},
 	{
 		'id' => 'submission',
 		'label' => text('setup_svc_submission'),
 		'type' => text('setup_type_service'),
-		'port' => '587',
+		'port' => profile_ports_label(@submission_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 587 accept']
+		'rules' => [ profile_accept_rules('tcp', @submission_ports) ]
 	},
 	{
 		'id' => 'smtps',
 		'label' => text('setup_svc_smtps'),
 		'type' => text('setup_type_service'),
-		'port' => '465',
+		'port' => profile_ports_label(@smtps_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 465 accept']
+		'rules' => [ profile_accept_rules('tcp', @smtps_ports) ]
 	},
 	{
 		'id' => 'ftp_data',
 		'label' => text('setup_port_ftp_data'),
 		'type' => text('setup_type_port'),
-		'port' => '20',
+		'port' => profile_ports_label(@ftp_data_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 20 accept']
+		'rules' => [ profile_accept_rules('tcp', @ftp_data_ports) ]
 	},
 	{
 		'id' => 'ssh_alt',
@@ -1701,17 +3216,17 @@ return (
 		'id' => 'usermin',
 		'label' => text('setup_port_usermin'),
 		'type' => text('setup_type_port'),
-		'port' => $usermin_port,
+		'port' => profile_ports_label(@usermin_ports),
 		'proto' => 'TCP',
-		'rules' => ["tcp dport $usermin_port accept"]
+		'rules' => [ profile_accept_rules('tcp', @usermin_ports) ]
 	},
 	{
 		'id' => 'passive_ftp',
 		'label' => text('setup_port_passive_ftp'),
 		'type' => text('setup_type_port'),
-		'port' => '49152-65535',
+		'port' => profile_ports_label(@passive_ftp_ports),
 		'proto' => 'TCP',
-		'rules' => ['tcp dport 49152-65535 accept']
+		'rules' => [ profile_accept_rules('tcp', @passive_ftp_ports) ]
 	},
 );
 }
@@ -2494,6 +4009,18 @@ elsif ($r->{'goto'}) {
 elsif ($r->{'action'}) {
 	if ($r->{'action'} eq 'return') {
 		$action_label = text('index_return_action');
+		}
+	elsif ($r->{'action'} eq 'redirect') {
+		my $target = format_nat_target($r->{'nat_addr'}, $r->{'nat_port'});
+		$action_label = $target ne '' ?
+			text('index_redirect_to', html_escape($target)) :
+			text('index_redirect');
+		}
+	elsif ($r->{'action'} eq 'dnat') {
+		my $target = format_nat_target($r->{'nat_addr'}, $r->{'nat_port'});
+		$action_label = $target ne '' ?
+			text('index_dnat_to', html_escape($target)) :
+			text('index_dnat');
 		}
 	else {
 		$action_label = text('index_'.lc($r->{'action'}));
