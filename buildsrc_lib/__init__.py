@@ -30,7 +30,10 @@ Source: webmin
 Section: admin
 Priority: optional
 Maintainer: Jeremy Davis <jeremy@turnkeylinux.org>
-Build-Depends: debhelper (>= 10), gzip, tar
+Build-Depends:
+ debhelper (>= 10),
+ gzip,
+ tar,
 Standards-Version: 4.0.0
 Homepage: https://webmin.com/
 Vcs-Browser: https://github.com/turnkeylinux/webmin/
@@ -44,6 +47,7 @@ Depends:
  libauthen-pam-perl,
  libio-pty-perl,
  libnet-ssleay-perl,
+ libsocket6-perl,
  libpam-runtime,
  openssl,
  perl,
